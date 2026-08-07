@@ -15,6 +15,7 @@ dependencies = [
 dev = [
     "alembic>=1.16",
     "httpx2>=2.9.1",
+    "hypothesis>=6.165.2",
     "mypy>=2.3.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
@@ -27,7 +28,7 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "--strict-markers --strict-config --cov=src --cov-report=term-missing --cov-fail-under=85"
+addopts = "--strict-markers --strict-config --cov=src --cov-config=pyproject.toml --cov-report=term-missing --cov-fail-under=85"
 
 [tool.coverage.run]
 branch = true
