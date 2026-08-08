@@ -42,35 +42,14 @@ class ActivityHours:
     spa: Hours = ZERO_HOURS
     other: Hours = ZERO_HOURS
 
-    def __post_init__(self) -> None:
-        for field_name, value in (
-            ("dcc", self.dcc),
-            ("spa", self.spa),
-            ("other", self.other),
-        ):
-            if not isinstance(value, Hours):
-                raise TypeError(f"{field_name} must be an Hours instance")
-
-    def __add__(
-        self,
-        other: ActivityHours,
-    ) -> ActivityHours:
-        if not isinstance(other, ActivityHours):
-            raise TypeError("ActivityHours can only be added to ActivityHours")
-
+    def __add__(self, other: ActivityHours) -> ActivityHours:
         return ActivityHours(
             dcc=self.dcc + other.dcc,
             spa=self.spa + other.spa,
             other=self.other + other.other,
         )
 
-    def __sub__(
-        self,
-        other: ActivityHours,
-    ) -> ActivityHours:
-        if not isinstance(other, ActivityHours):
-            raise TypeError("ActivityHours can only subtract ActivityHours")
-
+    def __sub__(self, other: ActivityHours) -> ActivityHours:
         return ActivityHours(
             dcc=self.dcc - other.dcc,
             spa=self.spa - other.spa,
@@ -83,36 +62,15 @@ class ActivityHours:
 
     @property
     def is_zero(self) -> bool:
-        return all(
-            value == ZERO_HOURS
-            for value in (
-                self.dcc,
-                self.spa,
-                self.other,
-            )
-        )
+        return self.dcc == self.spa == self.other == ZERO_HOURS
 
     @property
     def has_negative_value(self) -> bool:
-        return any(
-            value.value < 0
-            for value in (
-                self.dcc,
-                self.spa,
-                self.other,
-            )
-        )
+        return any(value.value < 0 for value in (self.dcc, self.spa, self.other))
 
     @property
     def has_positive_value(self) -> bool:
-        return any(
-            value.value > 0
-            for value in (
-                self.dcc,
-                self.spa,
-                self.other,
-            )
-        )
+        return any(value.value > 0 for value in (self.dcc, self.spa, self.other))
 
 
 ZERO_ACTIVITY_HOURS = ActivityHours()
@@ -129,10 +87,7 @@ class DailyLeaveOverride:
     other_hours: Hours | None = None
 
     def __post_init__(self) -> None:
-        if type(self.leave_date) is not date:
-            raise TypeError("Override leave_date must be a date")
-
-        if not isinstance(self.reason, str) or not self.reason.strip():
+        if not self.reason.strip():
             raise ValueError("Override reason cannot be empty")
 
         supplied_values = (
@@ -144,21 +99,11 @@ class DailyLeaveOverride:
             raise ValueError("An override must replace at least one value")
 
         for value in supplied_values:
-            if value is not None:
-                if not isinstance(value, Hours):
-                    raise TypeError("Override values must be Hours")
+            if value is not None and value.value < 0:
+                raise ValueError("Override values cannot be negative")
 
-                if value.value < 0:
-                    raise ValueError("Override values cannot be negative")
-
-    def apply(
-        self,
-        standard: ActivityHours,
-    ) -> ActivityHours:
+    def apply(self, standard: ActivityHours) -> ActivityHours:
         """Replace supplied fields and preserve the others."""
-
-        if not isinstance(standard, ActivityHours):
-            raise TypeError("standard must be ActivityHours")
 
         return ActivityHours(
             dcc=(self.dcc_hours if self.dcc_hours is not None else standard.dcc),
@@ -178,20 +123,8 @@ class LeaveBooking:
     note: str | None = None
 
     def __post_init__(self) -> None:
-        if not isinstance(self.booking_id, str) or not self.booking_id.strip():
+        if not self.booking_id.strip():
             raise ValueError("Booking ID cannot be empty")
-
-        if not isinstance(self.period, DateRange):
-            raise TypeError("Booking period must be a DateRange")
-
-        if not isinstance(self.state, LeaveState):
-            raise TypeError("Booking state must be a LeaveState")
-
-        if not isinstance(self.overrides, tuple):
-            raise TypeError("Booking overrides must be a tuple")
-
-        if any(not isinstance(override, DailyLeaveOverride) for override in self.overrides):
-            raise TypeError("Booking overrides must contain DailyLeaveOverride instances")
 
         override_dates = tuple(override.leave_date for override in self.overrides)
         if len(override_dates) != len(set(override_dates)):
@@ -200,7 +133,7 @@ class LeaveBooking:
         if any(override_date not in self.period for override_date in override_dates):
             raise ValueError("Every override must fall inside the booking period")
 
-        if self.note is not None and (not isinstance(self.note, str) or not self.note.strip()):
+        if self.note is not None and not self.note.strip():
             raise ValueError("Booking note cannot be blank")
 
 
@@ -232,22 +165,13 @@ class LeaveAdjustment:
     reason: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.adjustment_id, str) or not self.adjustment_id.strip():
+        if not self.adjustment_id.strip():
             raise ValueError("Adjustment ID cannot be empty")
-
-        if type(self.effective_date) is not date:
-            raise TypeError("Adjustment effective_date must be a date")
-
-        if not isinstance(self.kind, AdjustmentKind):
-            raise TypeError("Adjustment kind must be an AdjustmentKind")
-
-        if not isinstance(self.hours, ActivityHours):
-            raise TypeError("Adjustment hours must be ActivityHours")
 
         if self.hours.is_zero:
             raise ValueError("Adjustment hours cannot all be zero")
 
-        if not isinstance(self.reason, str) or not self.reason.strip():
+        if not self.reason.strip():
             raise ValueError("Adjustment reason cannot be empty")
 
         if self.kind is AdjustmentKind.CARRY_FORWARD and self.hours.has_negative_value:
@@ -281,32 +205,8 @@ class LeaveRecordsRequest:
     adjustments: tuple[LeaveAdjustment, ...] = ()
 
     def __post_init__(self) -> None:
-        if not isinstance(self.leave_year, DateRange):
-            raise TypeError("leave_year must be a DateRange")
-
-        if not isinstance(
-            self.entitlement,
-            LeaveCalculationResult,
-        ):
-            raise TypeError("entitlement must be a LeaveCalculationResult")
-
         if self.entitlement.leave_year != self.leave_year:
             raise ValueError("Entitlement must belong to the requested leave year")
-
-        if not isinstance(
-            self.public_holidays,
-            PublicHolidayResult,
-        ):
-            raise TypeError("public_holidays must be a PublicHolidayResult")
-
-        if not isinstance(self.job_plans, JobPlanHistory):
-            raise TypeError("job_plans must be a JobPlanHistory")
-
-        if not isinstance(self.bookings, tuple):
-            raise TypeError("bookings must be a tuple")
-
-        if any(not isinstance(booking, LeaveBooking) for booking in self.bookings):
-            raise TypeError("bookings must contain LeaveBooking instances")
 
         booking_ids = tuple(booking.booking_id for booking in self.bookings)
         if len(booking_ids) != len(set(booking_ids)):
@@ -317,12 +217,6 @@ class LeaveRecordsRequest:
             for booking in self.bookings
         ):
             raise ValueError("Every booking must fall inside the leave year")
-
-        if not isinstance(self.adjustments, tuple):
-            raise TypeError("adjustments must be a tuple")
-
-        if any(not isinstance(adjustment, LeaveAdjustment) for adjustment in self.adjustments):
-            raise TypeError("adjustments must contain LeaveAdjustment instances")
 
         adjustment_ids = tuple(adjustment.adjustment_id for adjustment in self.adjustments)
         if len(adjustment_ids) != len(set(adjustment_ids)):

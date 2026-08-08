@@ -28,14 +28,8 @@ class EntitlementComponent:
     full_time_hours: Hours
 
     def __post_init__(self) -> None:
-        if not isinstance(self.rule_id, RuleId):
-            raise TypeError("Entitlement component rule_id must be a RuleId")
-        if not isinstance(self.label, str) or not self.label.strip():
+        if not self.label.strip():
             raise ValueError("Entitlement component label cannot be empty")
-        if not isinstance(self.kind, EntitlementComponentKind):
-            raise TypeError("Entitlement component kind must be an EntitlementComponentKind")
-        if not isinstance(self.full_time_hours, Hours):
-            raise TypeError("Entitlement component full_time_hours must be an Hours instance")
         if self.full_time_hours.value < 0:
             raise ValueError("Entitlement component hours cannot be negative")
 
@@ -49,18 +43,10 @@ class ServiceTier:
     components: tuple[EntitlementComponent, ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.rule_id, RuleId):
-            raise TypeError("Service tier rule_id must be a RuleId")
-        if isinstance(self.minimum_completed_years, bool) or not isinstance(
-            self.minimum_completed_years, int
-        ):
-            raise TypeError("Minimum completed years must be an integer")
         if self.minimum_completed_years < 0:
             raise ValueError("Minimum completed years cannot be negative")
-        if not isinstance(self.components, tuple) or not self.components:
+        if not self.components:
             raise ValueError("A service tier must contain at least one entitlement component")
-        if any(not isinstance(component, EntitlementComponent) for component in self.components):
-            raise TypeError("Service tier components must be EntitlementComponent instances")
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,24 +60,16 @@ class AppointmentEra:
     service_tiers: tuple[ServiceTier, ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.rule_id, RuleId):
-            raise TypeError("Appointment era rule_id must be a RuleId")
-        if not isinstance(self.label, str) or not self.label.strip():
+        if not self.label.strip():
             raise ValueError("Appointment era label cannot be empty")
-        if self.appointment_from is not None and type(self.appointment_from) is not date:
-            raise TypeError("appointment_from must be a date")
-        if self.appointment_to is not None and type(self.appointment_to) is not date:
-            raise TypeError("appointment_to must be a date")
         if (
             self.appointment_from is not None
             and self.appointment_to is not None
             and self.appointment_to < self.appointment_from
         ):
             raise ValueError("Appointment era end date cannot be before its start date")
-        if not isinstance(self.service_tiers, tuple) or not self.service_tiers:
+        if not self.service_tiers:
             raise ValueError("An appointment era must contain at least one service tier")
-        if any(not isinstance(tier, ServiceTier) for tier in self.service_tiers):
-            raise TypeError("Appointment era tiers must be ServiceTier instances")
 
         thresholds = tuple(tier.minimum_completed_years for tier in self.service_tiers)
         if thresholds[0] != 0:
@@ -102,8 +80,6 @@ class AppointmentEra:
     def includes(self, appointment_date: date) -> bool:
         """Return whether an appointment date belongs to this era."""
 
-        if type(appointment_date) is not date:
-            raise TypeError("Appointment date must be a date")
         starts_in_time = self.appointment_from is None or appointment_date >= self.appointment_from
         ends_in_time = self.appointment_to is None or appointment_date <= self.appointment_to
         return starts_in_time and ends_in_time
@@ -111,10 +87,6 @@ class AppointmentEra:
     def tier_for(self, completed_service_years: int) -> ServiceTier:
         """Select the highest service tier already reached."""
 
-        if isinstance(completed_service_years, bool) or not isinstance(
-            completed_service_years, int
-        ):
-            raise TypeError("Completed service years must be an integer")
         if completed_service_years < 0:
             raise ValueError("Completed service years cannot be negative")
 

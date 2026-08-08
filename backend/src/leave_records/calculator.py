@@ -105,9 +105,6 @@ def calculate_leave_records(
 ) -> CalculationResult[LeaveRecordsResult]:
     """Expand all bookings and derive lifecycle balances."""
 
-    if not isinstance(request, LeaveRecordsRequest):
-        raise TypeError("request must be a LeaveRecordsRequest")
-
     days = tuple(
         day
         for booking in request.bookings

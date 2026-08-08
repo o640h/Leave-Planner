@@ -14,6 +14,7 @@ from typing import Generic, TypeAlias, TypeVar
 DecimalInput: TypeAlias = Decimal | int | str
 ResultValue = TypeVar("ResultValue")
 
+
 def _to_decimal(value: DecimalInput, *, field_name: str) -> Decimal:
     """Convert an exact input into a finite Decimal."""
 
@@ -21,12 +22,7 @@ def _to_decimal(value: DecimalInput, *, field_name: str) -> Decimal:
         raise TypeError(f"{field_name} cannot be created from bool or float")
 
     try:
-        if isinstance(value, Decimal):
-            result = value
-        elif isinstance(value, int):
-            result = Decimal(value)
-        else:
-            result = Decimal(value)
+        result = value if isinstance(value, Decimal) else Decimal(value)
     except InvalidOperation as error:
         raise ValueError(f"{field_name} is not a valid decimal value") from error
 
@@ -43,12 +39,6 @@ class Hours:
     value: Decimal
 
     def __post_init__(self) -> None:
-        if not isinstance(self.value, Decimal):
-            raise TypeError(
-                "Hours must be constructed with Decimal: "
-                "use Hours.from_value for strings or integers"
-            )
-
         if not self.value.is_finite():
             raise ValueError("Hours must be a finite decimal value")
 
@@ -88,12 +78,6 @@ class ProgrammedActivities:
     value: Decimal
 
     def __post_init__(self) -> None:
-        if not isinstance(self.value, Decimal):
-            raise TypeError(
-                "ProgrammedActivities must be constructed with Decimal: "
-                "use ProgrammedActivities.from_value for strings or integers"
-            )
-
         if not self.value.is_finite():
             raise ValueError("Programmed activities must be finite")
 
@@ -143,11 +127,7 @@ class DateRange:
             yield self.start + timedelta(days=offset)
 
     def __contains__(self, value: object) -> bool:
-        return (
-            type(value) is date
-            and self.start <= value
-            and value <= self.end
-        )
+        return type(value) is date and self.start <= value <= self.end
 
 
 class ActivityType(StrEnum):
@@ -174,9 +154,7 @@ class WarningSeverity(StrEnum):
     WARNING = "warning"
 
 
-_RULE_ID_PATTERN = re.compile(
-    r"^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
-)
+_RULE_ID_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$")
 
 
 @dataclass(frozen=True, order=True, slots=True)
@@ -186,9 +164,6 @@ class RuleId:
     value: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.value, str):
-            raise TypeError("RuleId must be constructed with a string")
-
         if not _RULE_ID_PATTERN.fullmatch(self.value):
             raise ValueError(
                 "RuleId must be lowercase and contain only alphanumeric "
@@ -202,15 +177,7 @@ class RuleId:
 def _immutable_context(context: Mapping[str, str]) -> Mapping[str, str]:
     """Copy calculation metadata into an immutable mapping."""
 
-    copied_context = dict(context)
-
-    if any(
-        not isinstance(key, str) or not isinstance(value, str)
-        for key, value in copied_context.items()
-    ):
-        raise TypeError("Context keys and values must be strings")
-
-    return MappingProxyType(copied_context)
+    return MappingProxyType(dict(context))
 
 
 @dataclass(frozen=True, slots=True)
@@ -224,21 +191,8 @@ class CalculationWarning:
     context: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.rule_id, RuleId):
-            raise TypeError("CalculationWarning rule_id must be a RuleId")
-
-        if not isinstance(self.message, str) or not self.message.strip():
+        if not self.message.strip():
             raise ValueError("CalculationWarning message must be a non-empty string")
-
-        if not isinstance(self.severity, WarningSeverity):
-            raise TypeError("CalculationWarning severity must be a WarningSeverity")
-
-        if (
-            self.affected_period is not None
-            and not isinstance(self.affected_period, DateRange)
-        ):
-            raise TypeError("CalculationWarning affected_period must be a DateRange")
-
         object.__setattr__(self, "context", _immutable_context(self.context))
 
 
@@ -253,18 +207,8 @@ class CalculationStep:
     context: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.rule_id, RuleId):
-            raise TypeError("CalculationStep rule_id must be a RuleId")
-
-        if not isinstance(self.description, str) or not self.description.strip():
+        if not self.description.strip():
             raise ValueError("CalculationStep description must be a non-empty string")
-
-        if self.amount is not None and not isinstance(self.amount, Hours):
-            raise TypeError("CalculationStep amount must be an Hours instance")
-
-        if self.effective_date is not None and type(self.effective_date) is not date:
-            raise TypeError("CalculationStep effective_date must be a date")
-
         object.__setattr__(self, "context", _immutable_context(self.context))
 
 
@@ -275,31 +219,6 @@ class CalculationResult(Generic[ResultValue]):
     value: ResultValue
     warnings: tuple[CalculationWarning, ...] = ()
     trace: tuple[CalculationStep, ...] = ()
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.warnings, tuple):
-            raise TypeError("CalculationResult warnings must be a tuple")
-
-        if any(
-            not isinstance(warning, CalculationWarning)
-            for warning in self.warnings
-        ):
-            raise TypeError(
-                "CalculationResult warnings must contain "
-                "CalculationWarning instances"
-            )
-
-        if not isinstance(self.trace, tuple):
-            raise TypeError("CalculationResult trace must be a tuple")
-
-        if any(
-            not isinstance(step, CalculationStep)
-            for step in self.trace
-        ):
-            raise TypeError(
-                "CalculationResult trace must contain "
-                "CalculationStep instances"
-            )
 
     @property
     def has_warnings(self) -> bool:

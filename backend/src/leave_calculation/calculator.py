@@ -21,12 +21,6 @@ from .models import LeaveCalculationPeriod, LeaveCalculationRequest, LeaveCalcul
 def service_anniversary(service_start: date, completed_years: int) -> date:
     """Return a service anniversary, including leap-day starts."""
 
-    if type(service_start) is not date:
-        raise TypeError("Service start must be a date")
-
-    if isinstance(completed_years, bool) or not isinstance(completed_years, int):
-        raise TypeError("Completed years must be an integer")
-
     if completed_years < 0:
         raise ValueError("Completed years cannot be negative")
 
@@ -38,12 +32,6 @@ def service_anniversary(service_start: date, completed_years: int) -> date:
 
 def completed_service_years(service_start: date, calculation_date: date) -> int:
     """Return completed years of service on a date."""
-
-    if type(service_start) is not date:
-        raise TypeError("Service start must be a date")
-
-    if type(calculation_date) is not date:
-        raise TypeError("Calculation date must be a date")
 
     if calculation_date < service_start:
         raise ValueError("Calculation date cannot precede service start")
@@ -63,15 +51,6 @@ def calculate_partial_year_hours(
     leave_year_days: int,
 ) -> Hours:
     """Calculate the share of annual hours for included calendar days."""
-
-    if not isinstance(annual_hours, Hours):
-        raise TypeError("annual_hours must be an Hours instance")
-
-    if isinstance(included_days, bool) or not isinstance(included_days, int):
-        raise TypeError("included_days must be an integer")
-
-    if isinstance(leave_year_days, bool) or not isinstance(leave_year_days, int):
-        raise TypeError("leave_year_days must be an integer")
 
     if leave_year_days < 1:
         raise ValueError("leave_year_days must be greater than zero")
@@ -200,9 +179,6 @@ def calculate_leave_entitlement(
     request: LeaveCalculationRequest,
 ) -> CalculationResult[LeaveCalculationResult]:
     """Calculate annual entitlement across all effective changes."""
-
-    if not isinstance(request, LeaveCalculationRequest):
-        raise TypeError("request must be a LeaveCalculationRequest")
 
     active_period = request.active_period
 

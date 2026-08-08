@@ -16,9 +16,6 @@ def resolved_holidays(
 ) -> tuple[PublicHoliday, ...]:
     """Apply manual corrections without changing the source snapshot."""
 
-    if not isinstance(calendar, PublicHolidayCalendar):
-        raise TypeError("calendar must be a PublicHolidayCalendar")
-
     holidays_by_date = {holiday.holiday_date: holiday for holiday in calendar.holidays}
 
     for correction in calendar.corrections:
@@ -52,9 +49,6 @@ def holidays_in_period(
     period: DateRange,
 ) -> tuple[PublicHoliday, ...]:
     """Return resolved holidays inside an inclusive date period."""
-
-    if not isinstance(period, DateRange):
-        raise TypeError("period must be a DateRange")
 
     return tuple(
         holiday for holiday in resolved_holidays(calendar) if holiday.holiday_date in period

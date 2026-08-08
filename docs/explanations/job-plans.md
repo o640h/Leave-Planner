@@ -64,6 +64,10 @@ When calculating a date, `JobPlanHistory` selects the version whose effective pe
 that date. Versions cannot overlap. A gap is allowed in stored history but causes an explicit
 error if a calculation reaches it, rather than silently using the wrong pattern.
 
+In the stored application, **Effective Until is exclusive**. A plan entered as 29 August 2025 to
+29 August 2026 applies through 28 August 2026. This matches the calculation engine's date ranges
+and prevents adjacent plans from overlapping on their handover date.
+
 ## One-week and multi-week patterns
 
 Most consultants can use a one-week pattern. A multi-week cycle uses the same weekday table with
@@ -91,11 +95,34 @@ Doing so would incorrectly reject the supplied workbook's flexible activity arra
 All hours and PAs use `Decimal`. Enter `"5.910"`, not the float `5.910`, so small binary
 floating-point errors cannot accumulate in leave balances.
 
+## What the operator sees
+
+The selected leave year contains a Job Plans section. **Add Job Plan** opens a focused editor with:
+
+- the effective period;
+- the overall Total, DCC, SPA, and Other PAs;
+- a standard Monday-to-Friday hours grid, with weekends available when needed;
+- an optional multi-week pattern; and
+- an advanced Hours per PA field, which normally stays at four.
+
+**Preview Job Plan** runs the existing calculation model without writing to SQLite. It shows the
+allocated PA total, any difference from contracted PAs, and the average visible hours. A matching
+PA split can be saved directly. A mismatch remains possible, but the operator must record why it
+is being accepted. This follows the product rule that unusual policy situations should be visible
+and explained rather than silently corrected.
+
+Creating or editing a plan writes the complete PA split and daily pattern in one database
+transaction. The change is also recorded in the append-only audit log. Plans cannot overlap and
+must remain inside their selected leave year.
+
 ## Code layout
 
 - `backend/src/job_plans/models.py` contains weekdays, daily activity, and repeating cycles.
 - `backend/src/job_plans/versioning.py` contains effective versions and consultant history.
+- `backend/src/job_plans/persistence.py` stores job-plan versions and their weekday rows.
+- `backend/src/job_plans/schemas.py` validates API input and serializes exact decimals as strings.
+- `backend/src/job_plans/service.py` adapts entered data to the calculation model, previews it, and
+  saves accepted plans with audit events.
+- `backend/src/job_plans/router.py` exposes the nested leave-year API.
 - `backend/src/job_plans/__init__.py` contains the small public import surface.
-
-Persistence and the frontend editor will be added later. The operator-facing editor should look
-like a straightforward weekly DCC/SPA/Other grid, not like these internal Python objects.
+- `frontend/src/jobPlans/` contains the typed API client and workbook-style editor.

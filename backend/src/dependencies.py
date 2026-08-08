@@ -1,0 +1,21 @@
+"""FastAPI dependencies shared by API routes."""
+
+from collections.abc import Iterator
+from typing import Annotated
+
+from fastapi import Depends, Request
+from sqlalchemy.orm import Session, sessionmaker
+
+from database import session_scope
+
+
+def get_database_session(request: Request) -> Iterator[Session]:
+    """Provide one transactional database session per API request."""
+
+    factory: sessionmaker[Session] = request.app.state.session_factory
+
+    with session_scope(factory) as session:
+        yield session
+
+
+DatabaseSession = Annotated[Session, Depends(get_database_session)]

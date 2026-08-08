@@ -18,7 +18,15 @@ def test_alembic_upgrade_creates_foundation_schema(tmp_path: Path) -> None:
     upgrade_database(database_path)
 
     engine = create_database_engine(database_path)
-    assert {"alembic_version", "system_metadata"} <= set(inspect(engine).get_table_names())
+    assert {
+        "alembic_version",
+        "system_metadata",
+        "consultants",
+        "leave_years",
+        "audit_events",
+        "job_plan_versions",
+        "job_plan_days",
+    } <= set(inspect(engine).get_table_names())
     engine.dispose()
 
 

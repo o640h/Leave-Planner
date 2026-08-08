@@ -33,9 +33,6 @@ def calculate_public_holidays(
 ) -> CalculationResult[PublicHolidayResult]:
     """Calculate all applicable public holidays in a leave year."""
 
-    if not isinstance(request, PublicHolidayRequest):
-        raise TypeError("request must be a PublicHolidayRequest")
-
     active_period = request.active_period
     if active_period is None:
         return CalculationResult(value=PublicHolidayResult(occurrences=()))

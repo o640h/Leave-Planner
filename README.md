@@ -17,7 +17,8 @@ Create the Python environment yourself:
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-uv sync --project backend --active
+Set-Location backend
+uv sync --active
 ```
 
 Install frontend dependencies:
@@ -29,7 +30,8 @@ npm.cmd install --prefix frontend
 Run the backend and frontend in separate terminals:
 
 ```powershell
-uv run --active --directory backend uvicorn main:app --app-dir src --reload --host 127.0.0.1 --port 8000
+Set-Location backend
+python -m uvicorn main:app --app-dir src --reload --host 127.0.0.1 --port 8000
 ```
 
 ```powershell
@@ -41,9 +43,10 @@ The Vite development server proxies `/api` to `http://127.0.0.1:8000`.
 ## Verification
 
 ```powershell
-uv run --active --directory backend ruff check .
-uv run --active --directory backend mypy
-uv run --active --directory backend pytest
+Set-Location backend
+ruff check .
+mypy
+pytest
 npm.cmd run lint --prefix frontend
 npm.cmd run format:check --prefix frontend
 npm.cmd test --prefix frontend

@@ -30,10 +30,6 @@ class ActivityAllocation:
     hours: Hours
 
     def __post_init__(self) -> None:
-        if not isinstance(self.activity_type, ActivityType):
-            raise TypeError("Activity allocation type must be an ActivityType")
-        if not isinstance(self.hours, Hours):
-            raise TypeError("Activity allocation hours must be an Hours instance")
         if self.hours.value <= 0:
             raise ValueError("Activity allocation hours must be greater than zero")
 
@@ -47,16 +43,8 @@ class JobPlanDay:
     activities: tuple[ActivityAllocation, ...] = ()
 
     def __post_init__(self) -> None:
-        if isinstance(self.cycle_week, bool) or not isinstance(self.cycle_week, int):
-            raise TypeError("Cycle week must be an integer")
         if self.cycle_week < 1:
             raise ValueError("Cycle week must be at least one")
-        if not isinstance(self.weekday, Weekday):
-            raise TypeError("Job-plan weekday must be a Weekday")
-        if not isinstance(self.activities, tuple):
-            raise TypeError("Job-plan activities must be a tuple")
-        if any(not isinstance(activity, ActivityAllocation) for activity in self.activities):
-            raise TypeError("Job-plan activities must contain ActivityAllocation instances")
 
         activity_types = tuple(activity.activity_type for activity in self.activities)
         if len(activity_types) != len(set(activity_types)):
@@ -73,9 +61,6 @@ class JobPlanDay:
 
     def hours_for(self, activity_type: ActivityType) -> Hours:
         """Return visible hours for one activity type, or zero if absent."""
-
-        if not isinstance(activity_type, ActivityType):
-            raise TypeError("activity_type must be an ActivityType")
 
         for activity in self.activities:
             if activity.activity_type is activity_type:
@@ -103,29 +88,10 @@ class JobPlanCycle:
     reconciliation_override_reason: str | None = None
 
     def __post_init__(self) -> None:
-        if isinstance(self.week_count, bool) or not isinstance(self.week_count, int):
-            raise TypeError("Job-plan week count must be an integer")
         if self.week_count < 1:
             raise ValueError("A job-plan cycle must contain at least one week")
-        if not isinstance(self.contracted_pas, ProgrammedActivities):
-            raise TypeError("contracted_pas must be ProgrammedActivities")
-
-        for field_name, value in (
-            ("dcc_pas", self.dcc_pas),
-            ("spa_pas", self.spa_pas),
-            ("other_pas", self.other_pas),
-        ):
-            if not isinstance(value, ProgrammedActivities):
-                raise TypeError(f"{field_name} must be ProgrammedActivities")
-
-        if not isinstance(self.hours_per_pa, Hours):
-            raise TypeError("hours_per_pa must be an Hours instance")
         if self.hours_per_pa.value <= 0:
             raise ValueError("hours_per_pa must be greater than zero")
-        if not isinstance(self.days, tuple):
-            raise TypeError("Job-plan days must be a tuple")
-        if any(not isinstance(day, JobPlanDay) for day in self.days):
-            raise TypeError("Job-plan days must contain JobPlanDay instances")
 
         self._validate_day_positions()
         self._validate_reconciliation()
@@ -152,7 +118,7 @@ class JobPlanCycle:
         """Require the activity PA split to equal total contracted PAs."""
 
         reason = self.reconciliation_override_reason
-        if reason is not None and (not isinstance(reason, str) or not reason.strip()):
+        if reason is not None and not reason.strip():
             raise ValueError("Reconciliation override reason cannot be blank")
         if not self.is_reconciled and reason is None:
             raise ValueError(
@@ -181,8 +147,6 @@ class JobPlanCycle:
     def pas_for(self, activity_type: ActivityType) -> ProgrammedActivities:
         """Return contracted PAs for DCC, SPA, or Other."""
 
-        if not isinstance(activity_type, ActivityType):
-            raise TypeError("activity_type must be an ActivityType")
         if activity_type is ActivityType.DCC:
             return self.dcc_pas
         if activity_type is ActivityType.SPA:
@@ -220,9 +184,6 @@ class JobPlanCycle:
     def activity_hours(self, activity_type: ActivityType) -> Hours:
         """Return visible cycle hours for DCC, SPA, or Other."""
 
-        if not isinstance(activity_type, ActivityType):
-            raise TypeError("activity_type must be an ActivityType")
-
         total = ZERO_HOURS
         for day in self.days:
             total += day.hours_for(activity_type)
@@ -239,10 +200,6 @@ class JobPlanCycle:
     def day_on(self, target_date: date, *, cycle_anchor_date: date) -> JobPlanDay:
         """Map a calendar date onto its repeating cycle position."""
 
-        if type(target_date) is not date:
-            raise TypeError("Target date must be a date")
-        if type(cycle_anchor_date) is not date:
-            raise TypeError("Cycle anchor date must be a date")
         if cycle_anchor_date.weekday() != Weekday.MONDAY:
             raise ValueError("Cycle anchor date must be a Monday")
 

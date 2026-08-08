@@ -18,12 +18,6 @@ def expand_booking(
 ) -> tuple[LeaveDay, ...]:
     """Generate one calculated record for each booking date."""
 
-    if not isinstance(booking, LeaveBooking):
-        raise TypeError("booking must be a LeaveBooking")
-
-    if not isinstance(job_plans, JobPlanHistory):
-        raise TypeError("job_plans must be a JobPlanHistory")
-
     overrides_by_date = {override.leave_date: override for override in booking.overrides}
     generated_days: list[LeaveDay] = []
 

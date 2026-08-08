@@ -248,12 +248,6 @@ def evaluate_leave_warnings(
 ) -> tuple[CalculationWarning, ...]:
     """Return deterministic, non-blocking leave warnings."""
 
-    if not isinstance(request, LeaveRecordsRequest):
-        raise TypeError("request must be a LeaveRecordsRequest")
-
-    if not isinstance(result, LeaveRecordsResult):
-        raise TypeError("result must be a LeaveRecordsResult")
-
     carry_forward_warning = _carry_forward_warning(request)
 
     return (

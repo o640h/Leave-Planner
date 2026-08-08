@@ -5,13 +5,16 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from database import Base
+from audit import AuditEvent  # noqa: F401
+from consultants.models import Consultant
+from job_plans.persistence import JobPlanRecord  # noqa: F401
+from leave_years.models import LeaveYear  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = Consultant.metadata
 
 
 def run_migrations_offline() -> None:

@@ -35,20 +35,8 @@ class JobPlanVersion:
     cycle: JobPlanCycle
 
     def __post_init__(self) -> None:
-        if not isinstance(self.version_id, RuleId):
-            raise TypeError("Job-plan version_id must be a RuleId")
-
-        if type(self.effective_from) is not date:
-            raise TypeError("effective_from must be a date")
-
-        if self.effective_to is not None and type(self.effective_to) is not date:
-            raise TypeError("effective_to must be a date")
-
         if self.effective_to is not None and self.effective_to < self.effective_from:
             raise ValueError("effective_to cannot be before effective_from")
-
-        if type(self.cycle_anchor_date) is not date:
-            raise TypeError("cycle_anchor_date must be a date")
 
         if self.cycle_anchor_date.weekday() != Weekday.MONDAY:
             raise ValueError("Cycle anchor date must be a Monday")
@@ -56,14 +44,8 @@ class JobPlanVersion:
         if self.cycle_anchor_date > self.effective_from:
             raise ValueError("Cycle anchor date cannot be after effective_from")
 
-        if not isinstance(self.cycle, JobPlanCycle):
-            raise TypeError("cycle must be a JobPlanCycle")
-
     def includes(self, target_date: date) -> bool:
         """Return whether this version applies on a date."""
-
-        if type(target_date) is not date:
-            raise TypeError("Target date must be a date")
 
         return target_date >= self.effective_from and (
             self.effective_to is None or target_date <= self.effective_to
@@ -88,14 +70,8 @@ class JobPlanHistory:
     versions: tuple[JobPlanVersion, ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.versions, tuple):
-            raise TypeError("Job-plan history versions must be a tuple")
-
         if not self.versions:
             raise ValueError("Job-plan history must contain at least one version")
-
-        if any(not isinstance(version, JobPlanVersion) for version in self.versions):
-            raise TypeError("Job-plan history must contain JobPlanVersion instances")
 
         ordered_versions = tuple(
             sorted(

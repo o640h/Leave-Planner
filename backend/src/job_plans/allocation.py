@@ -11,12 +11,6 @@ def allocate_hours_by_pa(
 ) -> tuple[Hours, Hours, Hours]:
     """Split hours into DCC, SPA, and Other using contracted PAs."""
 
-    if not isinstance(hours, Hours):
-        raise TypeError("hours must be an Hours instance")
-
-    if not isinstance(cycle, JobPlanCycle):
-        raise TypeError("cycle must be a JobPlanCycle")
-
     allocations = (
         (ActivityType.DCC, cycle.dcc_pas.value),
         (ActivityType.SPA, cycle.spa_pas.value),

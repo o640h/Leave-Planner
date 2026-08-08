@@ -31,36 +31,20 @@ class EntitlementPolicyVersion:
     appointment_eras: tuple[AppointmentEra, ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.version, str) or not self.version.strip():
+        if not self.version.strip():
             raise ValueError("Policy version cannot be empty")
-        if not isinstance(self.source_document, str) or not self.source_document.strip():
+        if not self.source_document.strip():
             raise ValueError("Policy source document cannot be empty")
-        if not isinstance(self.source_section, str) or not self.source_section.strip():
+        if not self.source_section.strip():
             raise ValueError("Policy source section cannot be empty")
-        if type(self.effective_from) is not date:
-            raise TypeError("Policy effective_from must be a date")
-        if self.effective_to is not None and type(self.effective_to) is not date:
-            raise TypeError("Policy effective_to must be a date")
         if self.effective_to is not None and self.effective_to < self.effective_from:
             raise ValueError("Policy effective_to cannot be before effective_from")
-        if not isinstance(self.hours_per_pa, Hours):
-            raise TypeError("hours_per_pa must be an Hours instance")
         if self.hours_per_pa.value <= 0:
             raise ValueError("hours_per_pa must be greater than zero")
-        if not isinstance(self.pa_cap, ProgrammedActivities):
-            raise TypeError("pa_cap must be ProgrammedActivities")
         if self.pa_cap.value <= 0:
             raise ValueError("pa_cap must be greater than zero")
-        if not isinstance(self.common_components, tuple):
-            raise TypeError("common_components must be a tuple")
-        if any(
-            not isinstance(component, EntitlementComponent) for component in self.common_components
-        ):
-            raise TypeError("common_components must contain EntitlementComponent instances")
-        if not isinstance(self.appointment_eras, tuple) or not self.appointment_eras:
+        if not self.appointment_eras:
             raise ValueError("A policy version must contain at least one appointment era")
-        if any(not isinstance(era, AppointmentEra) for era in self.appointment_eras):
-            raise TypeError("appointment_eras must contain AppointmentEra instances")
 
         self._validate_appointment_eras()
         self._validate_component_ids()
@@ -88,8 +72,6 @@ class EntitlementPolicyVersion:
     def applies_on(self, calculation_date: date) -> bool:
         """Return whether this policy version applies on a date."""
 
-        if type(calculation_date) is not date:
-            raise TypeError("Calculation date must be a date")
         return calculation_date >= self.effective_from and (
             self.effective_to is None or calculation_date <= self.effective_to
         )
@@ -108,9 +90,6 @@ class EntitlementPolicyVersion:
             raise ValueError(
                 f"Policy version {self.version!r} does not apply on {calculation_date.isoformat()}"
             )
-        if not isinstance(contracted_pas, ProgrammedActivities):
-            raise TypeError("contracted_pas must be ProgrammedActivities")
-
         matching_eras = tuple(
             era for era in self.appointment_eras if era.includes(consultant_appointment_date)
         )
@@ -184,10 +163,8 @@ class EntitlementPolicyCatalogue:
     versions: tuple[EntitlementPolicyVersion, ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.versions, tuple) or not self.versions:
+        if not self.versions:
             raise ValueError("The entitlement policy catalogue cannot be empty")
-        if any(not isinstance(version, EntitlementPolicyVersion) for version in self.versions):
-            raise TypeError("Catalogue versions must be EntitlementPolicyVersion instances")
 
         ordered_versions = tuple(sorted(self.versions, key=lambda version: version.effective_from))
         if self.versions != ordered_versions:

@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date
-from typing import Any, cast
+from typing import Any
 
-import pytest
 from reference_cases import full_time_request
 from reference_cases.common import booking
 
@@ -17,7 +16,6 @@ from leave_records import (
     AdjustmentKind,
     LeaveAdjustment,
     calculate_leave_records,
-    evaluate_leave_warnings,
 )
 
 
@@ -150,12 +148,3 @@ def test_reconciliation_override_and_carry_forward_are_explained() -> None:
     )
     assert calculated.warnings[0].context["override_reason"] == ("Approved local exception")
     assert calculated.warnings[1].severity.value == "info"
-
-
-def test_warning_evaluator_rejects_wrong_public_inputs() -> None:
-    calculated = calculate_leave_records(full_time_request())
-
-    with pytest.raises(TypeError, match="LeaveRecordsRequest"):
-        evaluate_leave_warnings(cast(Any, "bad"), calculated.value)
-    with pytest.raises(TypeError, match="LeaveRecordsResult"):
-        evaluate_leave_warnings(full_time_request(), cast(Any, "bad"))

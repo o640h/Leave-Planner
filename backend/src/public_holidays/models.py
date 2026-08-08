@@ -42,14 +42,8 @@ class PublicHoliday:
     notes: str = ""
 
     def __post_init__(self) -> None:
-        if type(self.holiday_date) is not date:
-            raise TypeError("holiday_date must be a date")
-
-        if not isinstance(self.name, str) or not self.name.strip():
+        if not self.name.strip():
             raise ValueError("Public-holiday name cannot be empty")
-
-        if not isinstance(self.notes, str):
-            raise TypeError("Public-holiday notes must be a string")
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,17 +56,11 @@ class PublicHolidayCorrection:
     replacement_name: str | None = None
 
     def __post_init__(self) -> None:
-        if type(self.holiday_date) is not date:
-            raise TypeError("Correction holiday_date must be a date")
-
-        if not isinstance(self.action, HolidayCorrectionAction):
-            raise TypeError("Correction action must be a HolidayCorrectionAction")
-
-        if not isinstance(self.reason, str) or not self.reason.strip():
+        if not self.reason.strip():
             raise ValueError("Correction reason cannot be empty")
 
         if self.action is HolidayCorrectionAction.ADD_OR_REPLACE:
-            if not isinstance(self.replacement_name, str) or not self.replacement_name.strip():
+            if not self.replacement_name or not self.replacement_name.strip():
                 raise ValueError("An add-or-replace correction requires a name")
         elif self.replacement_name is not None:
             raise ValueError("A remove correction cannot have a replacement name")
@@ -88,32 +76,12 @@ class PublicHolidayCalendar:
     corrections: tuple[PublicHolidayCorrection, ...] = ()
 
     def __post_init__(self) -> None:
-        if not isinstance(self.source, HolidayCalendarSource):
-            raise TypeError("Calendar source must be a HolidayCalendarSource")
-
-        if type(self.source_date) is not date:
-            raise TypeError("Calendar source_date must be a date")
-
-        if not isinstance(self.holidays, tuple):
-            raise TypeError("Calendar holidays must be a tuple")
-
-        if any(not isinstance(holiday, PublicHoliday) for holiday in self.holidays):
-            raise TypeError("Calendar holidays must contain PublicHoliday instances")
-
         holiday_dates = tuple(holiday.holiday_date for holiday in self.holidays)
         if holiday_dates != tuple(sorted(holiday_dates)):
             raise ValueError("Calendar holidays must be in chronological order")
 
         if len(holiday_dates) != len(set(holiday_dates)):
             raise ValueError("Calendar cannot contain duplicate holiday dates")
-
-        if not isinstance(self.corrections, tuple):
-            raise TypeError("Calendar corrections must be a tuple")
-
-        if any(
-            not isinstance(correction, PublicHolidayCorrection) for correction in self.corrections
-        ):
-            raise TypeError("Calendar corrections must contain PublicHolidayCorrection instances")
 
         correction_dates = tuple(correction.holiday_date for correction in self.corrections)
         if len(correction_dates) != len(set(correction_dates)):
@@ -130,16 +98,7 @@ class PublicHolidayTreatment:
     worked_date: date | None = None
 
     def __post_init__(self) -> None:
-        if type(self.holiday_date) is not date:
-            raise TypeError("Treatment holiday_date must be a date")
-
-        if not isinstance(self.basis, HolidayTreatmentBasis):
-            raise TypeError("Treatment basis must be a HolidayTreatmentBasis")
-
-        if self.worked_date is not None and type(self.worked_date) is not date:
-            raise TypeError("Treatment worked_date must be a date")
-
-        if self.note is not None and (not isinstance(self.note, str) or not self.note.strip()):
+        if self.note is not None and not self.note.strip():
             raise ValueError("Treatment note cannot be blank")
 
         if self.retains_leave and self.note is None:
@@ -170,29 +129,8 @@ class PublicHolidayRequest:
     treatments: tuple[PublicHolidayTreatment, ...] = ()
 
     def __post_init__(self) -> None:
-        if not isinstance(self.leave_year, DateRange):
-            raise TypeError("leave_year must be a DateRange")
-
-        if type(self.employment_start) is not date:
-            raise TypeError("employment_start must be a date")
-
-        if self.employment_end is not None and type(self.employment_end) is not date:
-            raise TypeError("employment_end must be a date")
-
         if self.employment_end is not None and self.employment_end < self.employment_start:
             raise ValueError("employment_end cannot be before employment_start")
-
-        if not isinstance(self.calendar, PublicHolidayCalendar):
-            raise TypeError("calendar must be a PublicHolidayCalendar")
-
-        if not isinstance(self.job_plans, JobPlanHistory):
-            raise TypeError("job_plans must be a JobPlanHistory")
-
-        if not isinstance(self.treatments, tuple):
-            raise TypeError("treatments must be a tuple")
-
-        if any(not isinstance(treatment, PublicHolidayTreatment) for treatment in self.treatments):
-            raise TypeError("treatments must contain PublicHolidayTreatment instances")
 
         treatment_dates = tuple(treatment.holiday_date for treatment in self.treatments)
         if len(treatment_dates) != len(set(treatment_dates)):
@@ -246,15 +184,6 @@ class PublicHolidayResult:
 
     occurrences: tuple[PublicHolidayOccurrence, ...]
 
-    def __post_init__(self) -> None:
-        if not isinstance(self.occurrences, tuple):
-            raise TypeError("occurrences must be a tuple")
-
-        if any(
-            not isinstance(occurrence, PublicHolidayOccurrence) for occurrence in self.occurrences
-        ):
-            raise TypeError("occurrences must contain PublicHolidayOccurrence instances")
-
     @property
     def entitlement_hours(self) -> Hours:
         return self._sum("entitlement_hours")
@@ -284,11 +213,6 @@ class PublicHolidayResult:
         total = ZERO_HOURS
 
         for occurrence in self.occurrences:
-            value = getattr(occurrence, field_name)
-
-            if not isinstance(value, Hours):
-                raise TypeError(f"{field_name} must contain Hours values")
-
-            total += value
+            total += getattr(occurrence, field_name)
 
         return total
