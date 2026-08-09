@@ -51,12 +51,12 @@ def _sum_hours(
 def _opening_entitlement(
     request: LeaveRecordsRequest,
 ) -> ActivityHours:
-    """Combine policy and public-holiday entitlement."""
+    """Return the operator-approved opening entitlement."""
 
     return ActivityHours(
-        dcc=(request.entitlement.dcc_hours + request.public_holidays.dcc_entitlement_hours),
-        spa=(request.entitlement.spa_hours + request.public_holidays.spa_entitlement_hours),
-        other=(request.entitlement.other_hours + request.public_holidays.other_entitlement_hours),
+        dcc=request.entitlement.dcc_hours,
+        spa=request.entitlement.spa_hours,
+        other=request.entitlement.other_hours,
     )
 
 

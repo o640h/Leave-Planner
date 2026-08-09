@@ -31,9 +31,23 @@ def workbook_request() -> LeaveCalculationRequest:
     )
 
 
+def capped_request() -> LeaveCalculationRequest:
+    """Recover the pure calculation inputs from the capped ledger fixture."""
+
+    request = capped_multiweek_request()
+    return LeaveCalculationRequest(
+        leave_year=request.leave_year,
+        employment_start=date(2019, 7, 1),
+        employment_end=None,
+        consultant_appointment_date=date(2019, 7, 1),
+        consultant_service_start_date=date(2019, 7, 1),
+        policies=DEFAULT_ENTITLEMENT_POLICIES,
+        job_plans=request.job_plans,
+    )
+
+
 def test_workbook_periods_match_cached_entitlement() -> None:
-    request = workbook_reference_request()
-    result = request.entitlement
+    result = calculate_leave_entitlement(workbook_request()).value
     assert tuple(period.period.calendar_days for period in result.periods) == (337, 28)
     assert result.entitlement_hours == Hours.from_value("243.936")
     assert result.dcc_hours == Hours.from_value("170.208")
@@ -41,8 +55,7 @@ def test_workbook_periods_match_cached_entitlement() -> None:
 
 
 def test_job_plan_change_and_service_milestone_split_periods() -> None:
-    request = capped_multiweek_request()
-    entitlement = request.entitlement
+    entitlement = calculate_leave_entitlement(capped_request()).value
     assert len(entitlement.periods) == 3
     assert entitlement.periods[0].period.end == date(2026, 6, 30)
     assert entitlement.periods[1].completed_service_years == 7
@@ -72,8 +85,20 @@ def test_no_employment_in_year_returns_empty_result() -> None:
 
 def test_trace_explains_every_calculation_period() -> None:
     result = calculate_leave_entitlement(workbook_request())
-    assert len(result.trace) == len(result.value.periods)
-    assert {step.rule_id.value for step in result.trace} == {"leave-calculation.calendar-days"}
+    rule_ids = {step.rule_id.value for step in result.trace}
+
+    # Each period now explains policy selection and PA proration before showing
+    # the calendar-day formula used for that period.
+    assert "entitlement.era.from-2005" in rule_ids
+    assert "entitlement.tier.from-2005.7-plus" in rule_ids
+    assert "entitlement.pa-proration" in rule_ids
+    assert "leave-calculation.calendar-days" in rule_ids
+
+    period_steps = [
+        step for step in result.trace if step.rule_id.value == "leave-calculation.calendar-days"
+    ]
+    assert len(period_steps) == len(result.value.periods)
+    assert period_steps[0].context["full_year_hours"] == "243.936"
 
 
 def test_partial_year_uses_the_actual_leave_year_length() -> None:

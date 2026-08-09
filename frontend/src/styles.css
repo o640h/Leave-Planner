@@ -6,14 +6,14 @@
   --surface-raised: #191919;
   --control: #191919;
   --border-rgb: 255 255 255;
-  --line-opacity: 0.03;
-  --line-strong-opacity: 0.03;
+  --line-opacity: 0.05;
+  --line-strong-opacity: 0.08;
   --focus-rgb: 130 181 194;
   --focus-opacity: 0.38;
   --line: rgb(var(--border-rgb) / var(--line-opacity));
   --line-strong: rgb(var(--border-rgb) / var(--line-strong-opacity));
   --focus-line: rgb(var(--focus-rgb) / var(--focus-opacity));
-  --panel-shadow: 0 14px 34px rgb(0 0 0 / 0.3), inset 0 1px rgb(255 255 255 / 0.012);
+  --panel-shadow: 0 14px 34px rgba(0, 0, 0, 0.3), inset 0 1px rgb(255 255 255 / 0.012);
   --text: #dedbd7;
   --quiet: #74736f;
   --muted: #9c9a95;
@@ -318,6 +318,66 @@ p {
   border-color: var(--accent);
   color: #101010;
   background: var(--accent);
+}
+
+.button--danger {
+  border-color: rgb(181 103 99 / 0.55);
+  color: #d3918d;
+  background: rgb(181 103 99 / 0.08);
+}
+
+.button--danger:hover:not(:disabled) {
+  border-color: rgb(211 145 141 / 0.8);
+  background: rgb(181 103 99 / 0.14);
+}
+
+.removal-modal {
+  width: min(520px, calc(100vw - 48px));
+  padding: 28px;
+}
+
+.removal-modal header {
+  margin-bottom: 20px;
+  padding-right: 34px;
+}
+
+.removal-modal header h2 {
+  margin-bottom: 7px;
+  font: 450 20px/1.15 var(--brand);
+}
+
+.removal-modal header p,
+.removal-modal li,
+.removal-modal label > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.removal-modal ul {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 16px 16px 16px 30px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.removal-modal label {
+  display: grid;
+  gap: 8px;
+}
+
+.removal-modal label strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.removal-modal input {
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  background: #111;
 }
 
 .button--primary:hover:not(:disabled) {

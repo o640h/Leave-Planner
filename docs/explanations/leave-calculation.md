@@ -92,10 +92,11 @@ The current HR78 policy calculation gives a seven-year, 8.47-PA consultant `243.
 288 policy hours × 8.47 ÷ 10 = 243.936 hours
 ```
 
-The workbook's `291.368` gross total includes additional public-holiday value. Public holidays
-are the next separate calculation task, so the current integrated policy test correctly produces
-`243.936`, while the direct workbook-reference test confirms that `291.368` is split over 337 and
-28 days exactly as Excel does. The end-to-end fixture will combine those areas later.
+The workbook's `291.368` gross total includes `47.432` hours of public-holiday value. The integrated
+application now calculates the `243.936` base and each applicable public holiday separately, then
+adds them to the same `291.368` recommendation. Its detailed job-plan-period rows therefore show
+base leave only; the future consultant-year summary will also show the workbook-style gross
+`269.016 / 22.352` allocation for direct comparison.
 
 ## Exact arithmetic and display precision
 

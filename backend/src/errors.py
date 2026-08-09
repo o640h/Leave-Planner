@@ -44,10 +44,9 @@ def install_error_handlers(app: FastAPI) -> None:
     async def handle_validation_error(
         _request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        details = [
-            {key: value for key, value in error.items() if key != "ctx"}
-            for error in exc.errors()
-        ]
+        details = []
+        for error in exc.errors():
+            details.append({key: value for key, value in error.items() if key != "ctx"})
         return JSONResponse(
             status_code=422,
             content=error_payload("validation_error", "Request validation failed", details),

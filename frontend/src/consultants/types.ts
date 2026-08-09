@@ -2,6 +2,7 @@ export type Consultant = {
   id: number
   name: string
   post_title: string | null
+  archived_at: string | null
 }
 
 export type ConsultantInput = {

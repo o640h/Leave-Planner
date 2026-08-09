@@ -2,12 +2,13 @@
 
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from audit import record_audit_event
 from consultants import service as consultant_service
 from errors import ApiError
+from removal import RemovalCommand, RemovalImpact, RemovalResult
 
 from .models import LeaveYear
 from .schemas import LeaveYearCreate, LeaveYearUpdate
@@ -152,3 +153,76 @@ def update_leave_year(
 
     session.refresh(leave_year)
     return leave_year
+
+
+def removal_impact(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+) -> RemovalImpact:
+    """Describe records that belong exclusively to a leave year."""
+
+    from annual_entitlement.persistence import (
+        AppliedEntitlementRecord,
+        EntitlementRecommendationRecord,
+    )
+    from job_plans.persistence import JobPlanRecord
+
+    leave_year = get_leave_year(session, consultant_id, leave_year_id)
+    job_plan_count = session.scalar(
+        select(func.count())
+        .select_from(JobPlanRecord)
+        .where(JobPlanRecord.leave_year_id == leave_year.id)
+    ) or 0
+    recommendation_count = session.scalar(
+        select(func.count())
+        .select_from(EntitlementRecommendationRecord)
+        .where(EntitlementRecommendationRecord.leave_year_id == leave_year.id)
+    ) or 0
+    application_count = session.scalar(
+        select(func.count())
+        .select_from(AppliedEntitlementRecord)
+        .where(AppliedEntitlementRecord.leave_year_id == leave_year.id)
+    ) or 0
+
+    return RemovalImpact(
+        resource_name=f"{leave_year.start_date:%d %b %Y} - {leave_year.end_date:%d %b %Y}",
+        action="delete",
+        confirmation_text="DELETE",
+        consequences=(
+            f"{job_plan_count} job plan(s) will be deleted.",
+            f"{recommendation_count} calculation snapshot(s) will be deleted.",
+            f"{application_count} applied entitlement record(s) will be deleted.",
+            "The removal will remain recorded in the consultant audit history.",
+        ),
+    )
+
+
+def remove_leave_year(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    command: RemovalCommand,
+) -> RemovalResult:
+    """Delete a setup leave year and its owned configuration."""
+
+    if command.confirmation.strip() != "DELETE":
+        raise ApiError(
+            status_code=422,
+            code="confirmation_mismatch",
+            message="Enter DELETE to confirm removal.",
+        )
+
+    leave_year = get_leave_year(session, consultant_id, leave_year_id)
+    impact = removal_impact(session, consultant_id, leave_year_id)
+    record_audit_event(
+        session,
+        consultant_id=consultant_id,
+        entity_type="leave_year",
+        entity_id=leave_year.id,
+        action="deleted",
+        details={"before": _snapshot(leave_year), "consequences": impact.consequences},
+    )
+    session.delete(leave_year)
+    session.flush()
+    return RemovalResult(message="The leave year was deleted.")

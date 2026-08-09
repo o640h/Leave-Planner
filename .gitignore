@@ -42,6 +42,7 @@ exports/
 
 # Logs and temporary files
 *.log
+~$*.xlsx
 tmp/
 temp/
 .tmp/

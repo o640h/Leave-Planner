@@ -1,0 +1,354 @@
+.entitlement-panel {
+  grid-column: 1 / -1;
+  height: auto;
+}
+
+.entitlement-message {
+  padding: 24px 20px;
+  color: var(--muted);
+}
+
+.entitlement-message p {
+  margin-bottom: 5px;
+  color: var(--text);
+}
+
+.entitlement-message span {
+  font-size: 11px;
+}
+
+.entitlement-content {
+  padding: 20px;
+}
+
+.applied-entitlement-summary,
+.entitlement-components {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, minmax(100px, 1fr));
+  border: 1px solid var(--line);
+}
+
+.applied-entitlement-summary > div,
+.entitlement-components > div {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  padding: 15px 16px;
+}
+
+.applied-entitlement-summary > div + div,
+.entitlement-components > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.applied-entitlement-summary span,
+.entitlement-components span {
+  color: var(--quiet);
+  font-size: 10px;
+}
+
+.applied-entitlement-summary strong {
+  color: var(--warning);
+  font-size: 15px;
+  font-weight: 460;
+}
+
+.applied-entitlement-summary > div:first-child strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.entitlement-components {
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 12px;
+}
+
+.entitlement-components strong {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 440;
+}
+
+.entitlement-trace {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.entitlement-trace summary {
+  padding: 14px 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.entitlement-trace ol {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--line);
+}
+
+.entitlement-trace li {
+  padding: 12px 14px;
+  background: var(--surface);
+}
+
+.entitlement-trace li div {
+  display: grid;
+  gap: 4px;
+}
+
+.entitlement-trace li strong {
+  font-size: 11px;
+  font-weight: 430;
+}
+
+.entitlement-trace li p {
+  margin: 0;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.entitlement-trace li span {
+  color: var(--quiet);
+  font-size: 9px;
+}
+
+.entitlement-calculation-basis {
+  margin-bottom: 1px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.entitlement-calculation-basis > p {
+  max-width: 720px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.entitlement-calculation-basis > .entitlement-total-formula {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: none;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.entitlement-total-formula strong {
+  font-weight: 450;
+}
+
+.entitlement-total-formula span {
+  color: var(--warning);
+  text-align: right;
+}
+
+.entitlement-calculation-basis dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--line);
+}
+
+.entitlement-calculation-basis dl div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding: 10px;
+}
+
+.entitlement-calculation-basis dl div + div {
+  border-left: 1px solid var(--line);
+}
+
+.entitlement-calculation-basis dt {
+  color: var(--quiet);
+  font-size: 9px;
+}
+
+.entitlement-calculation-basis dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--warning);
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.manual-entitlement-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.entitlement-modal {
+  width: min(980px, calc(100vw - 48px));
+}
+
+.entitlement-form {
+  width: 100%;
+}
+
+.entitlement-mode-selector {
+  margin: 22px 0;
+  padding: 0;
+  border: 0;
+}
+
+.entitlement-mode-selector legend {
+  display: block;
+  width: 100%;
+  margin-bottom: 9px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.entitlement-mode-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  padding: 1px;
+  background: var(--line);
+}
+
+.entitlement-mode-selector label {
+  display: flex;
+  min-width: 0;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.entitlement-mode-selector label:has(input:checked) {
+  background: var(--surface-raised);
+  box-shadow: inset 0 -1px var(--accent);
+}
+
+.entitlement-mode-selector input {
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+.entitlement-mode-selector span {
+  display: grid;
+  gap: 5px;
+}
+
+.entitlement-mode-selector strong {
+  font-size: 11px;
+  font-weight: 460;
+}
+
+.entitlement-mode-selector small {
+  color: var(--quiet);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.entitlement-input-section {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+
+.entitlement-input-section header {
+  margin-bottom: 15px;
+}
+
+.entitlement-input-section h4 {
+  margin-bottom: 0;
+  font-size: 13px;
+  font-weight: 460;
+}
+
+.entitlement-date-fields,
+.entitlement-hour-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.entitlement-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin: 4px 0 20px;
+  padding: 1px;
+  background: var(--line);
+}
+
+.entitlement-breakdown {
+  padding: 15px;
+  background: var(--surface);
+}
+
+.entitlement-breakdown--emphasis {
+  box-shadow: inset 0 -1px var(--warning);
+}
+
+.entitlement-breakdown h4 {
+  margin-bottom: 13px;
+  font-size: 11px;
+  font-weight: 460;
+}
+
+.entitlement-breakdown dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+}
+
+.entitlement-breakdown dl div {
+  display: grid;
+  gap: 5px;
+}
+
+.entitlement-breakdown dt {
+  color: var(--quiet);
+  font-size: 9px;
+}
+
+.entitlement-breakdown dd {
+  margin: 0;
+  color: var(--warning);
+  font-size: 13px;
+}
+
+@container (max-width: 760px) {
+  .applied-entitlement-summary,
+  .entitlement-mode-options,
+  .entitlement-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .applied-entitlement-summary > div + div {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 680px) {
+  .entitlement-date-fields,
+  .entitlement-hour-fields,
+  .entitlement-components,
+  .entitlement-calculation-basis dl {
+    grid-template-columns: 1fr;
+  }
+
+  .entitlement-components > div + div {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .entitlement-calculation-basis dl div + div {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+}

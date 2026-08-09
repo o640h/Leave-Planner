@@ -34,10 +34,15 @@ def test_create_list_update_and_restart(tmp_path: Path) -> None:
         assert updated.json()["post_title"] == "Clinical Lead"
 
     # A fresh app proves the record came from SQLite rather than process memory.
-    with TestClient(app_for(tmp_path)) as client:
-        assert client.get("/api/consultants").json() == [
-            {"id": consultant_id, "name": "Dr Alex Morgan", "post_title": "Clinical Lead"}
-        ]
+        with TestClient(app_for(tmp_path)) as client:
+            assert client.get("/api/consultants").json() == [
+                {
+                    "id": consultant_id,
+                    "name": "Dr Alex Morgan",
+                    "post_title": "Clinical Lead",
+                    "archived_at": None,
+                }
+            ]
 
 
 def test_directory_is_alphabetical_and_normalizes_blank_post_titles(tmp_path: Path) -> None:

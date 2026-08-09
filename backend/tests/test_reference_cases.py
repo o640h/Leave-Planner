@@ -21,7 +21,7 @@ from reference_cases import (
 )
 from reference_cases.common import booking
 
-from domain import DateRange, Hours, LeaveState
+from domain import Hours, LeaveState
 from leave_records import ActivityHours, calculate_leave_records
 
 
@@ -72,7 +72,9 @@ def test_ltft_case_keeps_uneven_days_carry_and_worked_holiday() -> None:
     calculated = calculate_leave_records(request)
     actual = calculated.value.actual
 
-    assert request.entitlement.entitlement_hours == Hours.from_value("172.8")
+    # The ledger receives the approved combined opening value rather than the
+    # intermediate policy calculation object.
+    assert request.entitlement.total_hours == Hours.from_value("211.2")
     assert request.public_holidays.entitlement_hours == Hours.from_value("38.4")
     assert actual.opening_entitlement == ActivityHours(
         dcc=Hours.from_value("158.400"),
@@ -96,17 +98,12 @@ def test_capped_case_splits_at_service_milestone_and_job_plan_change() -> None:
     request = capped_multiweek_request()
     calculated = calculate_leave_records(request)
 
-    # The consultant reaches seven years on 1 July, then changes plan on
-    # 1 October. Those two dates divide the year into three periods.
-    assert tuple(period.period for period in request.entitlement.periods) == (
-        DateRange(date(2026, 1, 1), date(2026, 6, 30)),
-        DateRange(date(2026, 7, 1), date(2026, 9, 30)),
-        DateRange(date(2026, 10, 1), date(2026, 12, 31)),
-    )
+    # The consultant reaches seven years on 1 July. The applied opening value
+    # therefore includes both service tiers plus public-holiday entitlement.
     expected_entitlement = Hours.from_value("272").scale(
         Decimal(181) / Decimal(365)
     ) + Hours.from_value("288").scale(Decimal(184) / Decimal(365))
-    assert request.entitlement.entitlement_hours == expected_entitlement
+    assert request.entitlement.total_hours == expected_entitlement + Hours.from_value("64")
     assert request.public_holidays.entitlement_hours == Hours.from_value("64")
 
     # Twelve PAs affect the activity split, but cannot increase the overall

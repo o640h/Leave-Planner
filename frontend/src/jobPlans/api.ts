@@ -1,4 +1,5 @@
 import { apiRequest } from '../api/client'
+import type { RemovalImpact, RemovalResult } from '../system/removal'
 import type { JobPlan, JobPlanInput, JobPlanPreview } from './types'
 
 function jobPlanPath(consultantId: number, leaveYearId: number): string {
@@ -41,4 +42,29 @@ export function updateJobPlan(
     method: 'PUT',
     body: JSON.stringify(details),
   })
+}
+
+export function jobPlanRemovalImpact(
+  consultantId: number,
+  leaveYearId: number,
+  jobPlanId: number,
+): Promise<RemovalImpact> {
+  return apiRequest<RemovalImpact>(
+    `${jobPlanPath(consultantId, leaveYearId)}/${jobPlanId}/removal-impact`,
+  )
+}
+
+export function removeJobPlan(
+  consultantId: number,
+  leaveYearId: number,
+  jobPlanId: number,
+  confirmation: string,
+): Promise<RemovalResult> {
+  return apiRequest<RemovalResult>(
+    `${jobPlanPath(consultantId, leaveYearId)}/${jobPlanId}/remove`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ confirmation }),
+    },
+  )
 }

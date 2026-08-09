@@ -52,6 +52,26 @@ export async function apiRequest<ResponseBody>(
 
 export function operatorErrorMessage(error: unknown): string {
   if (error instanceof ApiClientError) {
+    if (error.code === 'validation_error' && Array.isArray(error.details)) {
+      const first = error.details.find(
+        (detail): detail is { loc?: unknown; msg: string } =>
+          typeof detail === 'object' &&
+          detail !== null &&
+          typeof (detail as { msg?: unknown }).msg === 'string',
+      )
+
+      if (first) {
+        const location = Array.isArray(first.loc)
+          ? first.loc
+              .filter((part) => part !== 'body' && typeof part === 'string')
+              .map((part) => part.replaceAll('_', ' '))
+              .join(' · ')
+          : ''
+        const message = first.msg.replace(/^Value error,\s*/i, '')
+        return location ? `${location}: ${message}` : message
+      }
+    }
+
     return error.message
   }
 

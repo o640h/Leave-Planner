@@ -3,6 +3,7 @@
 from fastapi import APIRouter, status
 
 from dependencies import DatabaseSession
+from removal import RemovalCommand, RemovalImpact, RemovalResult
 
 from . import service
 from .models import Consultant
@@ -51,3 +52,17 @@ def update_consultant(
     """Replace one consultant's editable information."""
 
     return service.update_consultant(session, consultant_id, details)
+
+
+@router.get("/{consultant_id}/archive-impact", response_model=RemovalImpact)
+def archive_impact(consultant_id: int, session: DatabaseSession) -> RemovalImpact:
+    return service.archive_impact(session, consultant_id)
+
+
+@router.post("/{consultant_id}/archive", response_model=RemovalResult)
+def archive_consultant(
+    consultant_id: int,
+    command: RemovalCommand,
+    session: DatabaseSession,
+) -> RemovalResult:
+    return service.archive_consultant(session, consultant_id, command)

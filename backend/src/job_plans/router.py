@@ -3,6 +3,7 @@
 from fastapi import APIRouter, status
 
 from dependencies import DatabaseSession
+from removal import RemovalCommand, RemovalImpact, RemovalResult
 
 from . import service
 from .persistence import JobPlanRecord
@@ -81,4 +82,36 @@ def update_job_plan(
         leave_year_id,
         job_plan_id,
         details,
+    )
+
+
+@router.get("/{job_plan_id}/removal-impact", response_model=RemovalImpact)
+def removal_impact(
+    consultant_id: int,
+    leave_year_id: int,
+    job_plan_id: int,
+    session: DatabaseSession,
+) -> RemovalImpact:
+    return service.removal_impact(
+        session,
+        consultant_id,
+        leave_year_id,
+        job_plan_id,
+    )
+
+
+@router.post("/{job_plan_id}/remove", response_model=RemovalResult)
+def remove_job_plan(
+    consultant_id: int,
+    leave_year_id: int,
+    job_plan_id: int,
+    command: RemovalCommand,
+    session: DatabaseSession,
+) -> RemovalResult:
+    return service.remove_job_plan(
+        session,
+        consultant_id,
+        leave_year_id,
+        job_plan_id,
+        command,
     )

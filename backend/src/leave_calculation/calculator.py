@@ -136,7 +136,7 @@ def _calculation_periods(
 def _calculate_period(
     request: LeaveCalculationRequest,
     period: DateRange,
-) -> LeaveCalculationPeriod:
+) -> CalculationResult[LeaveCalculationPeriod]:
     """Calculate one period with constant policy and job-plan inputs."""
 
     policy = request.policies.version_on(period.start)
@@ -146,12 +146,13 @@ def _calculate_period(
         period.start,
     )
 
-    entitlement = policy.resolve(
+    resolved = policy.resolve(
         calculation_date=period.start,
         consultant_appointment_date=request.consultant_appointment_date,
         completed_service_years=service_years,
         contracted_pas=job_plan.cycle.contracted_pas,
-    ).value
+    )
+    entitlement = resolved.value
 
     year_fraction = Decimal(period.calendar_days) / Decimal(request.leave_year.calendar_days)
     period_entitlement = calculate_partial_year_hours(
@@ -161,7 +162,7 @@ def _calculate_period(
     )
     dcc, spa, other = allocate_hours_by_pa(period_entitlement, job_plan.cycle)
 
-    return LeaveCalculationPeriod(
+    calculated_period = LeaveCalculationPeriod(
         period=period,
         completed_service_years=service_years,
         policy_version=policy.version,
@@ -173,6 +174,28 @@ def _calculate_period(
         spa_hours=spa,
         other_hours=other,
     )
+
+    period_step = CalculationStep(
+        rule_id=RuleId("leave-calculation.calendar-days"),
+        description="Calculated annual entitlement for a constant-input calendar period",
+        amount=calculated_period.entitlement_hours,
+        effective_date=calculated_period.period.start,
+        context={
+            "period_start": calculated_period.period.start.isoformat(),
+            "period_end": calculated_period.period.end.isoformat(),
+            "calendar_days": str(calculated_period.period.calendar_days),
+            "leave_year_days": str(request.leave_year.calendar_days),
+            "year_fraction": format(calculated_period.year_fraction, "f"),
+            "full_year_hours": str(calculated_period.full_year_hours),
+            "policy_version": calculated_period.policy_version,
+            "job_plan_version": str(calculated_period.job_plan_version),
+            "completed_service_years": str(calculated_period.completed_service_years),
+            "dcc_hours": str(calculated_period.dcc_hours),
+            "spa_hours": str(calculated_period.spa_hours),
+            "other_hours": str(calculated_period.other_hours),
+        },
+    )
+    return CalculationResult(value=calculated_period, trace=(*resolved.trace, period_step))
 
 
 def calculate_leave_entitlement(
@@ -191,37 +214,17 @@ def calculate_leave_entitlement(
             )
         )
 
-    periods = tuple(
+    period_calculations = tuple(
         _calculate_period(request, period)
         for period in _calculation_periods(request, active_period)
     )
+    periods = tuple(calculation.value for calculation in period_calculations)
     result = LeaveCalculationResult(
         leave_year=request.leave_year,
         active_period=active_period,
         periods=periods,
     )
 
-    trace = tuple(
-        CalculationStep(
-            rule_id=RuleId("leave-calculation.calendar-days"),
-            description="Calculated annual entitlement for a constant-input calendar period",
-            amount=period.entitlement_hours,
-            effective_date=period.period.start,
-            context={
-                "period_start": period.period.start.isoformat(),
-                "period_end": period.period.end.isoformat(),
-                "calendar_days": str(period.period.calendar_days),
-                "leave_year_days": str(request.leave_year.calendar_days),
-                "year_fraction": format(period.year_fraction, "f"),
-                "policy_version": period.policy_version,
-                "job_plan_version": str(period.job_plan_version),
-                "completed_service_years": str(period.completed_service_years),
-                "dcc_hours": str(period.dcc_hours),
-                "spa_hours": str(period.spa_hours),
-                "other_hours": str(period.other_hours),
-            },
-        )
-        for period in periods
-    )
+    trace = tuple(step for calculation in period_calculations for step in calculation.trace)
 
     return CalculationResult(value=result, trace=trace)

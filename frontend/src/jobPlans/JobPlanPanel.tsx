@@ -4,7 +4,14 @@ import { operatorErrorMessage } from '../api/client'
 import type { LeaveYear } from '../leaveYears/types'
 import { AppIcon } from '../system/AppIcon'
 import { formatDecimal } from '../system/decimal'
-import { createJobPlan, listJobPlans, previewJobPlan, updateJobPlan } from './api'
+import {
+  createJobPlan,
+  jobPlanRemovalImpact,
+  listJobPlans,
+  previewJobPlan,
+  removeJobPlan,
+  updateJobPlan,
+} from './api'
 import { JobPlanForm } from './JobPlanForm'
 import {
   editableJobPlan,
@@ -14,6 +21,8 @@ import {
   type JobPlanPreview,
 } from './types'
 import './jobPlans.css'
+import { RemovalDialog } from '../system/RemovalDialog'
+import type { RemovalImpact } from '../system/removal'
 
 type EditorTarget = JobPlan | 'new' | null
 
@@ -38,9 +47,17 @@ type JobPlanPanelProps = {
   consultantId: number
   leaveYear: LeaveYear
   onCountChange?: (count: number | null) => void
+  onSaved?: () => void
+  onRemoved?: () => void
 }
 
-export function JobPlanPanel({ consultantId, leaveYear, onCountChange }: JobPlanPanelProps) {
+export function JobPlanPanel({
+  consultantId,
+  leaveYear,
+  onCountChange,
+  onSaved,
+  onRemoved,
+}: JobPlanPanelProps) {
   const [jobPlans, setJobPlans] = useState<JobPlan[]>([])
   const [editorTarget, setEditorTarget] = useState<EditorTarget>(null)
   const [loadAttempt, setLoadAttempt] = useState(0)
@@ -48,6 +65,10 @@ export function JobPlanPanel({ consultantId, leaveYear, onCountChange }: JobPlan
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [removalTarget, setRemovalTarget] = useState<JobPlan | null>(null)
+  const [removalImpact, setRemovalImpact] = useState<RemovalImpact | null>(null)
+  const [removalError, setRemovalError] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
 
   useEffect(() => {
     onCountChange?.(null)
@@ -86,17 +107,17 @@ export function JobPlanPanel({ consultantId, leaveYear, onCountChange }: JobPlan
           ? await createJobPlan(consultantId, leaveYear.id, details)
           : await updateJobPlan(consultantId, leaveYear.id, editorTarget.id, details)
 
-      setJobPlans((current) => {
-        const next =
-          editorTarget === 'new'
-            ? [...current, saved]
-            : current.map((jobPlan) => (jobPlan.id === saved.id ? saved : jobPlan))
+      const next =
+        editorTarget === 'new'
+          ? [...jobPlans, saved]
+          : jobPlans.map((jobPlan) => (jobPlan.id === saved.id ? saved : jobPlan))
 
-        return sortJobPlans(next)
-      })
+      setJobPlans(sortJobPlans(next))
+      onCountChange?.(next.length)
 
       setEditorTarget(null)
       setNotice(editorTarget === 'new' ? 'The job plan was created.' : 'The job plan was updated.')
+      onSaved?.()
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
     } finally {
@@ -108,6 +129,41 @@ export function JobPlanPanel({ consultantId, leaveYear, onCountChange }: JobPlan
     if (!saving) {
       setEditorTarget(null)
       setError(null)
+    }
+  }
+
+  async function beginRemoval(jobPlan: JobPlan) {
+    setRemovalError(null)
+    try {
+      const impact = await jobPlanRemovalImpact(consultantId, leaveYear.id, jobPlan.id)
+      setRemovalTarget(jobPlan)
+      setRemovalImpact(impact)
+    } catch (requestError) {
+      setError(operatorErrorMessage(requestError))
+    }
+  }
+
+  async function confirmRemoval(confirmation: string) {
+    if (!removalTarget) return
+    setRemoving(true)
+    setRemovalError(null)
+    try {
+      const result = await removeJobPlan(consultantId, leaveYear.id, removalTarget.id, confirmation)
+      const remaining = jobPlans.filter((jobPlan) => jobPlan.id !== removalTarget.id)
+      setJobPlans(remaining)
+      onCountChange?.(remaining.length)
+      onRemoved?.()
+      setRemovalTarget(null)
+      setRemovalImpact(null)
+      setNotice(
+        result.entitlement_status === 'needs_attention'
+          ? `${result.message} The applied entitlement needs attention because the remaining plans do not provide complete coverage.`
+          : result.message,
+      )
+    } catch (requestError) {
+      setRemovalError(operatorErrorMessage(requestError))
+    } finally {
+      setRemoving(false)
     }
   }
 
@@ -206,16 +262,25 @@ export function JobPlanPanel({ consultantId, leaveYear, onCountChange }: JobPlan
                 </div>
               </dl>
 
-              <button
-                className="button button--quiet"
-                type="button"
-                onClick={() => {
-                  setError(null)
-                  setEditorTarget(jobPlan)
-                }}
-              >
-                Edit Job Plan
-              </button>
+              <div className="job-plan-actions">
+                <button
+                  className="button button--quiet"
+                  type="button"
+                  onClick={() => beginRemoval(jobPlan)}
+                >
+                  Delete
+                </button>
+                <button
+                  className="button button--quiet"
+                  type="button"
+                  onClick={() => {
+                    setError(null)
+                    setEditorTarget(jobPlan)
+                  }}
+                >
+                  Edit Job Plan
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -256,6 +321,23 @@ export function JobPlanPanel({ consultantId, leaveYear, onCountChange }: JobPlan
             />
           </section>
         </div>
+      ) : null}
+
+      {removalTarget && removalImpact ? (
+        <RemovalDialog
+          title="Delete Job Plan"
+          impact={removalImpact}
+          busy={removing}
+          error={removalError}
+          onConfirm={confirmRemoval}
+          onCancel={() => {
+            if (!removing) {
+              setRemovalTarget(null)
+              setRemovalImpact(null)
+              setRemovalError(null)
+            }
+          }}
+        />
       ) : null}
     </section>
   )

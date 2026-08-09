@@ -1,5 +1,6 @@
 """Validated consultant API contracts."""
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -41,3 +42,4 @@ class ConsultantRead(ConsultantFields):
     )
 
     id: int
+    archived_at: datetime | None

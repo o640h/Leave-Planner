@@ -10,6 +10,9 @@ The active source palette is recorded directly in `frontend/src/styles.css`: sol
 - `leave-planner-quiet-grid.png` explores a typography-led consultant directory with an open table and minimal summary figures.
 - `leave-planner-split-workspace.png` explores a consultant-first workspace with a persistent directory and a flat record inspector.
 - `leave-planner-wallchart-canvas.png` explores the team wallchart as the application's main planning surface.
+- `leave-planner-planning-calendar-concept.png` refines that wallchart into the planned shared
+  calendar surface: public holidays remain visible in the time grid, while a right-hand drawer
+  previews and saves one leave booking without hiding the wider team context.
 - `leave-planner-desktop-workspace-v2.png` is the active 1440×900 consultant-workspace reference. It corrects the undersized, top-heavy browser composition by defining a deliberate desktop frame, a factual setup overview, and two full-height configuration panels.
 
 These images are directional mockups, not exact interface specifications. Retain the palette and visual principles while implementing controls, copy, calculations, and accessibility as code-native application features.
@@ -29,3 +32,19 @@ The global navigation follows the mockups' narrow icon-only rail rather than dis
 The implemented consultant page is a bounded desktop workspace: the icon rail and consultant directory stay stable while the selected consultant's content scrolls independently. Leave-year and job-plan information sit in sibling panels so the current configuration can be read at a glance. Responsive behaviour follows the actual content-pane width, not only the outer browser width, which keeps the same structure usable in the planned resizable desktop window. Future dashboard panels must be backed by real slice data rather than decorative placeholder figures.
 
 The preferred initial desktop window is 1440×900. On larger development monitors the browser preview centres that exact frame rather than stretching small controls across the full viewport; at or below the target dimensions it fills the available window. The launcher should use the same initial size while allowing the operator to resize it.
+
+## Planning Page Interaction
+
+The Planning page should use one calendar canvas with two views rather than separate holiday and
+booking pages:
+
+1. **Consultant View** focuses the selected consultant and supports date-range selection.
+2. **Team View** uses consultant rows and day columns as the approximately 20-person wallchart.
+3. Public holidays are contextual calendar columns in both views, with a settings link for source and
+   correction maintenance.
+4. Selecting a range opens a right-hand booking drawer containing lifecycle state, generated DCC/SPA
+   deductions, warnings, notes, and the final save action.
+
+This keeps calendar selection, holiday context, and generated deductions together without forcing the
+full booking form into every calendar cell. The consultant Overview remains the summary and audit
+surface rather than a second leave-entry interface.

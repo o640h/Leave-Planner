@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
+from annual_entitlement import AppliedEntitlement
 from domain import (
     ZERO_HOURS,
     DateRange,
@@ -14,7 +15,6 @@ from domain import (
     RuleId,
 )
 from job_plans import JobPlanHistory
-from leave_calculation import LeaveCalculationResult
 from public_holidays import PublicHolidayResult
 
 
@@ -198,16 +198,13 @@ class LeaveRecordsRequest:
     """Inputs required to calculate one consultant leave year."""
 
     leave_year: DateRange
-    entitlement: LeaveCalculationResult
+    entitlement: AppliedEntitlement
     public_holidays: PublicHolidayResult
     job_plans: JobPlanHistory
     bookings: tuple[LeaveBooking, ...] = ()
     adjustments: tuple[LeaveAdjustment, ...] = ()
 
     def __post_init__(self) -> None:
-        if self.entitlement.leave_year != self.leave_year:
-            raise ValueError("Entitlement must belong to the requested leave year")
-
         booking_ids = tuple(booking.booking_id for booking in self.bookings)
         if len(booking_ids) != len(set(booking_ids)):
             raise ValueError("Booking IDs must be unique")

@@ -51,6 +51,7 @@ export function JobPlanForm({
     setDetails((current) => ({
       ...current,
       week_count: weekCount,
+      cycle_anchor_date: weekCount === 1 ? null : current.cycle_anchor_date,
       days: cycleDays(weekCount, current.days),
     }))
     setPreview(null)

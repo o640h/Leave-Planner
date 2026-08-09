@@ -30,12 +30,12 @@
 
 .workspace-overview {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 80px;
   margin-bottom: 18px;
   border: 1px solid var(--line-strong);
   background: #151515;
-  box-shadow: 0 12px 28px rgb(0 0 0 / 0.12);
+  box-shadow: var(--panel-shadow);
 }
 
 .overview-item {
@@ -137,7 +137,7 @@
   height: 100%;
   border: 1px solid var(--line);
   background: #161616;
-  box-shadow: 0 16px 36px rgb(0 0 0 / 0.15);
+  box-shadow: var(--panel-shadow);
 }
 
 .dashboard-panel-header {
@@ -160,8 +160,21 @@
   gap: 8px;
 }
 
-.dashboard-panel-actions select {
-  width: 170px;
+.leave-year-selector {
+  display: grid;
+  gap: 7px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.leave-year-selector span {
+  color: var(--quiet);
+  font-size: 10px;
+}
+
+.leave-year-selector select {
+  width: 100%;
+  min-width: 0;
   min-height: 38px;
   padding: 7px 30px 7px 9px;
   border: 1px solid var(--line-strong);

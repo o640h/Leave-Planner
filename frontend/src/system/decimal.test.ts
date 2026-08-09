@@ -14,3 +14,9 @@ describe('decimal display helpers', () => {
     expect(addNonNegativeDecimals('0.1', '0.2')).toBe('0.3')
   })
 })
+
+it('rounds display-only quantities without using binary floating point', () => {
+  expect(formatDecimal('225.223101369863013698630137', 3)).toBe('225.223')
+  expect(formatDecimal('18.71289863013698630136986301', 3)).toBe('18.713')
+  expect(formatDecimal('9.9999', 3)).toBe('10')
+})

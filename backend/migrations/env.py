@@ -5,6 +5,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from annual_entitlement.persistence import AppliedEntitlementRecord  # noqa: F401
 from audit import AuditEvent  # noqa: F401
 from consultants.models import Consultant
 from job_plans.persistence import JobPlanRecord  # noqa: F401

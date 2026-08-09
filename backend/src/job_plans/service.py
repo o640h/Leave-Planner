@@ -7,10 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from audit import record_audit_event
-from domain import ActivityType, Hours, ProgrammedActivities
+from domain import ActivityType, Hours, ProgrammedActivities, RuleId
 from errors import ApiError
 from leave_years import service as leave_year_service
 from leave_years.models import LeaveYear
+from removal import EntitlementRemovalStatus, RemovalCommand, RemovalImpact, RemovalResult
 
 from .models import (
     ActivityAllocation,
@@ -26,6 +27,7 @@ from .schemas import (
     JobPlanPreview,
     JobPlanUpdate,
 )
+from .versioning import JobPlanHistory, JobPlanVersion
 
 
 def monday_on_or_before(value: date) -> date:
@@ -185,6 +187,58 @@ def calculation_cycle(
         days=days,
         reconciliation_override_reason=reason,
     )
+
+
+def calculation_history(
+    records: tuple[JobPlanRecord, ...],
+) -> JobPlanHistory:
+    """Adapt stored job plans to the pure calculation engine."""
+
+    versions: list[JobPlanVersion] = []
+
+    for record in records:
+        days = tuple(
+            JobPlanDay(
+                cycle_week=day.cycle_week,
+                weekday=Weekday(day.weekday),
+                activities=tuple(
+                    ActivityAllocation(
+                        activity_type=activity_type,
+                        hours=Hours(hours),
+                    )
+                    for activity_type, hours in (
+                        (ActivityType.DCC, day.dcc_hours),
+                        (ActivityType.SPA, day.spa_hours),
+                        (ActivityType.OTHER, day.other_hours),
+                    )
+                    if hours > 0
+                ),
+            )
+            for day in record.days
+        )
+
+        cycle = JobPlanCycle(
+            week_count=record.week_count,
+            contracted_pas=ProgrammedActivities(record.contracted_pas),
+            dcc_pas=ProgrammedActivities(record.dcc_pas),
+            spa_pas=ProgrammedActivities(record.spa_pas),
+            other_pas=ProgrammedActivities(record.other_pas),
+            hours_per_pa=Hours(record.hours_per_pa),
+            days=days,
+            reconciliation_override_reason=(record.reconciliation_override_reason),
+        )
+
+        versions.append(
+            JobPlanVersion(
+                version_id=RuleId(f"job-plan.{record.id}"),
+                effective_from=record.effective_from,
+                effective_to=record.effective_until - timedelta(days=1),
+                cycle_anchor_date=record.cycle_anchor_date,
+                cycle=cycle,
+            )
+        )
+
+    return JobPlanHistory(tuple(versions))
 
 
 def preview_job_plan(
@@ -371,3 +425,123 @@ def update_job_plan(
     )
 
     return job_plan
+
+
+def _coverage_after_removal(
+    leave_year: LeaveYear,
+    job_plans: tuple[JobPlanRecord, ...],
+    removed_id: int,
+) -> bool:
+    """Return whether remaining plans cover every active leave-year date."""
+
+    active_start = max(leave_year.start_date, leave_year.employment_start or leave_year.start_date)
+    active_end = min(leave_year.end_date, leave_year.employment_end or leave_year.end_date)
+    if active_end < active_start:
+        return True
+
+    remaining = tuple(plan for plan in job_plans if plan.id != removed_id)
+    current = active_start
+    while current <= active_end:
+        if not any(plan.effective_from <= current < plan.effective_until for plan in remaining):
+            return False
+        current += timedelta(days=1)
+    return True
+
+
+def removal_impact(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    job_plan_id: int,
+) -> RemovalImpact:
+    """Explain the coverage and entitlement effect before deleting a plan."""
+
+    from annual_entitlement.service import current_application
+
+    leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    job_plan = get_job_plan(session, consultant_id, leave_year_id, job_plan_id)
+    plans = list_job_plans(session, consultant_id, leave_year_id)
+    complete_coverage = _coverage_after_removal(leave_year, plans, job_plan.id)
+    application = current_application(session, leave_year_id)
+
+    consequences = [
+        (
+            f"The plan covering {job_plan.effective_from:%d %b %Y} to "
+            f"{job_plan.effective_until:%d %b %Y} will be deleted."
+        ),
+        f"{len(plans) - 1} job plan(s) will remain in this leave year.",
+    ]
+    if not complete_coverage:
+        consequences.append(
+            "The remaining plans will not cover the complete active leave year. "
+            "The existing applied entitlement will be kept and marked for attention."
+        )
+    elif application is not None:
+        consequences.append(
+            "The entitlement recommendation will be refreshed from the remaining plans."
+        )
+    consequences.append("The removal will remain recorded in the consultant audit history.")
+
+    return RemovalImpact(
+        resource_name=f"Job Plan {job_plan.id}",
+        action="delete",
+        confirmation_text="DELETE",
+        consequences=tuple(consequences),
+    )
+
+
+def remove_job_plan(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    job_plan_id: int,
+    command: RemovalCommand,
+) -> RemovalResult:
+    """Delete a job plan and refresh a still-calculable entitlement."""
+
+    from annual_entitlement.models import EntitlementMode
+    from annual_entitlement.service import current_application, refresh_entitlement
+
+    if command.confirmation.strip() != "DELETE":
+        raise ApiError(
+            status_code=422,
+            code="confirmation_mismatch",
+            message="Enter DELETE to confirm removal.",
+        )
+
+    leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    job_plan = get_job_plan(session, consultant_id, leave_year_id, job_plan_id)
+    plans = list_job_plans(session, consultant_id, leave_year_id)
+    complete_coverage = _coverage_after_removal(leave_year, plans, job_plan.id)
+    before = snapshot(job_plan)
+
+    session.delete(job_plan)
+    session.flush()
+    record_audit_event(
+        session,
+        consultant_id=consultant_id,
+        entity_type="job_plan",
+        entity_id=job_plan_id,
+        action="deleted",
+        details={"before": before, "complete_coverage_after_removal": complete_coverage},
+    )
+
+    application = current_application(session, leave_year_id)
+    status: EntitlementRemovalStatus
+    if application is None:
+        status = "not_configured"
+    elif application.mode == EntitlementMode.MANUAL.value:
+        status = "preserved"
+    elif not complete_coverage:
+        status = "needs_attention"
+    else:
+        try:
+            refresh_entitlement(session, consultant_id, leave_year_id)
+            status = "refreshed"
+        except ApiError:
+            status = "needs_attention"
+
+    return RemovalResult(
+        message="The job plan was deleted.",
+        entitlement_status=status,
+    )

@@ -1,13 +1,21 @@
 import { useEffect, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
-import { createConsultant, listConsultants, updateConsultant } from './api'
+import {
+  archiveConsultant,
+  consultantArchiveImpact,
+  createConsultant,
+  listConsultants,
+  updateConsultant,
+} from './api'
 import { ConsultantForm } from './ConsultantForm'
 import { emptyConsultantInput, type Consultant, type ConsultantInput } from './types'
 import './consultants.css'
 
 import { LeaveYearPanel } from '../leaveYears/LeaveYearPanel'
 import { AppIcon } from '../system/AppIcon'
+import { RemovalDialog } from '../system/RemovalDialog'
+import type { RemovalImpact } from '../system/removal'
 
 type EditorTarget = number | 'new' | null
 
@@ -38,6 +46,8 @@ export function ConsultantDirectory() {
   const [notice, setNotice] = useState<string | null>(null)
   const [identityEditorOpen, setIdentityEditorOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [archiveImpact, setArchiveImpact] = useState<RemovalImpact | null>(null)
+  const [removing, setRemoving] = useState(false)
 
   useEffect(() => {
     listConsultants()
@@ -124,6 +134,35 @@ export function ConsultantDirectory() {
 
     if (editorTarget === 'new') setEditorTarget(consultants[0]?.id ?? null)
     setIdentityEditorOpen(false)
+  }
+
+  async function beginArchive() {
+    if (!selectedConsultant) return
+    setSaveError(null)
+    try {
+      setArchiveImpact(await consultantArchiveImpact(selectedConsultant.id))
+    } catch (error) {
+      setSaveError(operatorErrorMessage(error))
+    }
+  }
+
+  async function confirmArchive(confirmation: string) {
+    if (!selectedConsultant) return
+    setRemoving(true)
+    setSaveError(null)
+    try {
+      const result = await archiveConsultant(selectedConsultant.id, confirmation)
+      const remaining = consultants.filter((consultant) => consultant.id !== selectedConsultant.id)
+      setConsultants(remaining)
+      setEditorTarget(remaining[0]?.id ?? null)
+      setArchiveImpact(null)
+      setIdentityEditorOpen(false)
+      setNotice(result.message)
+    } catch (error) {
+      setSaveError(operatorErrorMessage(error))
+    } finally {
+      setRemoving(false)
+    }
   }
 
   const normalizedQuery = searchQuery.trim().toLocaleLowerCase()
@@ -249,14 +288,19 @@ export function ConsultantDirectory() {
                     <p>{selectedConsultant.post_title ?? 'Post Title Not Set'}</p>
                   </div>
                 </div>
-                <button
-                  className="button button--quiet button--with-icon"
-                  type="button"
-                  onClick={() => setIdentityEditorOpen(true)}
-                >
-                  <AppIcon name="edit" />
-                  <span>Edit Consultant</span>
-                </button>
+                <div className="consultant-header-actions">
+                  <button className="button button--quiet" type="button" onClick={beginArchive}>
+                    Archive
+                  </button>
+                  <button
+                    className="button button--quiet button--with-icon"
+                    type="button"
+                    onClick={() => setIdentityEditorOpen(true)}
+                  >
+                    <AppIcon name="edit" />
+                    <span>Edit Consultant</span>
+                  </button>
+                </div>
               </header>
 
               <LeaveYearPanel key={selectedConsultant.id} consultantId={selectedConsultant.id} />
@@ -308,6 +352,22 @@ export function ConsultantDirectory() {
             />
           </section>
         </div>
+      ) : null}
+
+      {archiveImpact ? (
+        <RemovalDialog
+          title="Archive Consultant"
+          impact={archiveImpact}
+          busy={removing}
+          error={saveError}
+          onConfirm={confirmArchive}
+          onCancel={() => {
+            if (!removing) {
+              setArchiveImpact(null)
+              setSaveError(null)
+            }
+          }}
+        />
       ) : null}
     </section>
   )

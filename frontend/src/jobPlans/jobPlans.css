@@ -48,6 +48,11 @@
   background: transparent;
 }
 
+.job-plan-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .job-plan-card + .job-plan-card {
   border-top: 1px solid var(--line);
 }

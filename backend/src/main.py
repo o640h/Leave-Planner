@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from annual_entitlement.router import router as entitlement_router
 from consultants import router as consultant_router
 from database import create_database_engine, create_session_factory
 from errors import install_error_handlers
@@ -60,6 +61,7 @@ def create_app(
     app.include_router(consultant_router)
     app.include_router(leave_year_router)
     app.include_router(job_plan_router)
+    app.include_router(entitlement_router)
 
     static_dir = frontend_dist if frontend_dist is not None else runtime.resolved_frontend_dist
     if static_dir.is_dir():

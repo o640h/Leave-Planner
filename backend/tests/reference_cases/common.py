@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import date
 
+from annual_entitlement import AppliedEntitlement
 from domain import ActivityType, DateRange, Hours, LeaveState, ProgrammedActivities, RuleId
 from entitlement_policy import DEFAULT_ENTITLEMENT_POLICIES
 from job_plans import (
@@ -141,7 +142,14 @@ def request(
     ).value
     return LeaveRecordsRequest(
         leave_year=leave_year,
-        entitlement=entitlement,
+        # The ledger now receives the operator-applied opening entitlement.
+        # For calculation fixtures, that is the unmodified recommendation:
+        # base policy entitlement plus public-holiday entitlement.
+        entitlement=AppliedEntitlement(
+            dcc_hours=(entitlement.dcc_hours + public_holidays.dcc_entitlement_hours),
+            spa_hours=(entitlement.spa_hours + public_holidays.spa_entitlement_hours),
+            other_hours=(entitlement.other_hours + public_holidays.other_entitlement_hours),
+        ),
         public_holidays=public_holidays,
         job_plans=job_plans,
         bookings=bookings,

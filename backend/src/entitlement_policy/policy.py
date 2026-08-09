@@ -147,6 +147,7 @@ class EntitlementPolicyVersion:
                 amount=resolved.annual_hours,
                 effective_date=calculation_date,
                 context={
+                    "full_time_hours": str(resolved.full_time_hours),
                     "contracted_pas": str(resolved.contracted_pas),
                     "capped_pas": str(resolved.capped_pas),
                     "pa_cap": str(self.pa_cap),

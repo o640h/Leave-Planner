@@ -94,12 +94,15 @@ export function editableJobPlan(jobPlan: JobPlan): JobPlanInput {
   return {
     effective_from: jobPlan.effective_from,
     effective_until: jobPlan.effective_until,
-    cycle_anchor_date: jobPlan.cycle_anchor_date,
+    // A one-week pattern does not need an anchor. Keeping its old generated
+    // anchor after moving Effective From can make an invisible stale date fail
+    // backend validation.
+    cycle_anchor_date: jobPlan.week_count > 1 ? jobPlan.cycle_anchor_date : null,
     week_count: jobPlan.week_count,
     contracted_pas: addNonNegativeDecimals(jobPlan.dcc_pas, jobPlan.spa_pas),
     dcc_pas: formatDecimal(jobPlan.dcc_pas),
     spa_pas: formatDecimal(jobPlan.spa_pas),
-    other_pas: formatDecimal(jobPlan.other_pas),
+    other_pas: '0',
     hours_per_pa: formatDecimal(jobPlan.hours_per_pa),
     reconciliation_override_reason: jobPlan.reconciliation_override_reason,
     days: cycleDays(jobPlan.week_count, jobPlan.days),

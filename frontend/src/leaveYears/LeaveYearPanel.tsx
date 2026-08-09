@@ -3,9 +3,18 @@ import { useEffect, useState } from 'react'
 import { operatorErrorMessage } from '../api/client'
 import { JobPlanPanel } from '../jobPlans/JobPlanPanel'
 import { AppIcon } from '../system/AppIcon'
-import { createLeaveYear, listLeaveYears, updateLeaveYear } from './api'
+import {
+  createLeaveYear,
+  leaveYearRemovalImpact,
+  listLeaveYears,
+  removeLeaveYear,
+  updateLeaveYear,
+} from './api'
 import { LeaveYearForm } from './LeaveYearForm'
 import { emptyLeaveYearInput, type LeaveYear, type LeaveYearInput } from './types'
+import { EntitlementPanel } from '../annualEntitlement/EntitlementPanel'
+import { RemovalDialog } from '../system/RemovalDialog'
+import type { RemovalImpact } from '../system/removal'
 import './leaveYears.css'
 
 type EditorTarget = LeaveYear | 'new' | null
@@ -48,6 +57,12 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [jobPlanCount, setJobPlanCount] = useState<number | null>(null)
+  const [entitlementConfigured, setEntitlementConfigured] = useState<boolean | null>(null)
+  const [calculationRevision, setCalculationRevision] = useState(0)
+  const [entitlementReloadRevision, setEntitlementReloadRevision] = useState(0)
+  const [removalImpact, setRemovalImpact] = useState<RemovalImpact | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [removalError, setRemovalError] = useState<string | null>(null)
 
   useEffect(() => {
     listLeaveYears(consultantId)
@@ -95,6 +110,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
       setNotice(
         editorTarget === 'new' ? 'The leave year was created.' : 'The leave year was updated.',
       )
+      setCalculationRevision((revision) => revision + 1)
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
     } finally {
@@ -106,6 +122,36 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
     if (!saving) {
       setEditorTarget(null)
       setError(null)
+    }
+  }
+
+  async function beginRemoval() {
+    if (!selectedLeaveYear) return
+    setRemovalError(null)
+    try {
+      setRemovalImpact(await leaveYearRemovalImpact(consultantId, selectedLeaveYear.id))
+    } catch (requestError) {
+      setError(operatorErrorMessage(requestError))
+    }
+  }
+
+  async function confirmRemoval(confirmation: string) {
+    if (!selectedLeaveYear) return
+    setRemoving(true)
+    setRemovalError(null)
+    try {
+      const result = await removeLeaveYear(consultantId, selectedLeaveYear.id, confirmation)
+      const remaining = leaveYears.filter((leaveYear) => leaveYear.id !== selectedLeaveYear.id)
+      setLeaveYears(remaining)
+      setSelectedId(remaining[0]?.id ?? null)
+      setJobPlanCount(null)
+      setEntitlementConfigured(null)
+      setRemovalImpact(null)
+      setNotice(result.message)
+    } catch (requestError) {
+      setRemovalError(operatorErrorMessage(requestError))
+    } finally {
+      setRemoving(false)
     }
   }
 
@@ -174,6 +220,29 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 </strong>
               </div>
             </div>
+            <div
+              className={`overview-item${
+                entitlementConfigured === false
+                  ? ' overview-item--warning'
+                  : entitlementConfigured
+                    ? ' overview-item--complete'
+                    : ''
+              }`}
+            >
+              <AppIcon name="brand" />
+              <div>
+                <span>Entitlement</span>
+                <strong>
+                  {selectedLeaveYear === null
+                    ? 'Requires Leave Year'
+                    : entitlementConfigured === null
+                      ? 'Checking'
+                      : entitlementConfigured
+                        ? 'Applied'
+                        : 'Not Configured'}
+                </strong>
+              </div>
+            </div>
           </div>
 
           {leaveYears.length === 0 ? (
@@ -194,22 +263,9 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                     <h4 id="year-summary-title">Current Leave Year</h4>
                   </div>
                   <div className="dashboard-panel-actions">
-                    {leaveYears.length > 1 ? (
-                      <select
-                        aria-label="Selected Leave Year"
-                        value={selectedLeaveYear.id}
-                        onChange={(event) => {
-                          setJobPlanCount(null)
-                          setSelectedId(Number(event.target.value))
-                        }}
-                      >
-                        {leaveYears.map((leaveYear) => (
-                          <option key={leaveYear.id} value={leaveYear.id}>
-                            {formatDate(leaveYear.start_date)} – {formatDate(leaveYear.end_date)}
-                          </option>
-                        ))}
-                      </select>
-                    ) : null}
+                    <button className="button button--quiet" type="button" onClick={beginRemoval}>
+                      Delete
+                    </button>
                     <button
                       className="button button--quiet button--with-icon"
                       type="button"
@@ -220,6 +276,26 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                     </button>
                   </div>
                 </header>
+
+                {leaveYears.length > 1 ? (
+                  <label className="leave-year-selector">
+                    <span>Selected Leave Year</span>
+                    <select
+                      value={selectedLeaveYear.id}
+                      onChange={(event) => {
+                        setJobPlanCount(null)
+                        setEntitlementConfigured(null)
+                        setSelectedId(Number(event.target.value))
+                      }}
+                    >
+                      {leaveYears.map((leaveYear) => (
+                        <option key={leaveYear.id} value={leaveYear.id}>
+                          {formatDate(leaveYear.start_date)} – {formatDate(leaveYear.end_date)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
 
                 <div className="leave-year-range">
                   <div>
@@ -261,6 +337,16 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 consultantId={consultantId}
                 leaveYear={selectedLeaveYear}
                 onCountChange={setJobPlanCount}
+                onSaved={() => setCalculationRevision((revision) => revision + 1)}
+                onRemoved={() => setEntitlementReloadRevision((revision) => revision + 1)}
+              />
+              <EntitlementPanel
+                key={`entitlement-${selectedLeaveYear.id}`}
+                consultantId={consultantId}
+                leaveYearId={selectedLeaveYear.id}
+                onStatusChange={setEntitlementConfigured}
+                refreshRevision={calculationRevision}
+                reloadRevision={entitlementReloadRevision}
               />
             </div>
           ) : null}
@@ -303,6 +389,22 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
             />
           </section>
         </div>
+      ) : null}
+
+      {removalImpact ? (
+        <RemovalDialog
+          title="Delete Leave Year"
+          impact={removalImpact}
+          busy={removing}
+          error={removalError}
+          onConfirm={confirmRemoval}
+          onCancel={() => {
+            if (!removing) {
+              setRemovalImpact(null)
+              setRemovalError(null)
+            }
+          }}
+        />
       ) : null}
     </section>
   )

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -25,6 +25,23 @@ describe('consultant directory', () => {
         if (path === '/api/health') return json({ status: 'ok' })
         if (path === '/api/consultants' && method === 'GET') return json(consultants)
         if (path === '/api/consultants/1/leave-years' && method === 'GET') return json([])
+        if (path === '/api/consultants/1/archive-impact') {
+          return json({
+            resource_name: 'Dr Alex Morgan',
+            action: 'archive',
+            confirmation_text: 'Dr Alex Morgan',
+            consequences: ['The consultant will disappear from the active directory.'],
+            can_proceed: true,
+            blocking_reason: null,
+          })
+        }
+        if (path === '/api/consultants/1/archive' && method === 'POST') {
+          consultants.splice(0)
+          return json({
+            message: 'Dr Alex Morgan was archived.',
+            entitlement_status: 'not_applicable',
+          })
+        }
 
         const details = JSON.parse(options.body as string) as Omit<Consultant, 'id'>
         if (path === '/api/consultants' && method === 'POST') {
@@ -62,6 +79,12 @@ describe('consultant directory', () => {
     await user.click(within(editDialog).getByRole('button', { name: 'Save Changes' }))
 
     expect(await screen.findAllByText('Clinical Lead')).toHaveLength(2)
+
+    await user.click(screen.getByRole('button', { name: 'Archive' }))
+    const archiveDialog = await screen.findByRole('dialog', { name: 'Archive Consultant' })
+    await user.type(within(archiveDialog).getByRole('textbox'), 'Dr Alex Morgan')
+    await user.click(within(archiveDialog).getByRole('button', { name: 'Archive' }))
+    expect(await screen.findByText('No Consultant Selected')).toBeInTheDocument()
   })
 
   it('uses Title Case for short interface labels', async () => {
@@ -87,6 +110,7 @@ describe('consultant directory', () => {
       id: 1,
       name: 'Dr Alex Morgan',
       post_title: 'Consultant in Radiology',
+      archived_at: null,
     }
 
     vi.stubGlobal(
@@ -118,6 +142,7 @@ describe('consultant directory', () => {
       id: 1,
       name: 'Dr Alex Morgan',
       post_title: 'Consultant in Radiology',
+      archived_at: null,
     }
     const leaveYears: Array<Record<string, unknown>> = []
 
@@ -194,6 +219,7 @@ describe('consultant directory', () => {
       id: 1,
       name: 'Dr Alex Morgan',
       post_title: 'Consultant in Radiology',
+      archived_at: null,
     }
     const leaveYear = {
       id: 1,
@@ -204,6 +230,7 @@ describe('consultant directory', () => {
       employment_end: null,
     }
     const jobPlans: Array<Record<string, unknown>> = []
+    let entitlementRefreshes = 0
 
     vi.stubGlobal(
       'fetch',
@@ -215,6 +242,13 @@ describe('consultant directory', () => {
         if (path === '/api/consultants') return json([consultant])
         if (path === '/api/consultants/1/leave-years') return json([leaveYear])
         if (path.endsWith('/job-plans') && method === 'GET') return json(jobPlans)
+        if (path.endsWith('/entitlement') && method === 'GET') {
+          return json({ recommendation: null, application: null })
+        }
+        if (path.endsWith('/entitlement/refresh') && method === 'POST') {
+          entitlementRefreshes += 1
+          return json({ recommendation: null, application: null })
+        }
 
         const details = JSON.parse(options.body as string) as Record<string, unknown>
         if (path.endsWith('/job-plans/preview')) {
@@ -269,6 +303,8 @@ describe('consultant directory', () => {
     expect(await within(dialog).findByText('PA Split Reconciled')).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Create Job Plan' }))
     expect(await screen.findByText('Job Plan 1')).toBeInTheDocument()
+    expect(screen.getByText('1 Plan Configured')).toBeInTheDocument()
+    await waitFor(() => expect(entitlementRefreshes).toBe(1))
 
     await user.click(screen.getByRole('button', { name: 'Edit Job Plan' }))
     const editDialog = screen.getByRole('dialog', { name: 'Edit Job Plan' })
@@ -281,5 +317,6 @@ describe('consultant directory', () => {
     expect(await within(editDialog).findByText('PA Split Reconciled')).toBeInTheDocument()
     await user.click(within(editDialog).getByRole('button', { name: 'Save Changes' }))
     expect(await screen.findByText('8.41')).toBeInTheDocument()
+    await waitFor(() => expect(entitlementRefreshes).toBe(2))
   })
 })

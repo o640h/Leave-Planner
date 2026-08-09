@@ -3,6 +3,7 @@
 from fastapi import APIRouter, status
 
 from dependencies import DatabaseSession
+from removal import RemovalCommand, RemovalImpact, RemovalResult
 
 from . import service
 from .models import LeaveYear
@@ -48,3 +49,22 @@ def update_leave_year(
         leave_year_id,
         details,
     )
+
+
+@router.get("/{leave_year_id}/removal-impact", response_model=RemovalImpact)
+def removal_impact(
+    consultant_id: int,
+    leave_year_id: int,
+    session: DatabaseSession,
+) -> RemovalImpact:
+    return service.removal_impact(session, consultant_id, leave_year_id)
+
+
+@router.post("/{leave_year_id}/remove", response_model=RemovalResult)
+def remove_leave_year(
+    consultant_id: int,
+    leave_year_id: int,
+    command: RemovalCommand,
+    session: DatabaseSession,
+) -> RemovalResult:
+    return service.remove_leave_year(session, consultant_id, leave_year_id, command)
