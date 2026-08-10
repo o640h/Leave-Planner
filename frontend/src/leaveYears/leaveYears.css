@@ -34,6 +34,8 @@
   min-height: 80px;
   margin-bottom: 18px;
   border: 1px solid var(--line-strong);
+  border-radius: var(--corner-panel);
+  overflow: hidden;
   background: #151515;
   box-shadow: var(--panel-shadow);
 }
@@ -136,6 +138,8 @@
   min-width: 0;
   height: 100%;
   border: 1px solid var(--line);
+  border-radius: var(--corner-panel);
+  overflow: hidden;
   background: #161616;
   box-shadow: var(--panel-shadow);
 }
@@ -178,7 +182,7 @@
   min-height: 38px;
   padding: 7px 30px 7px 9px;
   border: 1px solid var(--line-strong);
-  border-radius: 0;
+  border-radius: var(--corner-control);
   background: #111;
   font-size: 11px;
 }
@@ -219,8 +223,9 @@
 
 .leave-year-summary dl {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   margin: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .leave-year-summary dl div {
@@ -240,7 +245,7 @@
 
 .leave-year-summary dd {
   margin: 0;
-  color: var(--warning);
+  color: var(--text);
   font-size: 12px;
   font-weight: 460;
   line-height: 1.4;

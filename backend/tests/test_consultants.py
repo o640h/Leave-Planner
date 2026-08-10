@@ -33,7 +33,7 @@ def test_create_list_update_and_restart(tmp_path: Path) -> None:
         )
         assert updated.json()["post_title"] == "Clinical Lead"
 
-    # A fresh app proves the record came from SQLite rather than process memory.
+        # A fresh app proves the record came from SQLite rather than process memory.
         with TestClient(app_for(tmp_path)) as client:
             assert client.get("/api/consultants").json() == [
                 {

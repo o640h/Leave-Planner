@@ -48,7 +48,7 @@
 }
 
 .applied-entitlement-summary strong {
-  color: var(--warning);
+  color: var(--accent);
   font-size: 15px;
   font-weight: 460;
 }
@@ -67,6 +67,116 @@
   color: var(--accent);
   font-size: 13px;
   font-weight: 440;
+}
+
+.entitlement-component-table {
+  display: grid;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+}
+
+.entitlement-component-table > div {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(120px, 0.7fr) minmax(120px, 0.7fr);
+  align-items: center;
+  min-height: 38px;
+  border-bottom: 1px solid var(--line);
+}
+
+.entitlement-component-table > div:last-child {
+  border-bottom: 0;
+}
+.entitlement-component-table span,
+.entitlement-component-table strong {
+  padding: 9px 13px;
+}
+.entitlement-component-table span + span {
+  border-left: 1px solid var(--line);
+}
+.entitlement-component-heading {
+  color: var(--quiet);
+  background: #151515;
+  font-size: 9px;
+}
+.entitlement-component-table strong {
+  font-size: 10px;
+  font-weight: 440;
+}
+.entitlement-component-table [role='cell']:last-child {
+  color: var(--accent);
+}
+.entitlement-component-total {
+  background: var(--surface);
+}
+.entitlement-component-total > span:nth-child(2) {
+  color: var(--quiet);
+  font-size: 9px;
+}
+.entitlement-component-total--emphasis {
+  box-shadow: inset 2px 0 var(--accent);
+}
+
+.entitlement-explanation {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.entitlement-explanation details {
+  border-bottom: 1px solid var(--line);
+}
+.entitlement-explanation summary {
+  padding: 13px 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 10px;
+}
+.entitlement-basis-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--line);
+}
+.entitlement-basis-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+}
+.entitlement-basis-grid > div + div {
+  border-left: 1px solid var(--line);
+}
+.entitlement-basis-grid span {
+  color: var(--quiet);
+  font-size: 8px;
+}
+.entitlement-basis-grid strong {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 420;
+  text-overflow: ellipsis;
+}
+.calculation-lines {
+  margin: 10px 0 14px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.calculation-lines li {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(260px, 1.2fr);
+  gap: 5px 18px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.calculation-lines strong {
+  font-size: 9px;
+  font-weight: 440;
+}
+.calculation-lines span {
+  font-size: 9px;
+}
+.calculation-lines small {
+  grid-column: 2;
+  color: var(--quiet);
+  font-size: 8px;
 }
 
 .entitlement-trace {
@@ -145,7 +255,7 @@
 }
 
 .entitlement-total-formula span {
-  color: var(--warning);
+  color: var(--accent);
   text-align: right;
 }
 
@@ -175,7 +285,7 @@
 .entitlement-calculation-basis dd {
   margin: 0;
   overflow: hidden;
-  color: var(--warning);
+  color: var(--muted);
   font-size: 10px;
   text-overflow: ellipsis;
 }
@@ -290,7 +400,7 @@
 }
 
 .entitlement-breakdown--emphasis {
-  box-shadow: inset 0 -1px var(--warning);
+  box-shadow: inset 0 -1px var(--accent);
 }
 
 .entitlement-breakdown h4 {
@@ -317,7 +427,7 @@
 
 .entitlement-breakdown dd {
   margin: 0;
-  color: var(--warning);
+  color: var(--accent);
   font-size: 13px;
 }
 

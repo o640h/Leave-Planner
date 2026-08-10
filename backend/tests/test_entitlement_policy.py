@@ -80,7 +80,8 @@ def test_resolution_explains_components_and_rule_choices() -> None:
     assert components == {
         EntitlementComponentKind.STATUTORY: Hours.from_value("13.552"),
         EntitlementComponentKind.LOCAL: Hours.from_value("13.552"),
-        EntitlementComponentKind.CORE: Hours.from_value("216.832"),
+        EntitlementComponentKind.CORE: Hours.from_value("203.28"),
+        EntitlementComponentKind.SENIORITY: Hours.from_value("13.552"),
     }
     assert len(result.trace) == 3
     assert result.trace[-1].context["proration_factor"] == "0.847"

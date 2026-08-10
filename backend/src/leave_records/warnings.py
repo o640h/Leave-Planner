@@ -15,7 +15,6 @@ from domain import (
 from .models import (
     ZERO_ACTIVITY_HOURS,
     ActivityHours,
-    AdjustmentKind,
     BalanceView,
     LeaveBooking,
     LeaveRecordsRequest,
@@ -217,15 +216,14 @@ def _carry_forward_warning(
 
     carry_forward = ZERO_ACTIVITY_HOURS
 
-    for adjustment in request.adjustments:
-        if adjustment.kind is AdjustmentKind.CARRY_FORWARD:
-            carry_forward += adjustment.hours
+    for item in request.carry_forward:
+        carry_forward += item.hours
 
     if carry_forward.is_zero:
         return None
 
     return CalculationWarning(
-        rule_id=RuleId("leave-adjustment.carry-forward"),
+        rule_id=RuleId("leave-balance.carry-forward"),
         message=(
             "Carry-forward is included in this leave year. "
             "Confirm that its approval and use comply with the "

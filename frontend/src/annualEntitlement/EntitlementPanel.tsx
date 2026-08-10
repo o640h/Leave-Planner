@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
+import { LeaveYearHolidayPanel } from '../publicHolidays/LeaveYearHolidayPanel'
 import { AppIcon } from '../system/AppIcon'
 import { formatDecimal } from '../system/decimal'
 import { applyEntitlement, getEntitlement, previewEntitlement, refreshEntitlement } from './api'
@@ -13,6 +14,13 @@ import type {
   EntitlementWorkspace,
 } from './types'
 import './annualEntitlement.css'
+
+const componentOrder: Record<string, number> = {
+  core: 0,
+  statutory: 1,
+  seniority: 2,
+  local: 3,
+}
 
 type EntitlementPanelProps = {
   consultantId: number
@@ -190,40 +198,70 @@ export function EntitlementPanel({
             </div>
             <div>
               <span>DCC</span>
-              <strong>{formatDecimal(application.entitlement.dcc_hours)}</strong>
+              <strong>{formatDecimal(application.entitlement.dcc_hours, 3)}</strong>
             </div>
             <div>
               <span>SPA</span>
-              <strong>{formatDecimal(application.entitlement.spa_hours)}</strong>
+              <strong>{formatDecimal(application.entitlement.spa_hours, 3)}</strong>
             </div>
             <div>
               <span>Total Hours</span>
-              <strong>{formatDecimal(application.entitlement.total_hours)}</strong>
+              <strong>{formatDecimal(application.entitlement.total_hours, 3)}</strong>
             </div>
           </div>
 
           {recommendation ? (
             <>
-              <div className="entitlement-components">
-                <div>
-                  <span>Base Annual Leave</span>
-                  <strong>{formatDecimal(recommendation.base_entitlement.total_hours)}</strong>
+              <div
+                className="entitlement-component-table"
+                role="table"
+                aria-label="Entitlement Components"
+              >
+                <div className="entitlement-component-heading" role="row">
+                  <span role="columnheader">Policy Component</span>
+                  <span role="columnheader">Full-Time Hours</span>
+                  <span role="columnheader">Calculated Hours</span>
                 </div>
-                <div>
-                  <span>Public Holidays</span>
-                  <strong>
-                    {formatDecimal(recommendation.public_holiday_entitlement.total_hours)}
-                  </strong>
+                {[...recommendation.components]
+                  .sort(
+                    (left, right) =>
+                      (componentOrder[left.kind] ?? 99) - (componentOrder[right.kind] ?? 99),
+                  )
+                  .map((component) => (
+                    <div role="row" key={`${component.label}-${component.kind}`}>
+                      <strong role="cell">{component.label}</strong>
+                      <span role="cell">{formatDecimal(component.full_time_hours, 3)}</span>
+                      <span role="cell">{formatDecimal(component.prorated_hours, 3)}</span>
+                    </div>
+                  ))}
+                <div className="entitlement-component-total" role="row">
+                  <strong role="cell">Base Annual Leave</strong>
+                  <span role="cell">PA and period pro-rata</span>
+                  <span role="cell">
+                    {formatDecimal(recommendation.base_entitlement.total_hours, 3)}
+                  </span>
                 </div>
-                <div>
-                  <span>Recommended</span>
-                  <strong>
-                    {formatDecimal(recommendation.recommended_entitlement.total_hours)}
-                  </strong>
+                <div className="entitlement-component-total" role="row">
+                  <strong role="cell">Public Holidays</strong>
+                  <span role="cell">Applicable dated holidays</span>
+                  <span role="cell">
+                    {formatDecimal(recommendation.public_holiday_entitlement.total_hours, 3)}
+                  </span>
+                </div>
+                <div
+                  className="entitlement-component-total entitlement-component-total--emphasis"
+                  role="row"
+                >
+                  <strong role="cell">Recommended Total</strong>
+                  <span role="cell">Base plus public holidays</span>
+                  <span role="cell">
+                    {formatDecimal(recommendation.recommended_entitlement.total_hours, 3)}
+                  </span>
                 </div>
               </div>
 
               <EntitlementCalculationDetails recommendation={recommendation} />
+              <LeaveYearHolidayPanel consultantId={consultantId} leaveYearId={leaveYearId} />
             </>
           ) : (
             <p className="manual-entitlement-note">

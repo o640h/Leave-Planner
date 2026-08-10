@@ -312,22 +312,43 @@
   font-weight: 480;
 }
 
-.field input {
+.field > input,
+.field > textarea,
+.field > select {
   width: 100%;
   min-height: 42px;
   padding: 9px 11px;
   border: 1px solid var(--line-strong);
-  border-radius: 0;
+  border-radius: var(--corner-control);
   color: var(--text);
   background: #111;
 }
 
-.field input:hover:not(:disabled) {
+.field > input:hover:not(:disabled),
+.field > textarea:hover:not(:disabled),
+.field > select:hover:not(:disabled) {
   border-color: var(--quiet);
 }
 
-.field input:focus {
+.field > input:focus,
+.field > textarea:focus,
+.field > select:focus {
   border-color: var(--focus-line);
+}
+
+.field > select {
+  padding-right: 38px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) 50%,
+    calc(100% - 12px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
 }
 
 .field small {
@@ -382,6 +403,7 @@
   padding: 28px;
   overflow-y: auto;
   border: 1px solid var(--line-strong);
+  border-radius: var(--corner-modal);
   background: #181818;
   box-shadow: var(--panel-shadow);
 }

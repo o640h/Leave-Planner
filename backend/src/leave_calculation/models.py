@@ -7,7 +7,7 @@ from datetime import date
 from decimal import Decimal
 
 from domain import ZERO_HOURS, DateRange, Hours, RuleId
-from entitlement_policy import EntitlementPolicyCatalogue
+from entitlement_policy import EntitlementComponentKind, EntitlementPolicyCatalogue
 from job_plans import JobPlanHistory
 
 
@@ -41,6 +41,18 @@ class LeaveCalculationRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class LeaveCalculationComponent:
+    """One policy component after PA and calendar-period proration."""
+
+    rule_id: RuleId
+    label: str
+    kind: EntitlementComponentKind
+    full_time_hours: Hours
+    annual_adjusted_hours: Hours
+    period_hours: Hours
+
+
+@dataclass(frozen=True, slots=True)
 class LeaveCalculationPeriod:
     """One period during which all entitlement inputs are constant."""
 
@@ -54,6 +66,7 @@ class LeaveCalculationPeriod:
     dcc_hours: Hours
     spa_hours: Hours
     other_hours: Hours
+    components: tuple[LeaveCalculationComponent, ...]
 
     def __post_init__(self) -> None:
         if self.completed_service_years < 0:

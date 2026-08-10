@@ -9,9 +9,8 @@ from domain import ActivityType, DateRange, LeaveState
 from job_plans import JobPlanHistory, Weekday
 from leave_records import (
     ActivityHours,
-    AdjustmentKind,
+    CarryForward,
     DailyLeaveOverride,
-    LeaveAdjustment,
     LeaveBooking,
     LeaveRecordsRequest,
 )
@@ -143,14 +142,12 @@ def workbook_reference_request() -> LeaveRecordsRequest:
             ),
         ),
     )
-    carry_forward = LeaveAdjustment(
-        adjustment_id="workbook-carry-forward",
+    carry_forward = CarryForward(
+        carry_forward_id="workbook-carry-forward",
         effective_date=WORKBOOK_LEAVE_YEAR.start,
-        kind=AdjustmentKind.CARRY_FORWARD,
         hours=ActivityHours(dcc=hours("41.25")),
-        reason="Workbook carry-forward",
     )
     return replace(
         base_request,
-        adjustments=(carry_forward,),
+        carry_forward=(carry_forward,),
     )

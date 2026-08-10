@@ -143,8 +143,7 @@ def test_job_plan_removal_preserves_entitlement_when_it_creates_a_gap(tmp_path: 
         original = client.put(entitlement_path, json={"mode": "calculated", **dates}).json()
 
         plan_path = (
-            f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
-            f"/job-plans/{job_plan_id}"
+            f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/job-plans/{job_plan_id}"
         )
         impact = client.get(f"{plan_path}/removal-impact").json()
         assert any("will not cover" in item for item in impact["consequences"])
@@ -153,4 +152,3 @@ def test_job_plan_removal_preserves_entitlement_when_it_creates_a_gap(tmp_path: 
         assert removed.status_code == 200
         assert removed.json()["entitlement_status"] == "needs_attention"
         assert client.get(entitlement_path).json()["application"] == original["application"]
-

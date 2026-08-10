@@ -169,21 +169,30 @@ def removal_impact(
     from job_plans.persistence import JobPlanRecord
 
     leave_year = get_leave_year(session, consultant_id, leave_year_id)
-    job_plan_count = session.scalar(
-        select(func.count())
-        .select_from(JobPlanRecord)
-        .where(JobPlanRecord.leave_year_id == leave_year.id)
-    ) or 0
-    recommendation_count = session.scalar(
-        select(func.count())
-        .select_from(EntitlementRecommendationRecord)
-        .where(EntitlementRecommendationRecord.leave_year_id == leave_year.id)
-    ) or 0
-    application_count = session.scalar(
-        select(func.count())
-        .select_from(AppliedEntitlementRecord)
-        .where(AppliedEntitlementRecord.leave_year_id == leave_year.id)
-    ) or 0
+    job_plan_count = (
+        session.scalar(
+            select(func.count())
+            .select_from(JobPlanRecord)
+            .where(JobPlanRecord.leave_year_id == leave_year.id)
+        )
+        or 0
+    )
+    recommendation_count = (
+        session.scalar(
+            select(func.count())
+            .select_from(EntitlementRecommendationRecord)
+            .where(EntitlementRecommendationRecord.leave_year_id == leave_year.id)
+        )
+        or 0
+    )
+    application_count = (
+        session.scalar(
+            select(func.count())
+            .select_from(AppliedEntitlementRecord)
+            .where(AppliedEntitlementRecord.leave_year_id == leave_year.id)
+        )
+        or 0
+    )
 
     return RemovalImpact(
         resource_name=f"{leave_year.start_date:%d %b %Y} - {leave_year.end_date:%d %b %Y}",

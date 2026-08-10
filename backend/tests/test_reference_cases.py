@@ -40,7 +40,7 @@ def test_workbook_reference_case_reproduces_all_golden_totals() -> None:
     assert _three_places(actual.opening_entitlement.total) == Decimal("291.368")
     assert _three_places(actual.opening_entitlement.dcc) == Decimal("203.304")
     assert _three_places(actual.opening_entitlement.spa) == Decimal("88.064")
-    assert actual.adjustments == ActivityHours(dcc=Hours.from_value("41.25"))
+    assert actual.carry_forward == ActivityHours(dcc=Hours.from_value("41.25"))
     assert actual.booking_deductions == ActivityHours(
         dcc=Hours.from_value("213.5"),
         spa=Hours.from_value("17"),
@@ -52,7 +52,7 @@ def test_workbook_reference_case_reproduces_all_golden_totals() -> None:
     assert _three_places(actual.remaining.dcc) == Decimal("15.054")
     assert _three_places(actual.remaining.spa) == Decimal("70.064")
     assert tuple(str(warning.rule_id) for warning in calculated.warnings) == (
-        "leave-adjustment.carry-forward",
+        "leave-balance.carry-forward",
     )
 
 
@@ -90,7 +90,7 @@ def test_ltft_case_keeps_uneven_days_carry_and_worked_holiday() -> None:
         spa=Hours.from_value("46.800"),
     )
     assert tuple(str(warning.rule_id) for warning in calculated.warnings) == (
-        "leave-adjustment.carry-forward",
+        "leave-balance.carry-forward",
     )
 
 

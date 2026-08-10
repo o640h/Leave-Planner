@@ -61,19 +61,30 @@ def archive_impact(session: Session, consultant_id: int) -> RemovalImpact:
 
     consultant = get_consultant(session, consultant_id)
     leave_year_ids = select(LeaveYear.id).where(LeaveYear.consultant_id == consultant_id)
-    leave_year_count = session.scalar(
-        select(func.count()).select_from(LeaveYear).where(LeaveYear.consultant_id == consultant_id)
-    ) or 0
-    job_plan_count = session.scalar(
-        select(func.count())
-        .select_from(JobPlanRecord)
-        .where(JobPlanRecord.leave_year_id.in_(leave_year_ids))
-    ) or 0
-    application_count = session.scalar(
-        select(func.count())
-        .select_from(AppliedEntitlementRecord)
-        .where(AppliedEntitlementRecord.leave_year_id.in_(leave_year_ids))
-    ) or 0
+    leave_year_count = (
+        session.scalar(
+            select(func.count())
+            .select_from(LeaveYear)
+            .where(LeaveYear.consultant_id == consultant_id)
+        )
+        or 0
+    )
+    job_plan_count = (
+        session.scalar(
+            select(func.count())
+            .select_from(JobPlanRecord)
+            .where(JobPlanRecord.leave_year_id.in_(leave_year_ids))
+        )
+        or 0
+    )
+    application_count = (
+        session.scalar(
+            select(func.count())
+            .select_from(AppliedEntitlementRecord)
+            .where(AppliedEntitlementRecord.leave_year_id.in_(leave_year_ids))
+        )
+        or 0
+    )
 
     return RemovalImpact(
         resource_name=consultant.name,
@@ -109,14 +120,15 @@ def archive_consultant(
             message="Enter the consultant's full name exactly to confirm archiving.",
         )
 
-    consultant.archived_at = datetime.now(UTC).replace(tzinfo=None)
+    archived_at = datetime.now(UTC).replace(tzinfo=None)
+    consultant.archived_at = archived_at
     record_audit_event(
         session,
         consultant_id=consultant.id,
         entity_type="consultant",
         entity_id=consultant.id,
         action="archived",
-        details={"name": consultant.name, "archived_at": consultant.archived_at.isoformat()},
+        details={"name": consultant.name, "archived_at": archived_at.isoformat()},
     )
     session.flush()
     return RemovalResult(message=f"{consultant.name} was archived.")

@@ -13,8 +13,8 @@ The workbook does the same broad job on its `Master` sheet:
 - carry-forward is added separately; and
 - leave taken is subtracted from the resulting balance.
 
-This slice covers the opening annual entitlement only. Carry-forward and other adjustments remain
-separate records and are added in the next slice.
+Carry-forward remains a separate opening-balance value beside the applied entitlement.
+They affect the derived opening balance without rewriting the policy recommendation.
 
 ## The three sets of values
 
@@ -125,8 +125,9 @@ can compare the familiar accrued boxes without confusing them with the underlyin
 2. The frontend reads the entitlement workspace from the API.
 3. For a calculated mode, the service loads the leave year and its effective job plans, then calls
    the existing policy, partial-year, and public-holiday calculation functions.
-4. The API returns the base component, public-holiday component, total recommendation, rule versions,
-   source details, and a readable calculation trace.
+4. The API returns the named Basic Leave, Statutory Days, Hospital R&R and Seniority components,
+   the public-holiday component, total recommendation, rule versions, source details, and grouped
+   calculation explanations.
 5. The operator reviews the result and applies it unchanged, overrides it with a reason, or enters a
    manual value with a reason.
 6. The backend stores an immutable recommendation snapshot where one exists and stores the current
@@ -181,18 +182,16 @@ by a stored recommendation. This keeps historical explanations reproducible.
 
 ## Current boundary
 
-This slice uses the existing dated England and Wales holiday snapshot to calculate the holiday
-allowance. Persisted Trust corrections and worked/on-call treatments are part of the following
-public-holiday and adjustment slice. Until those are present, the recommendation explains the
-source it used and must not be treated as final policy sign-off.
+The calculation uses the persisted dated England and Wales calendar, active Trust corrections, and
+the selected qualifying-on-call treatments. The interface leads with workbook-relevant component and
+period totals; individual holiday occurrences and policy metadata sit in separate disclosures.
+These are still working rule interpretations and must not be treated as final policy sign-off.
 
 The following `Master`-sheet information is not yet displayed or maintained by the current vertical
 slices:
 
-- carry-forward and the applied total after carry-forward;
 - dated leave entries, weekday counts, leave used, and leave remaining;
 - annual leave calculated for each individual job-plan period and its calendar-day count;
-- persisted public-holiday corrections and worked/on-call treatment;
 - a separate job-plan review date, if the operator confirms this must remain distinct from the
   effective dates; and
 - the final combined consultant-year statement that brings all of those values together.

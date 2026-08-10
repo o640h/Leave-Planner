@@ -15,6 +15,8 @@ it('removes a hidden cycle anchor when editing a one-week plan', () => {
     spa_pas: '2.560',
     other_pas: '0',
     hours_per_pa: '4',
+    additional_dcc_hours: '3',
+    additional_spa_hours: '4',
     reconciliation_override_reason: null,
     days: [],
   }

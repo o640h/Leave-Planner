@@ -6,14 +6,18 @@
   --surface-raised: #191919;
   --control: #191919;
   --border-rgb: 255 255 255;
-  --line-opacity: 0.05;
-  --line-strong-opacity: 0.08;
+  --line-opacity: 0.03;
+  --line-strong-opacity: 0.02;
   --focus-rgb: 130 181 194;
   --focus-opacity: 0.38;
   --line: rgb(var(--border-rgb) / var(--line-opacity));
   --line-strong: rgb(var(--border-rgb) / var(--line-strong-opacity));
   --focus-line: rgb(var(--focus-rgb) / var(--focus-opacity));
   --panel-shadow: 0 14px 34px rgba(0, 0, 0, 0.3), inset 0 1px rgb(255 255 255 / 0.012);
+  --corner-frame: 10px;
+  --corner-control: 1px;
+  --corner-panel: 5px;
+  --corner-modal: 10px;
   --text: #dedbd7;
   --quiet: #74736f;
   --muted: #9c9a95;
@@ -152,6 +156,7 @@ p {
   height: min(900px, 100dvh);
   overflow: hidden;
   border: 1px solid var(--line-strong);
+  border-radius: var(--corner-frame);
   background: var(--canvas);
   box-shadow: 0 30px 90px rgb(0 0 0 / 0.42);
 }
@@ -296,7 +301,7 @@ p {
   min-height: 36px;
   padding: 8px 13px;
   border: 1px solid var(--line-strong);
-  border-radius: 0;
+  border-radius: var(--corner-control);
   background: transparent;
   font: 430 10px/1 var(--ui);
   letter-spacing: 0.01em;
@@ -404,6 +409,7 @@ p {
   min-height: 42px;
   overflow: hidden;
   border: 1px solid var(--line-strong);
+  border-radius: var(--corner-control);
   background: #111;
 }
 
@@ -482,6 +488,67 @@ p {
   color: var(--accent);
   background: transparent;
   font: 450 11px/1.4 var(--ui);
+}
+
+.date-input {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  min-height: 42px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--corner-control);
+  background: #111;
+}
+
+.date-input-placeholder {
+  position: absolute;
+  z-index: 1;
+  top: 1px;
+  right: 41px;
+  bottom: 1px;
+  left: 1px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  pointer-events: none;
+  color: var(--muted);
+  background: #111;
+}
+
+.date-input:hover:not(:has(input:disabled)) {
+  border-color: var(--quiet);
+}
+.date-input:focus-within {
+  border-color: var(--focus-line);
+}
+.date-input input {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  background: transparent;
+}
+.date-input input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+.date-input button {
+  display: grid;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+  background: #181818;
+}
+.date-input button:hover:not(:disabled) {
+  color: var(--accent);
+  background: #202020;
+}
+.date-input .app-icon {
+  width: 16px;
+  height: 16px;
 }
 
 @media (max-width: 1440px), (max-height: 900px) {

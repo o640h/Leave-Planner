@@ -7,9 +7,11 @@ from sqlalchemy import engine_from_config, pool
 
 from annual_entitlement.persistence import AppliedEntitlementRecord  # noqa: F401
 from audit import AuditEvent  # noqa: F401
+from carry_forward.persistence import CarryForwardRecord  # noqa: F401
 from consultants.models import Consultant
 from job_plans.persistence import JobPlanRecord  # noqa: F401
 from leave_years.models import LeaveYear  # noqa: F401
+from public_holidays.persistence import HolidayCalendarVersionRecord  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

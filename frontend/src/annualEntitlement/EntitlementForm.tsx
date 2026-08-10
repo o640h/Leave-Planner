@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
+import { DateInput } from '../system/DateInput'
 import { NumberInput } from '../system/NumberInput'
 import { formatDecimal } from '../system/decimal'
 import type {
@@ -235,26 +236,26 @@ export function EntitlementForm({
           <div className="entitlement-date-fields">
             <div className="field">
               <label htmlFor="appointment-date">Appointment Date</label>
-              <input
+              <DateInput
                 id="appointment-date"
-                type="date"
+                label="Appointment Date"
                 value={appointmentDate}
                 disabled={disabled}
-                aria-required="true"
-                onChange={(event) => invalidatePreview(setAppointmentDate, event.target.value)}
+                required
+                onChange={(value) => invalidatePreview(setAppointmentDate, value)}
               />
               <small>Selects the consultant contract-era entitlement rule.</small>
             </div>
 
             <div className="field">
               <label htmlFor="service-start-date">Reckonable Service Start</label>
-              <input
+              <DateInput
                 id="service-start-date"
-                type="date"
+                label="Reckonable Service Start"
                 value={serviceStartDate}
                 disabled={disabled}
-                aria-required="true"
-                onChange={(event) => invalidatePreview(setServiceStartDate, event.target.value)}
+                required
+                onChange={(value) => invalidatePreview(setServiceStartDate, value)}
               />
               <small>Determines when the seven-year service tier is reached.</small>
             </div>

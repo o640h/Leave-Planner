@@ -14,33 +14,33 @@ from .policy import EntitlementPolicyCatalogue, EntitlementPolicyVersion
 
 STATUTORY_DAYS = EntitlementComponent(
     rule_id=RuleId("entitlement.stat-days"),
-    label="Two extra statutory days",
+    label="Statutory Days",
     kind=EntitlementComponentKind.STATUTORY,
     full_time_hours=Hours.from_value("16"),
 )
 LOCALLY_AGREED_DAYS = EntitlementComponent(
     rule_id=RuleId("entitlement.local-days"),
-    label="Two locally agreed days",
+    label="Hospital R&R",
     kind=EntitlementComponentKind.LOCAL,
     full_time_hours=Hours.from_value("16"),
 )
 CORE_30_DAYS = EntitlementComponent(
     rule_id=RuleId("entitlement.core"),
-    label="Core annual leave: 30 days",
+    label="Basic Leave",
     kind=EntitlementComponentKind.CORE,
     full_time_hours=Hours.from_value("240"),
 )
-CORE_31_DAYS = EntitlementComponent(
-    rule_id=RuleId("entitlement.core"),
-    label="Core annual leave: 31 days",
-    kind=EntitlementComponentKind.CORE,
-    full_time_hours=Hours.from_value("248"),
+SENIORITY_ONE_DAY = EntitlementComponent(
+    rule_id=RuleId("entitlement.seniority"),
+    label="Seniority",
+    kind=EntitlementComponentKind.SENIORITY,
+    full_time_hours=Hours.from_value("8"),
 )
-CORE_32_DAYS = EntitlementComponent(
-    rule_id=RuleId("entitlement.core"),
-    label="Core annual leave: 32 days",
-    kind=EntitlementComponentKind.CORE,
-    full_time_hours=Hours.from_value("256"),
+SENIORITY_TWO_DAYS = EntitlementComponent(
+    rule_id=RuleId("entitlement.seniority"),
+    label="Seniority",
+    kind=EntitlementComponentKind.SENIORITY,
+    full_time_hours=Hours.from_value("16"),
 )
 
 
@@ -83,7 +83,7 @@ HR78_V3_CONSULTANT_POLICY = EntitlementPolicyVersion(
                 ServiceTier(
                     rule_id=RuleId("entitlement.tier.2004-2005.7-plus"),
                     minimum_completed_years=7,
-                    components=(CORE_31_DAYS,),
+                    components=(CORE_30_DAYS, SENIORITY_ONE_DAY),
                 ),
             ),
         ),
@@ -101,7 +101,7 @@ HR78_V3_CONSULTANT_POLICY = EntitlementPolicyVersion(
                 ServiceTier(
                     rule_id=RuleId("entitlement.tier.from-2005.7-plus"),
                     minimum_completed_years=7,
-                    components=(CORE_32_DAYS,),
+                    components=(CORE_30_DAYS, SENIORITY_TWO_DAYS),
                 ),
             ),
         ),

@@ -48,15 +48,15 @@ def test_hours_reject_non_finite_decimals(non_finite: Decimal) -> None:
         Hours(non_finite)
 
 
-def test_hours_support_exact_proration_ratios_and_signed_adjustments() -> None:
-    """Signed values are needed for corrections; scaling supports LTFT work."""
+def test_hours_support_exact_proration_ratios_and_signed_deltas() -> None:
+    """Signed values support balance maths; scaling supports LTFT work."""
     entitlement = Hours.from_value("40")
-    correction = Hours.from_value("-1.25")
+    delta = Hours.from_value("-1.25")
 
     assert entitlement.scale("0.6") == Hours.from_value("24.0")
     assert Hours.from_value("6").ratio_of(entitlement) == Decimal("0.15")
-    assert entitlement + correction == Hours.from_value("38.75")
-    assert -correction == Hours.from_value("1.25")
+    assert entitlement + delta == Hours.from_value("38.75")
+    assert -delta == Hours.from_value("1.25")
     assert Hours.from_value("0") == ZERO_HOURS
 
 

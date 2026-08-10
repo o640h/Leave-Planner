@@ -84,16 +84,16 @@ def _balance_view(
     *,
     basis: BalanceBasis,
     opening_entitlement: ActivityHours,
-    adjustments: ActivityHours,
+    carry_forward: ActivityHours,
     public_holiday_deductions: ActivityHours,
     booking_deductions: ActivityHours,
 ) -> BalanceView:
-    remaining = opening_entitlement + adjustments - public_holiday_deductions - booking_deductions
+    remaining = opening_entitlement + carry_forward - public_holiday_deductions - booking_deductions
 
     return BalanceView(
         basis=basis,
         opening_entitlement=opening_entitlement,
-        adjustments=adjustments,
+        carry_forward=carry_forward,
         public_holiday_deductions=(public_holiday_deductions),
         booking_deductions=booking_deductions,
         remaining=remaining,
@@ -113,14 +113,14 @@ def calculate_leave_records(
             request.job_plans,
         )
     )
-    adjustments = _sum_hours(adjustment.hours for adjustment in request.adjustments)
+    carry_forward = _sum_hours(item.hours for item in request.carry_forward)
     opening = _opening_entitlement(request)
     holiday_deductions = _public_holiday_deductions(request)
 
     projected = _balance_view(
         basis=BalanceBasis.PROJECTED,
         opening_entitlement=opening,
-        adjustments=adjustments,
+        carry_forward=carry_forward,
         public_holiday_deductions=holiday_deductions,
         booking_deductions=_booking_deductions(
             days,
@@ -130,7 +130,7 @@ def calculate_leave_records(
     confirmed = _balance_view(
         basis=BalanceBasis.CONFIRMED,
         opening_entitlement=opening,
-        adjustments=adjustments,
+        carry_forward=carry_forward,
         public_holiday_deductions=holiday_deductions,
         booking_deductions=_booking_deductions(
             days,
@@ -140,7 +140,7 @@ def calculate_leave_records(
     actual = _balance_view(
         basis=BalanceBasis.ACTUAL,
         opening_entitlement=opening,
-        adjustments=adjustments,
+        carry_forward=carry_forward,
         public_holiday_deductions=holiday_deductions,
         booking_deductions=_booking_deductions(
             days,
@@ -150,7 +150,7 @@ def calculate_leave_records(
 
     result = LeaveRecordsResult(
         days=days,
-        adjustments=request.adjustments,
+        carry_forward=request.carry_forward,
         projected=projected,
         confirmed=confirmed,
         actual=actual,
@@ -175,21 +175,20 @@ def calculate_leave_records(
         for day in days
     )
 
-    adjustment_trace = tuple(
+    carry_forward_trace = tuple(
         CalculationStep(
-            rule_id=RuleId(f"leave-adjustment.{adjustment.kind.value}"),
-            description=("Applied an operator-entered leave adjustment"),
-            amount=adjustment.hours.total,
-            effective_date=adjustment.effective_date,
+            rule_id=RuleId("leave-balance.carry-forward"),
+            description="Added approved carry-forward to the opening balance",
+            amount=item.hours.total,
+            effective_date=item.effective_date,
             context={
-                "adjustment_id": (adjustment.adjustment_id),
-                "reason": adjustment.reason,
-                "dcc_hours": str(adjustment.hours.dcc),
-                "spa_hours": str(adjustment.hours.spa),
-                "other_hours": str(adjustment.hours.other),
+                "carry_forward_id": item.carry_forward_id,
+                "dcc_hours": str(item.hours.dcc),
+                "spa_hours": str(item.hours.spa),
+                "other_hours": str(item.hours.other),
             },
         )
-        for adjustment in request.adjustments
+        for item in request.carry_forward
     )
 
     balance_trace = tuple(
@@ -218,5 +217,5 @@ def calculate_leave_records(
             request,
             result,
         ),
-        trace=(day_trace + adjustment_trace + balance_trace),
+        trace=(day_trace + carry_forward_trace + balance_trace),
     )

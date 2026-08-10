@@ -1,4 +1,4 @@
-"""Leave bookings, daily deductions, adjustments, and lifecycle balances."""
+"""Leave bookings, daily deductions, carry-forward, and lifecycle balances."""
 
 from dataclasses import replace
 from datetime import date
@@ -9,9 +9,8 @@ from reference_cases import full_time_request, workbook_reference_request
 from domain import DateRange, Hours, LeaveState
 from leave_records import (
     ActivityHours,
-    AdjustmentKind,
+    CarryForward,
     DailyLeaveOverride,
-    LeaveAdjustment,
     LeaveBooking,
     calculate_leave_records,
     expand_booking,
@@ -65,44 +64,28 @@ def test_leave_states_feed_the_expected_balance_views(
     assert result.actual.booking_deductions.dcc == hours(actual)
 
 
-def test_adjustments_change_all_balance_views() -> None:
+def test_carry_forward_changes_all_balance_views() -> None:
     request = full_time_request()
-    adjustments = (
-        LeaveAdjustment(
+    carry_forward = (
+        CarryForward(
             "carry",
             request.leave_year.start,
-            AdjustmentKind.CARRY_FORWARD,
             ActivityHours(dcc=hours("8")),
-            "Approved carry-forward",
-        ),
-        LeaveAdjustment(
-            "sold",
-            date(2026, 2, 1),
-            AdjustmentKind.SOLD_LEAVE,
-            ActivityHours(dcc=hours("-4")),
-            "Leave sold",
-        ),
-        LeaveAdjustment(
-            "correction",
-            date(2026, 3, 1),
-            AdjustmentKind.CORRECTION,
-            ActivityHours(spa=hours("2")),
-            "SPA correction",
         ),
     )
-    result = calculate_leave_records(replace(request, adjustments=adjustments)).value
-    expected = ActivityHours(dcc=hours("4"), spa=hours("2"))
-    assert result.projected.adjustments == expected
-    assert result.confirmed.adjustments == expected
-    assert result.actual.adjustments == expected
+    result = calculate_leave_records(replace(request, carry_forward=carry_forward)).value
+    expected = ActivityHours(dcc=hours("8"))
+    assert result.projected.carry_forward == expected
+    assert result.confirmed.carry_forward == expected
+    assert result.actual.carry_forward == expected
 
 
-def test_trace_explains_bookings_adjustments_and_balances() -> None:
+def test_trace_explains_bookings_carry_forward_and_balances() -> None:
     result = calculate_leave_records(workbook_reference_request())
     rule_ids = {step.rule_id.value for step in result.trace}
     assert {
         "leave-records.daily-deduction",
-        "leave-adjustment.carry_forward",
+        "leave-balance.carry-forward",
         "leave-balance.projected",
         "leave-balance.confirmed",
         "leave-balance.actual",
@@ -136,31 +119,19 @@ def test_request_rejects_duplicate_ids_and_out_of_year_records() -> None:
     with pytest.raises(ValueError, match="unique"):
         replace(request, bookings=(booking, booking))
 
-    adjustment = LeaveAdjustment(
+    carry_forward = CarryForward(
         "outside",
         date(2027, 1, 1),
-        AdjustmentKind.CORRECTION,
         ActivityHours(dcc=hours("1")),
-        "Outside year",
     )
     with pytest.raises(ValueError, match="leave year"):
-        replace(request, adjustments=(adjustment,))
+        replace(request, carry_forward=(carry_forward,))
 
 
-def test_adjustment_sign_rules_match_the_operator_action() -> None:
+def test_carry_forward_cannot_remove_hours() -> None:
     with pytest.raises(ValueError, match="negative"):
-        LeaveAdjustment(
+        CarryForward(
             "carry",
             date(2026, 1, 1),
-            AdjustmentKind.CARRY_FORWARD,
             ActivityHours(dcc=hours("-1")),
-            "Invalid carry-forward",
-        )
-    with pytest.raises(ValueError, match="negative"):
-        LeaveAdjustment(
-            "sold",
-            date(2026, 1, 1),
-            AdjustmentKind.SOLD_LEAVE,
-            ActivityHours(dcc=hours("1")),
-            "Invalid sale",
         )

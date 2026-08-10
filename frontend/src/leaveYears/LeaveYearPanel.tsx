@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
+import { CarryForwardControl } from '../carryForward/CarryForwardControl'
 import { JobPlanPanel } from '../jobPlans/JobPlanPanel'
 import { AppIcon } from '../system/AppIcon'
 import {
@@ -312,24 +313,27 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                   </div>
                 </div>
 
-                <dl>
-                  <div>
-                    <dt>Employment From</dt>
-                    <dd>
-                      {selectedLeaveYear.employment_start
-                        ? formatDate(selectedLeaveYear.employment_start)
-                        : 'Covers Full Leave Year'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Employment Until</dt>
-                    <dd>
-                      {selectedLeaveYear.employment_end
-                        ? formatDate(selectedLeaveYear.employment_end)
-                        : 'Continues Beyond Leave Year'}
-                    </dd>
-                  </div>
-                </dl>
+                {selectedLeaveYear.employment_start || selectedLeaveYear.employment_end ? (
+                  <dl>
+                    {selectedLeaveYear.employment_start ? (
+                      <div>
+                        <dt>Employment From</dt>
+                        <dd>{formatDate(selectedLeaveYear.employment_start)}</dd>
+                      </div>
+                    ) : null}
+                    {selectedLeaveYear.employment_end ? (
+                      <div>
+                        <dt>Employment Until</dt>
+                        <dd>{formatDate(selectedLeaveYear.employment_end)}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                ) : null}
+
+                <CarryForwardControl
+                  consultantId={consultantId}
+                  leaveYearId={selectedLeaveYear.id}
+                />
               </section>
 
               <JobPlanPanel

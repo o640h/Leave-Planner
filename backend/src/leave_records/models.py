@@ -18,14 +18,6 @@ from job_plans import JobPlanHistory
 from public_holidays import PublicHolidayResult
 
 
-class AdjustmentKind(StrEnum):
-    """Supported changes to available leave."""
-
-    CARRY_FORWARD = "carry_forward"
-    SOLD_LEAVE = "sold_leave"
-    CORRECTION = "correction"
-
-
 class BalanceBasis(StrEnum):
     """The booking states represented by a balance."""
 
@@ -155,30 +147,22 @@ class LeaveDay:
 
 
 @dataclass(frozen=True, slots=True)
-class LeaveAdjustment:
-    """An explicit change to available leave hours."""
+class CarryForward:
+    """Approved carry-forward added to the opening balance."""
 
-    adjustment_id: str
+    carry_forward_id: str
     effective_date: date
-    kind: AdjustmentKind
     hours: ActivityHours
-    reason: str
 
     def __post_init__(self) -> None:
-        if not self.adjustment_id.strip():
-            raise ValueError("Adjustment ID cannot be empty")
+        if not self.carry_forward_id.strip():
+            raise ValueError("Carry-forward ID cannot be empty")
 
         if self.hours.is_zero:
-            raise ValueError("Adjustment hours cannot all be zero")
+            raise ValueError("Carry-forward hours cannot all be zero")
 
-        if not self.reason.strip():
-            raise ValueError("Adjustment reason cannot be empty")
-
-        if self.kind is AdjustmentKind.CARRY_FORWARD and self.hours.has_negative_value:
+        if self.hours.has_negative_value:
             raise ValueError("Carry-forward hours cannot be negative")
-
-        if self.kind is AdjustmentKind.SOLD_LEAVE and self.hours.has_positive_value:
-            raise ValueError("Sold-leave hours must be negative")
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,7 +171,7 @@ class BalanceView:
 
     basis: BalanceBasis
     opening_entitlement: ActivityHours
-    adjustments: ActivityHours
+    carry_forward: ActivityHours
     public_holiday_deductions: ActivityHours
     booking_deductions: ActivityHours
     remaining: ActivityHours
@@ -202,7 +186,7 @@ class LeaveRecordsRequest:
     public_holidays: PublicHolidayResult
     job_plans: JobPlanHistory
     bookings: tuple[LeaveBooking, ...] = ()
-    adjustments: tuple[LeaveAdjustment, ...] = ()
+    carry_forward: tuple[CarryForward, ...] = ()
 
     def __post_init__(self) -> None:
         booking_ids = tuple(booking.booking_id for booking in self.bookings)
@@ -215,12 +199,12 @@ class LeaveRecordsRequest:
         ):
             raise ValueError("Every booking must fall inside the leave year")
 
-        adjustment_ids = tuple(adjustment.adjustment_id for adjustment in self.adjustments)
-        if len(adjustment_ids) != len(set(adjustment_ids)):
-            raise ValueError("Adjustment IDs must be unique")
+        carry_forward_ids = tuple(item.carry_forward_id for item in self.carry_forward)
+        if len(carry_forward_ids) != len(set(carry_forward_ids)):
+            raise ValueError("Carry-forward IDs must be unique")
 
-        if any(adjustment.effective_date not in self.leave_year for adjustment in self.adjustments):
-            raise ValueError("Every adjustment must fall inside the leave year")
+        if any(item.effective_date not in self.leave_year for item in self.carry_forward):
+            raise ValueError("Carry-forward must fall inside the leave year")
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,7 +212,7 @@ class LeaveRecordsResult:
     """Expanded leave days and all three balance views."""
 
     days: tuple[LeaveDay, ...]
-    adjustments: tuple[LeaveAdjustment, ...]
+    carry_forward: tuple[CarryForward, ...]
     projected: BalanceView
     confirmed: BalanceView
     actual: BalanceView

@@ -1,0 +1,121 @@
+.settings-page {
+  height: 100%;
+  overflow: auto;
+  padding: 32px 38px;
+}
+.settings-heading,
+.settings-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.settings-heading {
+  margin-bottom: 24px;
+}
+.settings-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 420;
+}
+.settings-panel {
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--corner-panel);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--panel-shadow);
+}
+.settings-panel > header {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.settings-panel h3 {
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 440;
+}
+.settings-panel p {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 10px;
+}
+.holiday-year-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+.holiday-year-groups > div {
+  display: grid;
+  gap: 4px;
+  padding: 16px 20px;
+  border-right: 1px solid var(--line);
+}
+.holiday-year-groups span,
+.correction-list span {
+  color: var(--quiet);
+  font-size: 9px;
+}
+.correction-list,
+.holiday-disclosure ul {
+  margin: 0;
+  padding: 0 20px;
+  list-style: none;
+}
+.correction-list li,
+.holiday-disclosure li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.correction-list li > div,
+.holiday-disclosure li > div {
+  display: grid;
+  gap: 3px;
+}
+.settings-empty {
+  padding: 20px;
+}
+.dashboard-panel-header > div > span {
+  color: var(--quiet);
+  font-size: 9px;
+}
+.entitlement-holidays {
+  border-top: 1px solid var(--line);
+}
+.holiday-disclosure-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 28px;
+  padding: 2px 0 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+}
+.holiday-disclosure-summary strong {
+  margin-left: 6px;
+  color: var(--accent);
+  font-weight: 450;
+}
+.holiday-disclosure-summary small {
+  margin-left: auto;
+  color: var(--quiet);
+  font-size: 9px;
+}
+.holiday-disclosure summary {
+  padding: 13px 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 10px;
+}
+.entitlement-holidays .holiday-disclosure ul {
+  padding: 0;
+}
+.holiday-disclosure li > span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 9px;
+}

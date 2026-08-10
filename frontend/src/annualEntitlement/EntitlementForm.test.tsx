@@ -36,6 +36,7 @@ const recommendation: EntitlementRecommendation = {
     other_hours: '0',
     total_hours: '291.368',
   },
+  components: [],
   trace: [],
 }
 

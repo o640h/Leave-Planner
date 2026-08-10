@@ -1,0 +1,81 @@
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { App } from '../App'
+import { CarryForwardControl } from '../carryForward/CarryForwardControl'
+
+function json(body: unknown) {
+  return { ok: true, json: () => Promise.resolve(body) }
+}
+
+describe('holiday and carry-forward workflows', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('opens the shared public-holiday settings from primary navigation', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const path = input.toString()
+        if (path === '/api/health') return Promise.resolve(json({ status: 'ok' }))
+        if (path === '/api/consultants') return Promise.resolve(json([]))
+        if (path === '/api/settings/public-holidays') {
+          return Promise.resolve(
+            json({
+              source: 'static_snapshot',
+              source_date: '2026-08-06',
+              holidays: [{ holiday_date: '2026-12-25', name: 'Christmas Day', notes: '' }],
+              corrections: [],
+            }),
+          )
+        }
+        throw new Error(`Unexpected request: ${path}`)
+      }),
+    )
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(await screen.findByRole('heading', { name: 'Public Holidays' })).toBeInTheDocument()
+    expect(screen.getByText('2026')).toBeInTheDocument()
+    expect(screen.getByText('1 date')).toBeInTheDocument()
+  })
+
+  it('adds workbook carry-forward and shows its calculated total', async () => {
+    const user = userEvent.setup()
+    let saved = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, options: RequestInit = {}) => {
+        if ((options.method ?? 'GET') === 'GET') {
+          return json({
+            id: null,
+            leave_year_id: 1,
+            hours: '0',
+            created_at: null,
+          })
+        }
+        saved = true
+        return json({
+          id: 1,
+          leave_year_id: 1,
+          hours: '41.25',
+          created_at: '2026-08-10T12:00:00',
+        })
+      }),
+    )
+
+    render(<CarryForwardControl consultantId={1} leaveYearId={1} />)
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    const dialog = screen.getByRole('dialog', { name: 'Carry Forward' })
+    const carryForward = within(dialog).getByLabelText('Total Hours')
+    await user.clear(carryForward)
+    await user.type(carryForward, '41.25')
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+    expect(saved).toBe(true)
+    expect(await screen.findByText('41.25')).toBeInTheDocument()
+    expect(screen.getByText('hours')).toBeInTheDocument()
+    expect(screen.queryByText('Added to the DCC opening balance.')).not.toBeInTheDocument()
+  })
+})

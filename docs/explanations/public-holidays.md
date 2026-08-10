@@ -45,7 +45,7 @@ A holiday on a normal non-working day therefore has a zero deduction. A holiday 
 can deduct more than a holiday on a shorter Wednesday. This is the same distinction shown by the
 workbook: overall PAs calculate entitlement, while visible weekday hours calculate usage.
 
-If an approved worked/on-call treatment retains the leave, the deduction is zero. The eight-hour
+If an approved qualifying-on-call treatment retains the leave, the deduction is zero. The eight-hour
 prorated entitlement is still added.
 
 ## Workbook reconciliation
@@ -81,13 +81,12 @@ no visible activity and deduct zero. Easter Monday and the spring holiday each d
 0.5 SPA`. The early-May holiday is marked on-call and retains its leave, so it also deducts zero.
 The resulting public-holiday deduction is `16 DCC + 1 SPA = 17` hours.
 
-## Worked and on-call treatment
+## On-call treatment
 
-The operator selects one of three treatments:
+The operator selects one of two treatments:
 
 - `STANDARD` uses the normal weekday deduction;
-- `WORKED_ON_SITE` retains the normal deduction; or
-- `QUALIFYING_ON_CALL` retains the normal deduction.
+- `QUALIFYING_ON_CALL` retains the equivalent leave by making the deduction zero.
 
 A retained treatment requires an explanatory note. `worked_date` can record the actual attendance
 date when it differs from the officially designated holiday date.
@@ -117,9 +116,8 @@ treatment record. This mirrors the policy examples without adding shift or rota 
 therefore calculate leave without internet access.
 
 The optional synchronisation reads only the `england-and-wales` division from the fixed GOV.UK
-JSON endpoint. It validates the response and limits its size. The downloader does not overwrite
-saved data itself; later persistence/service code will store a successfully validated calendar and
-retain the existing snapshot if synchronisation fails.
+JSON endpoint. It validates the response and limits its size. A successful response is stored as a
+new dated calendar version. If synchronisation fails, the saved calendar remains active.
 
 Manual corrections are stored separately from the base calendar. A correction can:
 
@@ -129,9 +127,13 @@ Manual corrections are stored separately from the base calendar. A correction ca
 Resolving a calendar applies those corrections to a copy, preserving the original source data for
 audit purposes.
 
-## Future integration
+## Where the operator controls it
 
-The public-holiday result currently exposes entitlement, DCC/SPA/Other allocation, standard
-deductions, treatments, and a calculation trace. Persistence and the frontend will later provide
-editing, caching, and audit history. The leave-ledger task will consume the calculated deductions;
-it must not reimplement public-holiday policy.
+The Settings page owns the shared England and Wales calendar, optional GOV.UK synchronisation, and
+Trust corrections. The consultant Overview shows applicable holidays and lets the operator record
+qualifying-on-call treatment with a note. The later Planning calendar will show
+the same persisted dates as context; it will not maintain a second holiday source.
+
+The leave ledger consumes these calculated deductions and must not reimplement public-holiday
+policy. Changing the shared calendar or a correction refreshes calculable entitlement
+recommendations while preserving manual and reasoned override values.

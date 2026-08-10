@@ -38,13 +38,14 @@ The annual-leave log separately records standard hours by weekday:
 These weekday values are used when a leave date is expanded into a daily deduction. For
 example, ordinary leave on Monday starts from 8 DCC hours and 0.5 SPA hours.
 
-The visible weekday values do not add up to the full contracted PA total. This is expected where
-some activity is delivered flexibly rather than assigned to a fixed day. HRS09 also says that
-flexibly delivered activity must be considered even when it is not visible on the timetable.
+The visible weekday values do not add up to the full weekly activity. In the supplied workbook,
+the visible rows total `20.5 DCC / 4 SPA`, then operator-entered flexible amounts of `3 DCC / 4 SPA`
+produce the displayed standard totals of `23.5 DCC / 8 SPA`. The application stores those flexible
+amounts explicitly instead of hiding them in a formula.
 
-The workbook's displayed standard totals contain unexplained hard-coded additions of `+3` DCC
-and `+4` SPA. Those additions are not encoded as policy. They remain a known workbook issue to
-reconcile during the golden-reference fixture work.
+Flexible hours contribute to the standard weekly totals, but are not assigned to a weekday. They
+therefore do not create daily leave deductions. Only the visible weekday grid is used when a leave
+date is booked. The operator remains responsible for entering the Trust-approved flexible amounts.
 
 ## Why weekday information is necessary
 
@@ -100,13 +101,15 @@ floating-point errors cannot accumulate in leave balances.
 The selected leave year contains a Job Plans section. **Add Job Plan** opens a focused editor with:
 
 - the effective period;
-- the overall Total, DCC, SPA, and Other PAs;
+- the overall DCC and SPA PAs, with Total PA calculated from them;
 - a standard Monday-to-Friday hours grid, with weekends available when needed;
+- additional flexible weekly DCC and SPA hours that are not tied to a weekday;
 - an optional multi-week pattern; and
 - an advanced Hours per PA field, which normally stays at four.
 
 **Preview Job Plan** runs the existing calculation model without writing to SQLite. It shows the
-allocated PA total, any difference from contracted PAs, and the average visible hours. A matching
+allocated PA total, any difference from contracted PAs, the average visible hours, and the complete
+standard weekly totals after flexible hours. A matching
 PA split can be saved directly. A mismatch remains possible, but the operator must record why it
 is being accepted. This follows the product rule that unusual policy situations should be visible
 and explained rather than silently corrected.

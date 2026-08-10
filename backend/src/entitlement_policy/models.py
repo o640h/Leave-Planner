@@ -14,6 +14,7 @@ class EntitlementComponentKind(StrEnum):
     """Categories used to explain an annual entitlement."""
 
     CORE = "core"
+    SENIORITY = "seniority"
     STATUTORY = "statutory"
     LOCAL = "local"
 

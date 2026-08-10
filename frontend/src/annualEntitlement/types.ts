@@ -25,11 +25,19 @@ export type EntitlementTraceStep = {
   context: Record<string, string>
 }
 
+export type EntitlementComponentSummary = {
+  label: string
+  kind: string
+  full_time_hours: string
+  prorated_hours: string
+}
+
 export type EntitlementRecommendation = {
   inputs: EntitlementInputs
   base_entitlement: EntitlementAmounts
   public_holiday_entitlement: EntitlementAmounts
   recommended_entitlement: EntitlementAmounts
+  components: EntitlementComponentSummary[]
   trace: EntitlementTraceStep[]
 }
 

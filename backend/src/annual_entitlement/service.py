@@ -20,10 +20,10 @@ from leave_calculation import (
 from leave_years import service as leave_year_service
 from leave_years.models import LeaveYear
 from public_holidays import (
-    ENGLAND_WALES_SNAPSHOT,
     PublicHolidayRequest,
     calculate_public_holidays,
 )
+from public_holidays import service as public_holiday_service
 
 from .models import EntitlementMode
 from .persistence import (
@@ -34,6 +34,7 @@ from .schemas import (
     AppliedEntitlementRead,
     EntitlementAmounts,
     EntitlementApply,
+    EntitlementComponentSummary,
     EntitlementInputs,
     EntitlementRecommendation,
     EntitlementRecommendationRead,
@@ -194,13 +195,15 @@ def calculate_recommendation(
         )
     )
 
+    holiday_calendar = public_holiday_service.active_calendar(session)
     holiday_calculation = calculate_public_holidays(
         PublicHolidayRequest(
             leave_year=period_dates,
             employment_start=employment_start,
             employment_end=leave_year.employment_end,
-            calendar=ENGLAND_WALES_SNAPSHOT,
+            calendar=holiday_calendar,
             job_plans=history,
+            treatments=public_holiday_service.treatments_for_leave_year(session, leave_year_id),
         )
     )
 
@@ -226,18 +229,41 @@ def calculate_recommendation(
     policy_versions = tuple(
         dict.fromkeys(calculation_period.policy_version for calculation_period in base.periods)
     )
+    component_totals: dict[tuple[str, str], dict[str, Decimal]] = {}
+    for calculation_period in base.periods:
+        for component in calculation_period.components:
+            key = (component.label, component.kind.value)
+            current = component_totals.setdefault(
+                key,
+                {
+                    "full_time_hours": component.full_time_hours.value,
+                    "prorated_hours": Decimal("0"),
+                },
+            )
+            current["prorated_hours"] += component.period_hours.value
+
+    components = tuple(
+        EntitlementComponentSummary(
+            label=label,
+            kind=kind,
+            full_time_hours=values["full_time_hours"],
+            prorated_hours=values["prorated_hours"],
+        )
+        for (label, kind), values in component_totals.items()
+    )
 
     return EntitlementRecommendation(
         inputs=EntitlementInputs(
             consultant_appointment_date=(consultant_appointment_date),
             consultant_service_start_date=(consultant_service_start_date),
             policy_versions=policy_versions,
-            public_holiday_source=(ENGLAND_WALES_SNAPSHOT.source.value),
-            public_holiday_source_date=(ENGLAND_WALES_SNAPSHOT.source_date),
+            public_holiday_source=holiday_calendar.source.value,
+            public_holiday_source_date=holiday_calendar.source_date,
         ),
         base_entitlement=base_amounts,
         public_holiday_entitlement=holiday_amounts,
         recommended_entitlement=recommended_amounts,
+        components=components,
         trace=tuple(
             trace_step(step) for step in (base_calculation.trace + holiday_calculation.trace)
         ),
@@ -263,6 +289,9 @@ def store_recommendation(
                 "recommended_entitlement": (
                     recommendation.recommended_entitlement.model_dump(mode="json")
                 ),
+                "components": [
+                    component.model_dump(mode="json") for component in recommendation.components
+                ],
             },
             sort_keys=True,
         ),
@@ -294,6 +323,10 @@ def recommendation_read(
         ),
         recommended_entitlement=(
             EntitlementAmounts.model_validate(results["recommended_entitlement"])
+        ),
+        components=tuple(
+            EntitlementComponentSummary.model_validate(component)
+            for component in results.get("components", [])
         ),
         trace=tuple(
             EntitlementTraceStep.model_validate(step) for step in json.loads(record.trace_json)

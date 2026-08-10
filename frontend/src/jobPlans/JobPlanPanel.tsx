@@ -230,15 +230,11 @@ export function JobPlanPanel({
                   <small>Effective Until is not included.</small>
                 </div>
 
-                <span
-                  className={
-                    jobPlan.reconciliation_override_reason
-                      ? 'job-plan-status job-plan-status--warning'
-                      : 'job-plan-status job-plan-status--nominal'
-                  }
-                >
-                  {jobPlan.reconciliation_override_reason ? 'Saved With Override' : 'Reconciled'}
-                </span>
+                {jobPlan.reconciliation_override_reason ? (
+                  <small className="job-plan-override">
+                    PA Override: {jobPlan.reconciliation_override_reason}
+                  </small>
+                ) : null}
               </header>
 
               <dl>
@@ -259,6 +255,14 @@ export function JobPlanPanel({
                   <dd>
                     {jobPlan.week_count} {jobPlan.week_count === 1 ? 'Week' : 'Weeks'}
                   </dd>
+                </div>
+                <div>
+                  <dt>Flexible DCC</dt>
+                  <dd>{formatDecimal(jobPlan.additional_dcc_hours)}</dd>
+                </div>
+                <div>
+                  <dt>Flexible SPA</dt>
+                  <dd>{formatDecimal(jobPlan.additional_spa_hours)}</dd>
                 </div>
               </dl>
 

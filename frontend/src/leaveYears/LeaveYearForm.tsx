@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 
+import { DateInput } from '../system/DateInput'
 import type { LeaveYearInput } from './types'
 
 type LeaveYearFormProps = {
@@ -70,48 +71,48 @@ export function LeaveYearForm({
       <div className="leave-year-fields">
         <div className="field">
           <label htmlFor="leave-year-start">Annual Leave Year Start</label>
-          <input
+          <DateInput
             id="leave-year-start"
-            type="date"
+            label="Annual Leave Year Start"
             value={details.start_date}
-            aria-required="true"
+            required
             disabled={busy}
-            onChange={(event) => updateDate('start_date', event.target.value)}
+            onChange={(value) => updateDate('start_date', value)}
           />
         </div>
 
         <div className="field">
           <label htmlFor="leave-year-end">Annual Leave Year End</label>
-          <input
+          <DateInput
             id="leave-year-end"
-            type="date"
+            label="Annual Leave Year End"
             value={details.end_date}
-            aria-required="true"
+            required
             disabled={busy}
-            onChange={(event) => updateDate('end_date', event.target.value)}
+            onChange={(value) => updateDate('end_date', value)}
           />
         </div>
 
         <div className="field">
           <label htmlFor="employment-start">Employment Start</label>
-          <input
+          <DateInput
             id="employment-start"
-            type="date"
+            label="Employment Start"
             value={details.employment_start ?? ''}
             disabled={busy}
-            onChange={(event) => updateDate('employment_start', event.target.value, true)}
+            onChange={(value) => updateDate('employment_start', value, true)}
           />
           <small>Optional — leave blank when employment covers the full year.</small>
         </div>
 
         <div className="field">
           <label htmlFor="employment-end">Employment End</label>
-          <input
+          <DateInput
             id="employment-end"
-            type="date"
+            label="Employment End"
             value={details.employment_end ?? ''}
             disabled={busy}
-            onChange={(event) => updateDate('employment_end', event.target.value, true)}
+            onChange={(value) => updateDate('employment_end', value, true)}
           />
           <small>Optional — leave blank when employment continues.</small>
         </div>

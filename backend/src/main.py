@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from annual_entitlement.router import router as entitlement_router
+from carry_forward.router import router as carry_forward_router
 from consultants import router as consultant_router
 from database import create_database_engine, create_session_factory
 from errors import install_error_handlers
@@ -15,6 +16,8 @@ from job_plans.router import router as job_plan_router
 from leave_years import router as leave_year_router
 from logging_config import configure_logging
 from migrations import upgrade_database
+from public_holidays.router import settings_router as holiday_settings_router
+from public_holidays.router import year_router as holiday_year_router
 from settings import Settings
 
 
@@ -62,6 +65,9 @@ def create_app(
     app.include_router(leave_year_router)
     app.include_router(job_plan_router)
     app.include_router(entitlement_router)
+    app.include_router(carry_forward_router)
+    app.include_router(holiday_settings_router)
+    app.include_router(holiday_year_router)
 
     static_dir = frontend_dist if frontend_dist is not None else runtime.resolved_frontend_dist
     if static_dir.is_dir():

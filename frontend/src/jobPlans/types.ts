@@ -19,6 +19,8 @@ export type JobPlanInput = {
   spa_pas: string
   other_pas: string
   hours_per_pa: string
+  additional_dcc_hours: string
+  additional_spa_hours: string
   reconciliation_override_reason: string | null
   days: JobPlanDayInput[]
 }
@@ -36,6 +38,9 @@ export type JobPlanPreview = JobPlanInput & {
   average_dcc_hours: string
   average_spa_hours: string
   average_other_hours: string
+  average_standard_dcc_hours: string
+  average_standard_spa_hours: string
+  average_standard_hours: string
   scheduled_average_pas: string
   warning: string | null
 }
@@ -85,6 +90,8 @@ export function emptyJobPlanInput(leaveYear: LeaveYear): JobPlanInput {
     spa_pas: '0',
     other_pas: '0',
     hours_per_pa: '4',
+    additional_dcc_hours: '0',
+    additional_spa_hours: '0',
     reconciliation_override_reason: null,
     days: cycleDays(1),
   }
@@ -104,6 +111,8 @@ export function editableJobPlan(jobPlan: JobPlan): JobPlanInput {
     spa_pas: formatDecimal(jobPlan.spa_pas),
     other_pas: '0',
     hours_per_pa: formatDecimal(jobPlan.hours_per_pa),
+    additional_dcc_hours: formatDecimal(jobPlan.additional_dcc_hours),
+    additional_spa_hours: formatDecimal(jobPlan.additional_spa_hours),
     reconciliation_override_reason: jobPlan.reconciliation_override_reason,
     days: cycleDays(jobPlan.week_count, jobPlan.days),
   }

@@ -9,8 +9,7 @@ from domain import ActivityType, DateRange
 from job_plans import JobPlanHistory, Weekday
 from leave_records import (
     ActivityHours,
-    AdjustmentKind,
-    LeaveAdjustment,
+    CarryForward,
     LeaveRecordsRequest,
 )
 from public_holidays import HolidayTreatmentBasis, PublicHolidayTreatment
@@ -108,20 +107,18 @@ def ltft_uneven_request() -> LeaveRecordsRequest:
         treatments=(
             PublicHolidayTreatment(
                 holiday_date=date(2026, 5, 4),
-                basis=HolidayTreatmentBasis.WORKED_ON_SITE,
+                basis=HolidayTreatmentBasis.QUALIFYING_ON_CALL,
                 note="Synthetic case: consultant worked the holiday",
             ),
         ),
     )
     return replace(
         base_request,
-        adjustments=(
-            LeaveAdjustment(
-                adjustment_id="ltft-carry-forward",
+        carry_forward=(
+            CarryForward(
+                carry_forward_id="ltft-carry-forward",
                 effective_date=CALENDAR_2026.start,
-                kind=AdjustmentKind.CARRY_FORWARD,
                 hours=ActivityHours(dcc=hours("8")),
-                reason="Synthetic approved carry-forward",
             ),
         ),
     )

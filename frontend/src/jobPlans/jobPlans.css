@@ -83,21 +83,10 @@
   letter-spacing: 0.08em;
 }
 
-.job-plan-status {
-  padding: 4px 7px;
-  border: 1px solid currentColor;
-  font-size: 9px;
-  font-weight: 520;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.job-plan-status--nominal {
-  color: var(--nominal);
-}
-
-.job-plan-status--warning {
+.job-plan-override {
+  max-width: 240px;
   color: var(--warning);
+  text-align: right;
 }
 
 .job-plan-card dl,
@@ -127,7 +116,7 @@
 .job-plan-card dd,
 .job-plan-preview dd {
   margin: 0;
-  color: var(--warning);
+  color: var(--text);
   font-weight: 500;
 }
 
@@ -198,7 +187,7 @@
   min-height: 42px;
   padding: 9px 11px;
   border: 1px solid var(--line);
-  color: var(--warning);
+  color: var(--accent);
   background: #151515;
 }
 
@@ -335,7 +324,7 @@
   padding: 11px 12px;
   resize: vertical;
   border: 1px solid var(--line-strong);
-  border-radius: 0;
+  border-radius: var(--corner-control);
   color: var(--text);
   background: #111;
 }
@@ -348,6 +337,33 @@
   padding: 16px 30px;
   background: rgb(22 22 22 / 0.98);
   box-shadow: 0 -16px 32px rgb(0 0 0 / 0.24);
+}
+
+.job-plan-flexible-hours {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.job-plan-flexible-hours > header {
+  margin-bottom: 14px;
+}
+
+.job-plan-flexible-hours h4 {
+  margin-bottom: 5px;
+}
+
+.job-plan-flexible-hours p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.job-plan-flexible-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 260px));
+  gap: 16px;
 }
 
 @media (max-width: 760px) {

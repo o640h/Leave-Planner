@@ -134,7 +134,7 @@ def test_manual_corrections_preserve_the_base_snapshot() -> None:
 
 def test_retained_treatment_requires_an_operator_note() -> None:
     with pytest.raises(ValueError, match="note"):
-        PublicHolidayTreatment(date(2026, 1, 1), HolidayTreatmentBasis.WORKED_ON_SITE)
+        PublicHolidayTreatment(date(2026, 1, 1), HolidayTreatmentBasis.QUALIFYING_ON_CALL)
     with pytest.raises(ValueError, match="more than one"):
         replace(
             workbook_holiday_request(),

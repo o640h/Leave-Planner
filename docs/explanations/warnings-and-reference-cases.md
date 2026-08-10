@@ -40,7 +40,7 @@ workbook, flexibly delivered activity means visible daily hours need not equal c
 
 ### Carry-forward information
 
-When carry-forward adjustments exist, an informational warning shows their DCC/SPA/Other total
+When carry-forward exists, an informational warning shows its total
 and asks the operator to confirm local approval and use conditions. The engine does not currently
 invent a maximum amount or expiry date.
 
@@ -83,7 +83,7 @@ public-holiday entitlement, a normal Monday-to-Friday leave week, and a warning-
 
 A 6-PA consultant works an uneven Monday/Tuesday pattern. The case verifies PA proration, the
 visible hours of long working days, DCC/SPA splitting, approved carry-forward, and a public holiday
-worked on site with its deduction retained.
+qualifying on-call with its deduction retained.
 
 ### Synthetic capped multi-week case
 

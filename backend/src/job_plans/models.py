@@ -85,6 +85,8 @@ class JobPlanCycle:
     other_pas: ProgrammedActivities
     hours_per_pa: Hours
     days: tuple[JobPlanDay, ...]
+    additional_dcc_hours: Hours = ZERO_HOURS
+    additional_spa_hours: Hours = ZERO_HOURS
     reconciliation_override_reason: str | None = None
 
     def __post_init__(self) -> None:
@@ -92,6 +94,8 @@ class JobPlanCycle:
             raise ValueError("A job-plan cycle must contain at least one week")
         if self.hours_per_pa.value <= 0:
             raise ValueError("hours_per_pa must be greater than zero")
+        if self.additional_dcc_hours.value < 0 or self.additional_spa_hours.value < 0:
+            raise ValueError("Additional flexible hours cannot be negative")
 
         self._validate_day_positions()
         self._validate_reconciliation()
@@ -174,6 +178,27 @@ class JobPlanCycle:
         """Return average visible standard hours per week."""
 
         return self.actual_cycle_hours.scale(Decimal("1") / Decimal(self.week_count))
+
+    def average_visible_activity_hours(self, activity_type: ActivityType) -> Hours:
+        """Return visible weekly hours for one activity."""
+
+        return self.activity_hours(activity_type).scale(Decimal("1") / Decimal(self.week_count))
+
+    def average_standard_activity_hours(self, activity_type: ActivityType) -> Hours:
+        """Add flexible weekly hours to the visible workbook-style total."""
+
+        visible = self.average_visible_activity_hours(activity_type)
+        if activity_type is ActivityType.DCC:
+            return visible + self.additional_dcc_hours
+        if activity_type is ActivityType.SPA:
+            return visible + self.additional_spa_hours
+        return visible
+
+    @property
+    def average_standard_weekly_hours(self) -> Hours:
+        """Return visible plus flexible DCC/SPA weekly hours."""
+
+        return self.average_weekly_hours + self.additional_dcc_hours + self.additional_spa_hours
 
     @property
     def scheduled_average_weekly_pas(self) -> ProgrammedActivities:

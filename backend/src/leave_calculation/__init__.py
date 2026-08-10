@@ -7,12 +7,14 @@ from .calculator import (
     service_anniversary,
 )
 from .models import (
+    LeaveCalculationComponent,
     LeaveCalculationPeriod,
     LeaveCalculationRequest,
     LeaveCalculationResult,
 )
 
 __all__ = [
+    "LeaveCalculationComponent",
     "LeaveCalculationPeriod",
     "LeaveCalculationRequest",
     "LeaveCalculationResult",

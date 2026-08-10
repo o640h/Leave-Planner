@@ -47,7 +47,7 @@ function HoursTable({ cycleWeek, weekdayNumbers, days, disabled, onChange }: Hou
                     <NumberInput
                       label={`${weekdays[weekday]} ${label} Hours Week ${cycleWeek}`}
                       min="0"
-                      step="0.001"
+                      step="0.25"
                       inputMode="decimal"
                       value={day[field]}
                       disabled={disabled}

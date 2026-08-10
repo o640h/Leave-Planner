@@ -249,6 +249,23 @@ describe('consultant directory', () => {
           entitlementRefreshes += 1
           return json({ recommendation: null, application: null })
         }
+        if (path.endsWith('/carry-forward') && method === 'GET') {
+          return json({
+            id: null,
+            leave_year_id: 1,
+            hours: '0',
+            created_at: null,
+          })
+        }
+        if (path.endsWith('/public-holidays') && method === 'GET') {
+          return json({
+            source: 'static_snapshot',
+            source_date: '2026-08-06',
+            entitlement_hours: '0',
+            deduction_hours: '0',
+            occurrences: [],
+          })
+        }
 
         const details = JSON.parse(options.body as string) as Record<string, unknown>
         if (path.endsWith('/job-plans/preview')) {
@@ -264,6 +281,9 @@ describe('consultant directory', () => {
             average_dcc_hours: '0',
             average_spa_hours: '0',
             average_other_hours: '0',
+            average_standard_dcc_hours: '0',
+            average_standard_spa_hours: '0',
+            average_standard_hours: '0',
             scheduled_average_pas: '0',
             warning: variance === 0 ? null : 'Enter an override reason before saving.',
           })

@@ -29,7 +29,6 @@ class HolidayTreatmentBasis(StrEnum):
     """How a consultant's public holiday should be treated."""
 
     STANDARD = "standard"
-    WORKED_ON_SITE = "worked_on_site"
     QUALIFYING_ON_CALL = "qualifying_on_call"
 
 
@@ -111,10 +110,7 @@ class PublicHolidayTreatment:
     def retains_leave(self) -> bool:
         """Return whether the normal holiday deduction is retained."""
 
-        return self.basis in {
-            HolidayTreatmentBasis.WORKED_ON_SITE,
-            HolidayTreatmentBasis.QUALIFYING_ON_CALL,
-        }
+        return self.basis is HolidayTreatmentBasis.QUALIFYING_ON_CALL
 
 
 @dataclass(frozen=True, slots=True)

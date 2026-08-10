@@ -37,14 +37,19 @@ included here.
 | From 1 April 2005 | Under 7 years | 34 days / 272 hours |
 | From 1 April 2005 | 7 years or more | 36 days / 288 hours |
 
-These totals include two extra statutory days and two locally agreed days. The code keeps those
-parts visible rather than storing one unexplained total:
+The code presents the total using the same named groups as the supplied workbook: Basic Leave,
+Statutory Days, Hospital R&R, and any earned Seniority. This is easier to compare than one opaque
+core figure:
 
-| Total | Core leave | Statutory | Local |
-| --- | ---: | ---: | ---: |
-| 272 hours | 240 hours | 16 hours | 16 hours |
-| 280 hours | 248 hours | 16 hours | 16 hours |
-| 288 hours | 256 hours | 16 hours | 16 hours |
+| Tier total | Basic | Statutory | Hospital R&R | Seniority |
+| --- | ---: | ---: | ---: | ---: |
+| 272 hours | 240 | 16 | 16 | 0 |
+| 280 hours | 240 | 16 | 16 | 8 |
+| 288 hours | 240 | 16 | 16 | 16 |
+
+`Hospital R&R` is the workbook label currently used for the policy's locally agreed allowance.
+That mapping remains subject to Trust policy-owner confirmation; changing the label must not
+silently change the historical policy version or total.
 
 This makes the calculation trace understandable and allows a future policy to change one
 component independently.

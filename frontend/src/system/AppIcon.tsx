@@ -7,6 +7,7 @@ type AppIconProps = {
     | 'search'
     | 'plus'
     | 'edit'
+    | 'calendar'
     | 'profile'
     | 'jobPlan'
 }
@@ -19,7 +20,7 @@ export function AppIcon({ name }: AppIconProps) {
     viewBox: '0 0 24 24',
   }
 
-  if (name === 'brand') {
+  if (name === 'brand' || name === 'calendar') {
     return (
       <svg {...commonProps}>
         <path d="M5 4.5h14v15H5zM8 2.5v4M16 2.5v4M5 9h14M8.5 14l2 2 4.5-5" />
@@ -82,6 +83,15 @@ export function AppIcon({ name }: AppIconProps) {
     return (
       <svg {...commonProps}>
         <path d="M3.5 8h17v11h-17zM8.5 8V5h7v3M3.5 12.5h17M10 12.5v2h4v-2" />
+      </svg>
+    )
+  }
+
+  if (name === 'settings') {
+    return (
+      <svg {...commonProps}>
+        <path d="M9.5 3.5h5l.5 2.2 1.3.8 2.2-.7L21 10.2l-1.7 1.5v1.6l1.7 1.5-2.5 4.4-2.2-.7-1.3.8-.5 2.2h-5L9 19.3l-1.3-.8-2.2.7L3 14.8l1.7-1.5v-1.6L3 10.2l2.5-4.4 2.2.7L9 5.7z" />
+        <circle cx="12" cy="12.5" r="3" />
       </svg>
     )
   }

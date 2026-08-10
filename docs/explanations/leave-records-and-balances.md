@@ -5,7 +5,7 @@ equivalent of the workbook's leave tables and the purple **Leave Taken / Leave R
 
 The implementation is in `backend/src/leave_records/`:
 
-- `models.py` defines bookings, daily overrides, adjustments, and calculated balance views;
+- `models.py` defines bookings, daily overrides, carry-forward, and calculated balance views;
 - `expansion.py` turns each entered date range into individual calendar dates;
 - `calculator.py` totals the deductions and explains the calculation; and
 - `__init__.py` lists the names other backend code should import.
@@ -22,7 +22,7 @@ The operator supplies:
 - its state: Planned, Approved, Taken, or Cancelled;
 - an optional note;
 - any partial-day replacement hours and the reason for changing them; and
-- explicit adjustments such as carry-forward, sold leave, or a correction.
+- approved carry-forward from the previous leave year.
 
 The software calculates:
 
@@ -33,7 +33,7 @@ The software calculates:
 - projected, confirmed, and actual remaining balances.
 
 A calculated balance is never typed in or silently edited. It can always be rebuilt from the
-entitlement, public holidays, leave records, and adjustments.
+entitlement, public holidays, leave records, and carry-forward.
 
 ## Turning a range into daily deductions
 
@@ -77,21 +77,21 @@ Every view uses the same calculation:
 ```text
 remaining = annual entitlement
           + public-holiday entitlement
-          + adjustments
+          + carry-forward
           - applicable public-holiday deductions
           - applicable booking deductions
 ```
 
-## Adjustments
+## Carry-forward
 
-Adjustments are named records, not edits to a stored total:
+Carry-forward is an approved number of unused hours brought into the next leave year. The operator
+enters one total value, matching the supplied workbook, and the application adds it to the DCC
+opening balance. It cannot be negative and entering zero clears it.
 
-- carry-forward adds hours and cannot contain negative values;
-- sold leave removes hours and cannot contain positive values; and
-- a correction can add, remove, or move hours between DCC, SPA, and Other.
-
-For example, correcting `-1 DCC / +1 SPA` has no effect on total hours but changes the activity
-split. It is a meaningful correction, not an empty adjustment.
+The persisted workflow is implemented in `backend/src/carry_forward/` and currently appears
+inside Annual Entitlement on the consultant Overview. Once leave-used and leave-remaining totals
+are available, it belongs alongside that balance flow. Consultant corrections and sold leave are
+not supported because they are not required by the supplied workbook.
 
 ## Why `ZERO_HOURS` exists
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
+import { DateInput } from '../system/DateInput'
 import { addNonNegativeDecimals, formatDecimal } from '../system/decimal'
 import { NumberInput } from '../system/NumberInput'
 import { JobPlanGrid } from './JobPlanGrid'
@@ -88,6 +89,8 @@ export function JobPlanForm({
       details.dcc_pas,
       details.spa_pas,
       details.hours_per_pa,
+      details.additional_dcc_hours,
+      details.additional_spa_hours,
       ...details.days.flatMap((day) => [day.dcc_hours, day.spa_hours]),
     ]
 
@@ -171,23 +174,23 @@ export function JobPlanForm({
         <div className="job-plan-date-fields">
           <div className="field">
             <label htmlFor="job-plan-effective-from">Effective From</label>
-            <input
+            <DateInput
               id="job-plan-effective-from"
-              type="date"
+              label="Effective From"
               value={details.effective_from}
               disabled={disabled}
-              onChange={(event) => changeDetails({ effective_from: event.target.value })}
+              onChange={(value) => changeDetails({ effective_from: value })}
             />
           </div>
 
           <div className="field">
             <label htmlFor="job-plan-effective-until">Effective Until</label>
-            <input
+            <DateInput
               id="job-plan-effective-until"
-              type="date"
+              label="Effective Until"
               value={details.effective_until}
               disabled={disabled}
-              onChange={(event) => changeDetails({ effective_until: event.target.value })}
+              onChange={(value) => changeDetails({ effective_until: value })}
             />
           </div>
         </div>
@@ -219,7 +222,7 @@ export function JobPlanForm({
                 id={`job-plan-${field}`}
                 label={label}
                 min="0"
-                step="0.001"
+                step="0.01"
                 inputMode="decimal"
                 value={details[field]}
                 disabled={disabled}
@@ -256,14 +259,14 @@ export function JobPlanForm({
           {details.week_count > 1 ? (
             <div className="field">
               <label htmlFor="job-plan-cycle-anchor">Week 1 Monday</label>
-              <input
+              <DateInput
                 id="job-plan-cycle-anchor"
-                type="date"
+                label="Week 1 Monday"
                 value={details.cycle_anchor_date ?? ''}
                 disabled={disabled}
-                onChange={(event) =>
+                onChange={(value) =>
                   changeDetails({
-                    cycle_anchor_date: event.target.value || null,
+                    cycle_anchor_date: value || null,
                   })
                 }
               />
@@ -278,6 +281,44 @@ export function JobPlanForm({
           disabled={disabled}
           onChange={changeDay}
         />
+
+        <div className="job-plan-flexible-hours">
+          <header>
+            <h4>Additional Flexible Hours</h4>
+            <p>
+              Weekly hours not tied to a weekday. They increase the standard weekly totals but are
+              not deducted automatically from a leave date.
+            </p>
+          </header>
+          <div className="job-plan-flexible-fields">
+            <div className="field">
+              <label htmlFor="job-plan-additional-dcc">Additional DCC Hours</label>
+              <NumberInput
+                id="job-plan-additional-dcc"
+                label="Additional DCC Hours"
+                min="0"
+                step="0.25"
+                inputMode="decimal"
+                value={details.additional_dcc_hours}
+                disabled={disabled}
+                onChange={(value) => changeDetails({ additional_dcc_hours: value })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="job-plan-additional-spa">Additional SPA Hours</label>
+              <NumberInput
+                id="job-plan-additional-spa"
+                label="Additional SPA Hours"
+                min="0"
+                step="0.25"
+                inputMode="decimal"
+                value={details.additional_spa_hours}
+                disabled={disabled}
+                onChange={(value) => changeDetails({ additional_spa_hours: value })}
+              />
+            </div>
+          </div>
+        </div>
       </section>
 
       <details className="job-plan-advanced">
@@ -289,7 +330,7 @@ export function JobPlanForm({
             id="job-plan-hours-per-pa"
             label="Hours per PA"
             min="0.001"
-            step="0.001"
+            step="0.25"
             inputMode="decimal"
             value={details.hours_per_pa}
             disabled={disabled}
@@ -340,12 +381,16 @@ export function JobPlanForm({
               <dd>{formatDecimal(preview.average_visible_hours)}</dd>
             </div>
             <div>
-              <dt>DCC Hours</dt>
-              <dd>{formatDecimal(preview.average_dcc_hours)}</dd>
+              <dt>Standard DCC Hours</dt>
+              <dd>{formatDecimal(preview.average_standard_dcc_hours)}</dd>
             </div>
             <div>
-              <dt>SPA Hours</dt>
-              <dd>{formatDecimal(preview.average_spa_hours)}</dd>
+              <dt>Standard SPA Hours</dt>
+              <dd>{formatDecimal(preview.average_standard_spa_hours)}</dd>
+            </div>
+            <div>
+              <dt>Standard Weekly Hours</dt>
+              <dd>{formatDecimal(preview.average_standard_hours)}</dd>
             </div>
           </dl>
 

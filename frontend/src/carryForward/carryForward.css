@@ -1,0 +1,48 @@
+.carry-forward-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+  padding: 14px 20px;
+  background: rgb(255 255 255 / 0.006);
+}
+.carry-forward-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  max-width: 260px;
+  gap: 20px;
+}
+.carry-forward-value > span {
+  color: var(--quiet);
+  font-size: 10px;
+}
+.carry-forward-value strong {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--warning);
+  font: 470 16px/1 var(--brand);
+}
+.carry-forward-value strong small {
+  color: var(--quiet);
+  font: 9px/1 var(--ui);
+}
+.carry-forward-control > .form-notice {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.carry-forward-modal {
+  width: min(440px, calc(100vw - 48px));
+}
+.carry-forward-modal form {
+  display: grid;
+  gap: 20px;
+}
+.carry-forward-modal h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 440;
+}

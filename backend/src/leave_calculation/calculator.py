@@ -15,7 +15,12 @@ from domain import (
 )
 from job_plans import allocate_hours_by_pa
 
-from .models import LeaveCalculationPeriod, LeaveCalculationRequest, LeaveCalculationResult
+from .models import (
+    LeaveCalculationComponent,
+    LeaveCalculationPeriod,
+    LeaveCalculationRequest,
+    LeaveCalculationResult,
+)
 
 
 def service_anniversary(service_start: date, completed_years: int) -> date:
@@ -161,6 +166,21 @@ def _calculate_period(
         leave_year_days=request.leave_year.calendar_days,
     )
     dcc, spa, other = allocate_hours_by_pa(period_entitlement, job_plan.cycle)
+    components = tuple(
+        LeaveCalculationComponent(
+            rule_id=amount.component.rule_id,
+            label=amount.component.label,
+            kind=amount.component.kind,
+            full_time_hours=amount.component.full_time_hours,
+            annual_adjusted_hours=amount.adjusted_hours,
+            period_hours=calculate_partial_year_hours(
+                amount.adjusted_hours,
+                included_days=period.calendar_days,
+                leave_year_days=request.leave_year.calendar_days,
+            ),
+        )
+        for amount in entitlement.components
+    )
 
     calculated_period = LeaveCalculationPeriod(
         period=period,
@@ -173,6 +193,7 @@ def _calculate_period(
         dcc_hours=dcc,
         spa_hours=spa,
         other_hours=other,
+        components=components,
     )
 
     period_step = CalculationStep(

@@ -6,6 +6,7 @@ type NumberInputProps = {
   value: string | number
   min?: string
   step?: string
+  buttonSteps?: number
   disabled?: boolean
   inputMode?: 'decimal' | 'numeric'
   onChange: (value: string) => void
@@ -17,6 +18,7 @@ export function NumberInput({
   value,
   min,
   step,
+  buttonSteps = 1,
   disabled,
   inputMode,
   onChange,
@@ -28,9 +30,9 @@ export function NumberInput({
     if (!input) return
 
     if (direction === 'up') {
-      input.stepUp()
+      input.stepUp(buttonSteps)
     } else {
-      input.stepDown()
+      input.stepDown(buttonSteps)
     }
     onChange(input.value)
   }

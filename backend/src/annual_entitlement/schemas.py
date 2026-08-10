@@ -40,6 +40,15 @@ class EntitlementTraceStep(BaseModel):
     context: dict[str, str] = Field(default_factory=dict)
 
 
+class EntitlementComponentSummary(BaseModel):
+    """One workbook-style policy component and its calculated hours."""
+
+    label: str
+    kind: str
+    full_time_hours: ExactDecimal
+    prorated_hours: ExactDecimal
+
+
 class EntitlementRecommendation(BaseModel):
     """A complete unsaved calculation recommendation."""
 
@@ -47,6 +56,7 @@ class EntitlementRecommendation(BaseModel):
     base_entitlement: EntitlementAmounts
     public_holiday_entitlement: EntitlementAmounts
     recommended_entitlement: EntitlementAmounts
+    components: tuple[EntitlementComponentSummary, ...] = ()
     trace: tuple[EntitlementTraceStep, ...]
 
 

@@ -35,4 +35,3 @@ def downgrade() -> None:
 
     op.drop_index("ix_consultants_archived_at", table_name="consultants")
     op.drop_column("consultants", "archived_at")
-
