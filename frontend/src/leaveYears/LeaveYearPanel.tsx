@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
 import { CarryForwardControl } from '../carryForward/CarryForwardControl'
+import { getConsultantYearSummary } from '../consultantSummary/api'
+import {
+  ConsultantYearSummarySections,
+  LeaveBalanceSummary,
+} from '../consultantSummary/ConsultantYearSummarySections'
+import type { ConsultantYearSummary } from '../consultantSummary/types'
 import { JobPlanPanel } from '../jobPlans/JobPlanPanel'
 import { AppIcon } from '../system/AppIcon'
 import {
@@ -64,6 +70,9 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
   const [removalImpact, setRemovalImpact] = useState<RemovalImpact | null>(null)
   const [removing, setRemoving] = useState(false)
   const [removalError, setRemovalError] = useState<string | null>(null)
+  const [summary, setSummary] = useState<ConsultantYearSummary | null>(null)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+  const [summaryRevision, setSummaryRevision] = useState(0)
 
   useEffect(() => {
     listLeaveYears(consultantId)
@@ -83,6 +92,29 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
   }
 
   const selectedLeaveYear = leaveYears.find((leaveYear) => leaveYear.id === selectedId) ?? null
+
+  useEffect(() => {
+    if (selectedId === null) return
+    let active = true
+    getConsultantYearSummary(consultantId, selectedId)
+      .then((result) => {
+        if (active) {
+          setSummary(result)
+          setSummaryError(null)
+        }
+      })
+      .catch((requestError: unknown) => {
+        if (active) setSummaryError(operatorErrorMessage(requestError))
+      })
+    return () => {
+      active = false
+    }
+  }, [consultantId, selectedId, summaryRevision])
+
+  const refreshSummary = useCallback(() => {
+    setSummaryRevision((revision) => revision + 1)
+  }, [])
+  const selectedSummary = summary?.leave_year.id === selectedId ? summary : null
 
   async function saveLeaveYear(details: LeaveYearInput) {
     if (editorTarget === null) return
@@ -112,6 +144,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
         editorTarget === 'new' ? 'The leave year was created.' : 'The leave year was updated.',
       )
       setCalculationRevision((revision) => revision + 1)
+      refreshSummary()
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
     } finally {
@@ -333,7 +366,9 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 <CarryForwardControl
                   consultantId={consultantId}
                   leaveYearId={selectedLeaveYear.id}
+                  onSaved={refreshSummary}
                 />
+                <LeaveBalanceSummary summary={selectedSummary} />
               </section>
 
               <JobPlanPanel
@@ -341,17 +376,31 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 consultantId={consultantId}
                 leaveYear={selectedLeaveYear}
                 onCountChange={setJobPlanCount}
-                onSaved={() => setCalculationRevision((revision) => revision + 1)}
-                onRemoved={() => setEntitlementReloadRevision((revision) => revision + 1)}
+                onSaved={() => {
+                  setCalculationRevision((revision) => revision + 1)
+                  refreshSummary()
+                }}
+                onRemoved={() => {
+                  setEntitlementReloadRevision((revision) => revision + 1)
+                  refreshSummary()
+                }}
               />
               <EntitlementPanel
                 key={`entitlement-${selectedLeaveYear.id}`}
                 consultantId={consultantId}
                 leaveYearId={selectedLeaveYear.id}
                 onStatusChange={setEntitlementConfigured}
+                onChanged={refreshSummary}
                 refreshRevision={calculationRevision}
                 reloadRevision={entitlementReloadRevision}
               />
+              {summaryError ? (
+                <p className="summary-load-error form-notice--error" role="alert">
+                  {summaryError}
+                </p>
+              ) : selectedSummary ? (
+                <ConsultantYearSummarySections summary={selectedSummary} />
+              ) : null}
             </div>
           ) : null}
         </>

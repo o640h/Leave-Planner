@@ -22,7 +22,7 @@ WORKBOOK_LEAVE_YEAR = DateRange(date(2025, 8, 29), date(2026, 8, 28))
 
 # The two malformed decade dates in Excel are represented by their intended
 # dates here. Their entered DCC/SPA values are preserved exactly.
-_WORKBOOK_LEAVE_ROWS = (
+WORKBOOK_LEAVE_ROWS = (
     (date(2025, 10, 20), "8", "0.5"),
     (date(2025, 10, 21), "8", "2"),
     (date(2025, 10, 22), "4.5", "1.5"),
@@ -117,7 +117,7 @@ def _workbook_bookings() -> tuple[LeaveBooking, ...]:
             ),
         )
         for index, (leave_date, dcc, spa) in enumerate(
-            _WORKBOOK_LEAVE_ROWS,
+            WORKBOOK_LEAVE_ROWS,
             start=1,
         )
     )

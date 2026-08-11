@@ -26,6 +26,7 @@ type EntitlementPanelProps = {
   consultantId: number
   leaveYearId: number
   onStatusChange?: (configured: boolean | null) => void
+  onChanged?: () => void
   refreshRevision: number
   reloadRevision: number
 }
@@ -40,6 +41,7 @@ export function EntitlementPanel({
   consultantId,
   leaveYearId,
   onStatusChange,
+  onChanged,
   refreshRevision,
   reloadRevision,
 }: EntitlementPanelProps) {
@@ -64,13 +66,14 @@ export function EntitlementPanel({
       .then((result) => {
         setWorkspace(result)
         onStatusChange?.(result.application !== null)
+        onChanged?.()
       })
       .catch((requestError: unknown) => {
         setError(operatorErrorMessage(requestError))
         onStatusChange?.(null)
       })
       .finally(() => setLoading(false))
-  }, [consultantId, leaveYearId, loadAttempt, onStatusChange])
+  }, [consultantId, leaveYearId, loadAttempt, onChanged, onStatusChange])
 
   useEffect(() => {
     if (refreshRevision === seenRefreshRevision.current) return
@@ -95,7 +98,7 @@ export function EntitlementPanel({
       .catch((requestError: unknown) => {
         setRefreshError(operatorErrorMessage(requestError))
       })
-  }, [consultantId, leaveYearId, onStatusChange, refreshRevision])
+  }, [consultantId, leaveYearId, onChanged, onStatusChange, refreshRevision])
 
   useEffect(() => {
     if (reloadRevision === seenReloadRevision.current) return
@@ -130,6 +133,7 @@ export function EntitlementPanel({
       setEditorOpen(false)
       setNotice('The annual entitlement was applied.')
       onStatusChange?.(true)
+      onChanged?.()
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
     } finally {

@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from annual_entitlement.router import router as entitlement_router
 from carry_forward.router import router as carry_forward_router
+from consultant_year_summary import router as consultant_year_summary_router
 from consultants import router as consultant_router
 from database import create_database_engine, create_session_factory
 from errors import install_error_handlers
@@ -68,6 +69,7 @@ def create_app(
     app.include_router(leave_booking_router)
     app.include_router(entitlement_router)
     app.include_router(carry_forward_router)
+    app.include_router(consultant_year_summary_router)
     app.include_router(holiday_settings_router)
     app.include_router(holiday_year_router)
 

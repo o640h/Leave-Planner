@@ -9,9 +9,9 @@ import { getCarryForward, setCarryForward } from './api'
 import type { CarryForward } from './types'
 import './carryForward.css'
 
-type Props = { consultantId: number; leaveYearId: number }
+type Props = { consultantId: number; leaveYearId: number; onSaved?: () => void }
 
-export function CarryForwardControl({ consultantId, leaveYearId }: Props) {
+export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Props) {
   const [record, setRecord] = useState<CarryForward | null>(null)
   const [hours, setHours] = useState('0')
   const [open, setOpen] = useState(false)
@@ -37,6 +37,7 @@ export function CarryForwardControl({ consultantId, leaveYearId }: Props) {
       setRecord(saved)
       setHours(saved.hours)
       setOpen(false)
+      onSaved?.()
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
     } finally {

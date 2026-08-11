@@ -134,6 +134,12 @@
   min-height: 460px;
 }
 
+.summary-load-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 14px 18px;
+}
+
 .dashboard-panel {
   min-width: 0;
   height: 100%;

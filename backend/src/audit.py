@@ -4,7 +4,7 @@ import json
 from collections.abc import Mapping
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from database import Base
@@ -52,3 +52,17 @@ def record_audit_event(
             details=json.dumps(details, sort_keys=True),
         )
     )
+
+
+def list_audit_events(
+    session: Session, consultant_id: int, *, limit: int = 50
+) -> tuple[AuditEvent, ...]:
+    """Return the consultant's latest append-only changes."""
+
+    statement = (
+        select(AuditEvent)
+        .where(AuditEvent.consultant_id == consultant_id)
+        .order_by(AuditEvent.recorded_at.desc(), AuditEvent.id.desc())
+        .limit(limit)
+    )
+    return tuple(session.scalars(statement))
