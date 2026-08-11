@@ -1,12 +1,13 @@
 import { useState } from 'react'
 
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
+import { PlanningPage } from './planning/PlanningPage'
 import { HolidaySettingsPage } from './publicHolidays/HolidaySettingsPage'
 import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
 
 export function App() {
-  const [page, setPage] = useState<'consultants' | 'settings'>('consultants')
+  const [page, setPage] = useState<'consultants' | 'planning' | 'settings'>('consultants')
 
   return (
     <div className="application-frame">
@@ -34,9 +35,15 @@ export function App() {
               <AppIcon name="consultants" />
               <span className="visually-hidden">Consultants</span>
             </button>
-            <button className="navigation-item" type="button" title="Wallchart" disabled>
+            <button
+              className={`navigation-item${page === 'planning' ? ' navigation-item--active' : ''}`}
+              type="button"
+              title="Planning"
+              aria-current={page === 'planning' ? 'page' : undefined}
+              onClick={() => setPage('planning')}
+            >
               <AppIcon name="wallchart" />
-              <span className="visually-hidden">Wallchart</span>
+              <span className="visually-hidden">Planning</span>
             </button>
             <button
               className={`navigation-item${page === 'settings' ? ' navigation-item--active' : ''}`}
@@ -54,7 +61,9 @@ export function App() {
         </aside>
 
         <main className="application-content">
-          {page === 'consultants' ? <ConsultantDirectory /> : <HolidaySettingsPage />}
+          {page === 'consultants' && <ConsultantDirectory />}
+          {page === 'planning' && <PlanningPage />}
+          {page === 'settings' && <HolidaySettingsPage />}
         </main>
       </div>
     </div>

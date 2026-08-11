@@ -100,19 +100,11 @@ def _balance_view(
     )
 
 
-def calculate_leave_records(
+def calculate_leave_records_from_days(
     request: LeaveRecordsRequest,
+    days: tuple[LeaveDay, ...],
 ) -> CalculationResult[LeaveRecordsResult]:
-    """Expand all bookings and derive lifecycle balances."""
-
-    days = tuple(
-        day
-        for booking in request.bookings
-        for day in expand_booking(
-            booking,
-            request.job_plans,
-        )
-    )
+    """Derive balances from already calculated daily snapshots."""
     carry_forward = _sum_hours(item.hours for item in request.carry_forward)
     opening = _opening_entitlement(request)
     holiday_deductions = _public_holiday_deductions(request)
@@ -219,3 +211,19 @@ def calculate_leave_records(
         ),
         trace=(day_trace + carry_forward_trace + balance_trace),
     )
+
+
+def calculate_leave_records(
+    request: LeaveRecordsRequest,
+) -> CalculationResult[LeaveRecordsResult]:
+    """Expand all bookings and derive lifecycle balances."""
+
+    days = tuple(
+        day
+        for booking in request.bookings
+        for day in expand_booking(
+            booking,
+            request.job_plans,
+        )
+    )
+    return calculate_leave_records_from_days(request, days)

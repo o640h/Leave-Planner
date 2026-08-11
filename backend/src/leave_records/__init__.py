@@ -1,6 +1,6 @@
 """Public interface for leave bookings and balances."""
 
-from .calculator import calculate_leave_records
+from .calculator import calculate_leave_records, calculate_leave_records_from_days
 from .expansion import expand_booking
 from .models import (
     ZERO_ACTIVITY_HOURS,
@@ -28,6 +28,7 @@ __all__ = [
     "LeaveRecordsRequest",
     "LeaveRecordsResult",
     "calculate_leave_records",
+    "calculate_leave_records_from_days",
     "evaluate_leave_warnings",
     "expand_booking",
 ]

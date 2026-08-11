@@ -10,6 +10,7 @@ from audit import AuditEvent  # noqa: F401
 from carry_forward.persistence import CarryForwardRecord  # noqa: F401
 from consultants.models import Consultant
 from job_plans.persistence import JobPlanRecord  # noqa: F401
+from leave_bookings.persistence import LeaveBookingRecord  # noqa: F401
 from leave_years.models import LeaveYear  # noqa: F401
 from public_holidays.persistence import HolidayCalendarVersionRecord  # noqa: F401
 

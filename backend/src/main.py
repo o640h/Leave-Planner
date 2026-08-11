@@ -13,6 +13,7 @@ from consultants import router as consultant_router
 from database import create_database_engine, create_session_factory
 from errors import install_error_handlers
 from job_plans.router import router as job_plan_router
+from leave_bookings.router import router as leave_booking_router
 from leave_years import router as leave_year_router
 from logging_config import configure_logging
 from migrations import upgrade_database
@@ -64,6 +65,7 @@ def create_app(
     app.include_router(consultant_router)
     app.include_router(leave_year_router)
     app.include_router(job_plan_router)
+    app.include_router(leave_booking_router)
     app.include_router(entitlement_router)
     app.include_router(carry_forward_router)
     app.include_router(holiday_settings_router)

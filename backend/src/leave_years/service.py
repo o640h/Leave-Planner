@@ -167,6 +167,7 @@ def removal_impact(
         EntitlementRecommendationRecord,
     )
     from job_plans.persistence import JobPlanRecord
+    from leave_bookings.persistence import LeaveBookingRecord
 
     leave_year = get_leave_year(session, consultant_id, leave_year_id)
     job_plan_count = (
@@ -193,6 +194,14 @@ def removal_impact(
         )
         or 0
     )
+    booking_count = (
+        session.scalar(
+            select(func.count())
+            .select_from(LeaveBookingRecord)
+            .where(LeaveBookingRecord.leave_year_id == leave_year.id)
+        )
+        or 0
+    )
 
     return RemovalImpact(
         resource_name=f"{leave_year.start_date:%d %b %Y} - {leave_year.end_date:%d %b %Y}",
@@ -202,7 +211,14 @@ def removal_impact(
             f"{job_plan_count} job plan(s) will be deleted.",
             f"{recommendation_count} calculation snapshot(s) will be deleted.",
             f"{application_count} applied entitlement record(s) will be deleted.",
+            f"{booking_count} leave booking(s) are recorded in this year.",
             "The removal will remain recorded in the consultant audit history.",
+        ),
+        can_proceed=booking_count == 0,
+        blocking_reason=(
+            "This leave year contains saved leave and must be retained for history."
+            if booking_count
+            else None
         ),
     )
 
@@ -224,6 +240,12 @@ def remove_leave_year(
 
     leave_year = get_leave_year(session, consultant_id, leave_year_id)
     impact = removal_impact(session, consultant_id, leave_year_id)
+    if not impact.can_proceed:
+        raise ApiError(
+            status_code=409,
+            code="leave_year_has_leave_bookings",
+            message=impact.blocking_reason or "This leave year contains saved leave.",
+        )
     record_audit_event(
         session,
         consultant_id=consultant_id,

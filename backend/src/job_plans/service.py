@@ -3,7 +3,7 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from audit import record_audit_event
@@ -475,6 +475,16 @@ def removal_impact(
     complete_coverage = _coverage_after_removal(leave_year, plans, job_plan.id)
     application = current_application(session, leave_year_id)
 
+    from leave_bookings.persistence import LeaveBookingDayRecord, LeaveBookingRecord
+
+    booking_days = session.scalar(
+        select(func.count(LeaveBookingDayRecord.id))
+        .join(LeaveBookingRecord, LeaveBookingRecord.id == LeaveBookingDayRecord.booking_id)
+        .where(
+            LeaveBookingDayRecord.job_plan_id == job_plan.id,
+            LeaveBookingRecord.state != "cancelled",
+        )
+    ) or 0
     consequences = [
         (
             f"The plan covering {job_plan.effective_from:%d %b %Y} to "
@@ -498,6 +508,13 @@ def removal_impact(
         action="delete",
         confirmation_text="DELETE",
         consequences=tuple(consequences),
+        can_proceed=booking_days == 0,
+        blocking_reason=(
+            f"This job plan is used by {booking_days} active leave day(s). "
+            "Cancel or move the affected bookings before removing it."
+            if booking_days
+            else None
+        ),
     )
 
 
@@ -522,6 +539,25 @@ def remove_job_plan(
 
     leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     job_plan = get_job_plan(session, consultant_id, leave_year_id, job_plan_id)
+    impact = removal_impact(session, consultant_id, leave_year_id, job_plan_id)
+    if not impact.can_proceed:
+        raise ApiError(
+            status_code=409,
+            code="job_plan_has_leave_bookings",
+            message=impact.blocking_reason or "This job plan is used by saved leave.",
+        )
+    from leave_bookings.persistence import LeaveBookingDayRecord, LeaveBookingRecord
+
+    session.execute(
+        update(LeaveBookingDayRecord)
+        .where(
+            LeaveBookingDayRecord.job_plan_id == job_plan_id,
+            LeaveBookingDayRecord.booking_id.in_(
+                select(LeaveBookingRecord.id).where(LeaveBookingRecord.state == "cancelled")
+            ),
+        )
+        .values(job_plan_id=None)
+    )
     plans = list_job_plans(session, consultant_id, leave_year_id)
     complete_coverage = _coverage_after_removal(leave_year, plans, job_plan.id)
     before = snapshot(job_plan)

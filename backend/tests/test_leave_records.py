@@ -92,10 +92,9 @@ def test_trace_explains_bookings_carry_forward_and_balances() -> None:
     } <= rule_ids
 
 
-def test_booking_overrides_require_reasons_and_valid_dates() -> None:
+def test_booking_overrides_allow_optional_reasons_and_require_valid_dates() -> None:
     leave_date = date(2026, 6, 1)
-    with pytest.raises(ValueError, match="reason"):
-        DailyLeaveOverride(leave_date, "", dcc_hours=hours("4"))
+    assert DailyLeaveOverride(leave_date, "", dcc_hours=hours("4")).reason is None
     with pytest.raises(ValueError, match="at least one"):
         DailyLeaveOverride(leave_date, "No values")
 

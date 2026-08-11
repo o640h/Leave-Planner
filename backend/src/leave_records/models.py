@@ -73,14 +73,14 @@ class DailyLeaveOverride:
     """Operator-entered replacement for part or all of one day."""
 
     leave_date: date
-    reason: str
+    reason: str | None = None
     dcc_hours: Hours | None = None
     spa_hours: Hours | None = None
     other_hours: Hours | None = None
 
     def __post_init__(self) -> None:
-        if not self.reason.strip():
-            raise ValueError("Override reason cannot be empty")
+        if self.reason is not None:
+            object.__setattr__(self, "reason", self.reason.strip() or None)
 
         supplied_values = (
             self.dcc_hours,
