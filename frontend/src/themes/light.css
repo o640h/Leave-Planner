@@ -17,11 +17,11 @@
   --glass-fill-raised: rgb(255 255 255 / 0.7);
   --glass-fill-soft: rgb(255 255 255 / 0.6);
   --glass-dialog-fill: rgb(244 248 249 / 0.86);
-  --glass-edge: rgb(255 255 255 / 0.72);
-  --glass-edge-low: rgb(46 69 75 / 0.01);
+  --glass-edge: rgb(255 255 255 / 0.62);
+  --glass-edge-low: rgb(46 69 75 / 0.09);
   --glass-blur: 16px;
   --glass-saturation: 120%;
-  --glass-panel-opacity: 0.3;
+  --glass-panel-opacity: 0.34;
   --glass-shadow:
     0 1px 1px rgb(255 255 255 / 0.74) inset, 0 12px 32px rgb(58 78 83 / 0.09),
     0 2px 8px rgb(58 78 83 / 0.05);
@@ -56,10 +56,11 @@
 
   /* Overview material */
   --overview-panel-background: rgb(249 252 252 / var(--glass-panel-opacity));
-  --overview-panel-header-background: rgb(255 255 255 / 0.2);
+  --overview-panel-header-background: transparent;
   --overview-panel-border-opacity: 0.09;
-  --overview-panel-shadow-opacity: 0.08;
-  --overview-gap: 16px;
+  --overview-panel-shadow-opacity: 0.07;
+  --overview-divider-opacity: 0.07;
+  --overview-gap: 14px;
   --overview-action-opacity: 0.11;
   --overview-action-hover-opacity: 0.18;
   --dialog-action-radius: 6px;
@@ -82,10 +83,6 @@
   --overview-action-text: #326f80;
   --danger-text: #984944;
   color-scheme: light;
-}
-
-.panel-glass-effect {
-  display: none;
 }
 
 /* The varied field behind the translucent surfaces makes the blur visible. */
@@ -140,27 +137,6 @@
 /* Overview panels use their own opacity control rather than the shared glass fill. */
 :root[data-theme='light'] .dashboard-panel {
   background: var(--overview-panel-background);
-}
-
-:root[data-theme='light'] .panel-glass-effect {
-  display: block;
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-:root[data-theme='light'] .panel-glass-effect__material {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: inherit !important;
-  opacity: calc(var(--glass-panel-opacity) + 0.32);
-}
-
-:root[data-theme='light'] .panel-glass-effect__material .glass-ui-card-content {
-  overflow: hidden;
 }
 
 :root[data-theme='light'] :is(.record-modal, .booking-drawer) {
@@ -279,21 +255,17 @@
 }
 
 :root[data-theme='light'] .button--overview-action {
-  border-color: rgb(var(--focus-rgb) / 0.1);
+  border-color: rgb(var(--focus-rgb) / 0.07);
   color: var(--overview-action-text);
-  background: rgb(237 246 248 / 0.82);
-  box-shadow:
-    inset 0 1px rgb(255 255 255 / 0.84),
-    0 3px 10px rgb(55 89 97 / 0.08);
+  background: rgb(244 249 250 / 0.48);
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.54);
 }
 
 :root[data-theme='light'] .button--overview-action:hover:not(:disabled) {
-  border-color: rgb(var(--focus-rgb) / 0.18);
+  border-color: rgb(var(--focus-rgb) / 0.12);
   color: var(--accent-hover);
-  background: rgb(247 252 252 / 0.94);
-  box-shadow:
-    inset 0 1px rgb(255 255 255 / 0.92),
-    0 5px 14px rgb(55 89 97 / 0.11);
+  background: rgb(250 253 253 / 0.7);
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.7);
 }
 
 /* Empty and failed states use the same readable glass action as the workspace. */
@@ -311,15 +283,16 @@
 
 /* Destructive actions stay legible without surrounding every one in red. */
 :root[data-theme='light'] .overview-delete-button {
-  border-color: rgb(var(--border-rgb) / 0.08);
+  border-color: rgb(var(--border-rgb) / 0.05);
   color: var(--danger-text);
-  background: rgb(255 255 255 / 0.32);
+  background: rgb(255 255 255 / 0.16);
+  box-shadow: none;
 }
 
 :root[data-theme='light'] .overview-delete-button:hover:not(:disabled) {
-  border-color: rgb(164 81 76 / 0.22);
+  border-color: rgb(164 81 76 / 0.15);
   color: var(--danger);
-  background: rgb(164 81 76 / 0.07);
+  background: rgb(164 81 76 / 0.045);
 }
 
 /* Expanding audit content uses native glass so its material grows with the content. */

@@ -47,8 +47,8 @@
   display: grid;
   min-height: 0;
   flex: 1;
-  gap: 10px;
-  padding: 12px;
+  gap: 0;
+  padding: 0;
   grid-auto-rows: minmax(116px, 1fr);
 }
 
@@ -57,12 +57,12 @@
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto 1fr;
   align-items: start;
-  gap: 12px 16px;
+  gap: 14px 18px;
   min-height: 116px;
-  padding: 13px;
-  border: 1px solid var(--line);
-  border-radius: max(0px, calc(var(--corner-panel) - 2px));
-  background: var(--surface-subtle);
+  padding: var(--overview-section-padding);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .job-plan-actions {
@@ -110,13 +110,14 @@
 .job-plan-card dl {
   grid-column: 1 / -1;
   align-self: end;
-  border: 1px solid var(--line);
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 
 .job-plan-card dl div,
 .job-plan-preview dl div {
   padding: 8px 10px;
-  background: var(--surface-subtle);
+  background: transparent;
 }
 
 .job-plan-card dl div + div,

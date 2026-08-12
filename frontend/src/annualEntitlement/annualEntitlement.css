@@ -33,7 +33,7 @@
   display: grid;
   min-width: 0;
   gap: 5px;
-  padding: 13px 15px;
+  padding: 13px var(--overview-section-padding);
 }
 
 .applied-entitlement-summary > div + div,
@@ -76,13 +76,14 @@
 .entitlement-component-table {
   display: grid;
   margin-top: 0;
-  border: 1px solid var(--line);
+  border: 0;
 }
 
 .entitlement-overview-details {
   margin-top: 0;
   border: 0;
-  background: var(--surface-subtle);
+  border-top: 1px solid var(--line);
+  background: transparent;
 }
 
 .entitlement-overview-details > summary {
@@ -124,7 +125,7 @@
 }
 
 .entitlement-overview-details-content {
-  padding: 12px;
+  padding: 0 var(--overview-section-padding) var(--overview-section-padding);
   overflow-x: auto;
   border-top: 1px solid var(--line);
 }
@@ -149,7 +150,7 @@
 }
 .entitlement-component-heading {
   color: var(--quiet);
-  background: var(--overview-panel-background);
+  background: transparent;
   font-size: 9px;
 }
 .entitlement-component-table strong {
@@ -160,7 +161,7 @@
   color: var(--accent);
 }
 .entitlement-component-total {
-  background: var(--surface);
+  background: transparent;
 }
 .entitlement-component-total > span:nth-child(2) {
   color: var(--quiet);

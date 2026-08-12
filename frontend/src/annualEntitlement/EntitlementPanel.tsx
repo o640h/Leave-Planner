@@ -5,7 +5,6 @@ import { LeaveYearHolidayPanel } from '../publicHolidays/LeaveYearHolidayPanel'
 import { AppIcon } from '../system/AppIcon'
 import { formatDecimal } from '../system/decimal'
 import { ModalLayer } from '../system/ModalLayer'
-import { PanelGlass } from '../system/PanelGlass'
 import { applyEntitlement, getEntitlement, previewEntitlement, refreshEntitlement } from './api'
 import { EntitlementCalculationDetails } from './EntitlementCalculationDetails'
 import { EntitlementForm } from './EntitlementForm'
@@ -141,7 +140,6 @@ export function EntitlementPanel({
 
   return (
     <section className="dashboard-panel entitlement-panel" aria-labelledby="entitlement-title">
-      <PanelGlass />
       <header className="dashboard-panel-header">
         <h4 id="entitlement-title">Annual Entitlement</h4>
 

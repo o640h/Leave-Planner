@@ -11,7 +11,6 @@ import type { ConsultantYearSummary } from '../consultantSummary/types'
 import { JobPlanPanel } from '../jobPlans/JobPlanPanel'
 import { AppIcon } from '../system/AppIcon'
 import { ModalLayer } from '../system/ModalLayer'
-import { PanelGlass } from '../system/PanelGlass'
 import {
   createLeaveYear,
   leaveYearRemovalImpact,
@@ -230,7 +229,6 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 className="dashboard-panel leave-year-summary"
                 aria-labelledby="year-summary-title"
               >
-                <PanelGlass />
                 <header className="dashboard-panel-header">
                   <div className="leave-year-title-group">
                     <h4 id="year-summary-title">Leave Year</h4>

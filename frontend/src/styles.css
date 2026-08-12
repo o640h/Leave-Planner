@@ -28,15 +28,17 @@
   --frame-shadow: 0 30px 90px rgb(0 0 0 / 0.42);
   --rail-shadow: inset -10px 0 22px rgb(0 0 0 / 0.32);
   --corner-frame: 10px;
-  --corner-control: 1px;
-  --corner-panel: 15px;
+  --corner-control: 5px;
+  --corner-panel: 10px;
   --corner-modal: 10px;
   /* Overview tuning */
   --overview-gap: 12px;
   --overview-panel-background: #151515;
-  --overview-panel-header-background: #181818;
-  --overview-panel-border-opacity: 0.03;
-  --overview-panel-shadow-opacity: 0.22;
+  --overview-panel-header-background: transparent;
+  --overview-panel-border-opacity: 0.045;
+  --overview-panel-shadow-opacity: 0.18;
+  --overview-divider-opacity: 0.04;
+  --overview-section-padding: 14px;
   --overview-action-opacity: 0.075;
   --overview-action-hover-opacity: 0.5;
   --overview-action-radius: 5px;

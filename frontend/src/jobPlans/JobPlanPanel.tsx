@@ -5,7 +5,6 @@ import type { LeaveYear } from '../leaveYears/types'
 import { AppIcon } from '../system/AppIcon'
 import { formatDecimal } from '../system/decimal'
 import { ModalLayer } from '../system/ModalLayer'
-import { PanelGlass } from '../system/PanelGlass'
 import {
   createJobPlan,
   jobPlanRemovalImpact,
@@ -178,7 +177,6 @@ export function JobPlanPanel({
 
   return (
     <section className="dashboard-panel job-plan-panel" aria-labelledby="job-plans-title">
-      <PanelGlass />
       <header className="dashboard-panel-header job-plan-heading">
         <div>
           <h4 id="job-plans-title">Job Plans</h4>

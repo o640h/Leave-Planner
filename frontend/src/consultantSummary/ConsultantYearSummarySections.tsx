@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 import { addNonNegativeDecimals, formatDecimal } from '../system/decimal'
-import { PanelGlass } from '../system/PanelGlass'
 import type { ActivityHours, LeaveBooking } from '../planning/types'
 import type {
   AuditEvent,
@@ -190,7 +189,6 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
   return (
     <>
       <details className="dashboard-panel summary-panel summary-panel--periods">
-        <PanelGlass />
         <summary>
           <span>Annual Leave by Job Plan</span>
           <small>
@@ -220,7 +218,6 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
       ) : null}
 
       <section className="dashboard-panel summary-panel summary-panel--ledger">
-        <PanelGlass />
         <header className="dashboard-panel-header">
           <h4>Leave Log</h4>
           <span>{ledger.length} Entries</span>
