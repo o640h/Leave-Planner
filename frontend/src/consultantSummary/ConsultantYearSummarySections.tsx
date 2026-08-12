@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { addNonNegativeDecimals, formatDecimal } from '../system/decimal'
+import { PanelGlass } from '../system/PanelGlass'
 import type { ActivityHours, LeaveBooking } from '../planning/types'
 import type {
   AuditEvent,
@@ -188,13 +189,16 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
 
   return (
     <>
-      <section className="dashboard-panel summary-panel summary-panel--periods">
-        <header className="dashboard-panel-header">
-          <h4>Annual Leave by Job Plan</h4>
-          <span>
+      <details className="dashboard-panel summary-panel summary-panel--periods">
+        <PanelGlass />
+        <summary>
+          <span>Annual Leave by Job Plan</span>
+          <small>
+            {summary.job_plan_periods.length}{' '}
+            {summary.job_plan_periods.length === 1 ? 'Period' : 'Periods'} ·{' '}
             {summary.allocation_source === 'recommendation' ? 'Calculated Total' : 'Applied Total'}
-          </span>
-        </header>
+          </small>
+        </summary>
         {summary.job_plan_periods.length ? (
           <div className="period-table" role="table" aria-label="Annual Leave by Job Plan">
             {summary.job_plan_periods.map((period, index) => (
@@ -204,7 +208,7 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
         ) : (
           <p className="summary-empty">Add a job plan to calculate the leave-year periods.</p>
         )}
-      </section>
+      </details>
 
       {warnings.length ? (
         <section className="summary-warnings" aria-labelledby="summary-warnings-title">
@@ -216,6 +220,7 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
       ) : null}
 
       <section className="dashboard-panel summary-panel summary-panel--ledger">
+        <PanelGlass />
         <header className="dashboard-panel-header">
           <h4>Leave Log</h4>
           <span>{ledger.length} Entries</span>

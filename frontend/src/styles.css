@@ -5,26 +5,60 @@
   --surface: #161616;
   --surface-raised: #191919;
   --control: #191919;
+  --root-surround: #090909;
+  --rail: #0d0d0d;
+  --field: #111;
+  --field-action: #181818;
+  --interactive-hover: #202020;
+  --surface-subtle: #141414;
+  --overlay: rgb(0 0 0 / 0.72);
   --border-rgb: 255 255 255;
   --line-opacity: 0.03;
   --line-strong-opacity: 0.02;
   --focus-rgb: 130 181 194;
   --focus-opacity: 0.38;
+  --control-hover-opacity: 0.2;
+  --control-focus-opacity: 0.42;
   --line: rgb(var(--border-rgb) / var(--line-opacity));
   --line-strong: rgb(var(--border-rgb) / var(--line-strong-opacity));
   --focus-line: rgb(var(--focus-rgb) / var(--focus-opacity));
+  --control-hover-line: rgb(var(--focus-rgb) / var(--control-hover-opacity));
+  --control-focus-line: rgb(var(--focus-rgb) / var(--control-focus-opacity));
   --panel-shadow: 0 14px 34px rgba(0, 0, 0, 0.3), inset 0 1px rgb(255 255 255 / 0.012);
+  --frame-shadow: 0 30px 90px rgb(0 0 0 / 0.42);
+  --rail-shadow: inset -10px 0 22px rgb(0 0 0 / 0.32);
   --corner-frame: 10px;
   --corner-control: 1px;
-  --corner-panel: 5px;
+  --corner-panel: 15px;
   --corner-modal: 10px;
+  /* Overview tuning */
+  --overview-gap: 12px;
+  --overview-panel-background: #151515;
+  --overview-panel-header-background: #181818;
+  --overview-panel-border-opacity: 0.03;
+  --overview-panel-shadow-opacity: 0.22;
+  --overview-action-opacity: 0.075;
+  --overview-action-hover-opacity: 0.5;
+  --overview-action-radius: 5px;
+  --overview-carry-action-gap: 20px;
+  /* Dialog controls: shared by every create, edit, and removal panel. */
+  --dialog-action-radius: 5px;
+  --dialog-action-border-opacity: 0.06;
+  --dialog-action-fill-opacity: 0.075;
+  --dialog-action-hover-opacity: 0.14;
+  --dialog-field-rgb: 17 17 17;
+  --dialog-field-opacity: 0.78;
   --text: #dedbd7;
   --quiet: #74736f;
   --muted: #9c9a95;
   --accent: #82b5c2;
   --nominal: #8aba9a;
-  --warning: #c7a16d;
+  --warning: #ae946d;
   --danger: #bc706c;
+  --on-accent: #101010;
+  --accent-hover: #a0c7d0;
+  --overview-action-text: #b5cbd0;
+  --danger-text: #b98480;
   --brand: 'Montserrat Variable', Montserrat, 'Segoe UI Variable', 'Segoe UI', sans-serif;
   --ui: 'Montserrat Variable', Montserrat, 'Segoe UI Variable', 'Segoe UI', sans-serif;
   --mono: var(--ui);
@@ -84,7 +118,7 @@ body,
 #root {
   display: grid;
   place-items: center;
-  background: #090909;
+  background: var(--root-surround);
 }
 
 button,
@@ -158,7 +192,7 @@ p {
   border: 1px solid var(--line-strong);
   border-radius: var(--corner-frame);
   background: var(--canvas);
-  box-shadow: 0 30px 90px rgb(0 0 0 / 0.42);
+  box-shadow: var(--frame-shadow);
 }
 
 .application-frame--desktop {
@@ -188,8 +222,8 @@ p {
   min-height: 0;
   padding: 12px 9px;
   border-right: 1px solid var(--line);
-  background: #0d0d0d;
-  box-shadow: inset -10px 0 22px rgb(0 0 0 / 0.32);
+  background: var(--rail);
+  box-shadow: var(--rail-shadow);
 }
 
 .brand {
@@ -228,7 +262,7 @@ p {
 
 .navigation-item:hover:not(:disabled) {
   color: var(--text);
-  background: rgb(255 255 255 / 0.025);
+  background: var(--interactive-hover);
 }
 
 .navigation-item--active {
@@ -268,6 +302,7 @@ p {
 }
 
 .application-content {
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -298,12 +333,12 @@ p {
 .icon-text-button:hover:not(:disabled) {
   border-color: rgb(var(--focus-rgb) / 0.24);
   color: var(--text);
-  background: #202020;
+  background: var(--interactive-hover);
 }
 
 .button--primary {
   border-color: var(--accent);
-  color: #101010;
+  color: var(--on-accent);
   background: var(--accent);
 }
 
@@ -364,19 +399,84 @@ p {
   padding: 9px 11px;
   border: 1px solid var(--line-strong);
   color: var(--text);
-  background: #111;
+  background: var(--field);
 }
 
 .button--primary:hover:not(:disabled) {
-  border-color: #a0c7d0;
-  color: #101010;
-  background: #a0c7d0;
+  border-color: var(--accent-hover);
+  color: var(--on-accent);
+  background: var(--accent-hover);
 }
 
 .button--quiet {
   border-color: var(--line-strong);
   color: var(--muted);
   background: transparent;
+}
+
+.button--overview-action {
+  border-color: transparent;
+  border-radius: max(var(--overview-action-radius), var(--corner-control));
+  color: var(--overview-action-text);
+  background: rgb(var(--focus-rgb) / var(--overview-action-opacity));
+  box-shadow: none;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.button--overview-action .app-icon {
+  color: var(--accent);
+}
+
+.button--overview-action:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--text);
+  background: rgb(var(--focus-rgb) / var(--overview-action-hover-opacity));
+  box-shadow: none;
+}
+
+.button--overview-action:focus-visible {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--focus-line);
+}
+
+/* Keep every dialog action aligned with the compact Overview controls. */
+:is(.record-modal, .booking-drawer) .form-actions .button {
+  border-color: rgb(var(--border-rgb) / var(--dialog-action-border-opacity));
+  border-radius: max(var(--dialog-action-radius), var(--corner-control));
+  background: rgb(var(--focus-rgb) / var(--dialog-action-fill-opacity));
+  box-shadow: none;
+}
+
+:is(.record-modal, .booking-drawer) .form-actions .button:hover:not(:disabled) {
+  border-color: transparent;
+  background: rgb(var(--focus-rgb) / var(--dialog-action-hover-opacity));
+}
+
+:is(.record-modal, .booking-drawer) .form-actions .button--primary {
+  border-color: transparent;
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+:is(.record-modal, .booking-drawer) .form-actions .button--primary:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--on-accent);
+  background: var(--accent-hover);
+}
+
+.overview-delete-button {
+  border-color: rgb(188 112 108 / 0.32);
+  border-radius: max(3px, var(--corner-control));
+  color: var(--danger-text);
+  background: rgb(188 112 108 / 0.025);
+}
+
+.overview-delete-button:hover:not(:disabled) {
+  border-color: rgb(188 112 108 / 0.58);
+  color: var(--danger);
+  background: rgb(188 112 108 / 0.08);
 }
 
 .button--with-icon .app-icon,
@@ -392,15 +492,15 @@ p {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: var(--corner-control);
-  background: #111;
+  background: var(--field);
 }
 
 .number-input:hover:not(:has(input:disabled)) {
-  border-color: var(--quiet);
+  border-color: var(--control-hover-line);
 }
 
 .number-input:focus-within {
-  border-color: var(--focus-line);
+  border-color: var(--control-focus-line);
 }
 
 .number-input input,
@@ -435,7 +535,7 @@ p {
   place-items: center;
   border: 0;
   color: var(--quiet);
-  background: #181818;
+  background: var(--field-action);
 }
 
 .number-input-controls button + button {
@@ -444,7 +544,7 @@ p {
 
 .number-input-controls button:hover:not(:disabled) {
   color: var(--accent);
-  background: #202020;
+  background: var(--interactive-hover);
 }
 
 .number-input-controls svg {
@@ -480,7 +580,7 @@ p {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: var(--corner-control);
-  background: #111;
+  background: var(--field);
 }
 
 .date-input-placeholder {
@@ -495,14 +595,14 @@ p {
   padding: 0 12px;
   pointer-events: none;
   color: var(--muted);
-  background: #111;
+  background: var(--field);
 }
 
 .date-input:hover:not(:has(input:disabled)) {
-  border-color: var(--quiet);
+  border-color: var(--control-hover-line);
 }
 .date-input:focus-within {
-  border-color: var(--focus-line);
+  border-color: var(--control-focus-line);
 }
 .date-input input {
   min-width: 0;
@@ -522,11 +622,11 @@ p {
   border: 0;
   border-left: 1px solid var(--line);
   color: var(--muted);
-  background: #181818;
+  background: var(--field-action);
 }
 .date-input button:hover:not(:disabled) {
   color: var(--accent);
-  background: #202020;
+  background: var(--interactive-hover);
 }
 .date-input .app-icon {
   width: 16px;

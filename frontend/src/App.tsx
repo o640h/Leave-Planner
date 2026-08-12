@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
 import { PlanningPage } from './planning/PlanningPage'
-import { HolidaySettingsPage } from './publicHolidays/HolidaySettingsPage'
+import { SettingsPage } from './settings/SettingsPage'
 import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
 
@@ -57,7 +57,7 @@ export function App() {
         <main className="application-content">
           {page === 'consultants' && <ConsultantDirectory />}
           {page === 'planning' && <PlanningPage />}
-          {page === 'settings' && <HolidaySettingsPage />}
+          {page === 'settings' && <SettingsPage />}
         </main>
       </div>
     </div>

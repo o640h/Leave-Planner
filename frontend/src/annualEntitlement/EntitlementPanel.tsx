@@ -4,12 +4,13 @@ import { operatorErrorMessage } from '../api/client'
 import { LeaveYearHolidayPanel } from '../publicHolidays/LeaveYearHolidayPanel'
 import { AppIcon } from '../system/AppIcon'
 import { formatDecimal } from '../system/decimal'
+import { ModalLayer } from '../system/ModalLayer'
+import { PanelGlass } from '../system/PanelGlass'
 import { applyEntitlement, getEntitlement, previewEntitlement, refreshEntitlement } from './api'
 import { EntitlementCalculationDetails } from './EntitlementCalculationDetails'
 import { EntitlementForm } from './EntitlementForm'
 import type {
   EntitlementApplyInput,
-  EntitlementMode,
   EntitlementRecommendation,
   EntitlementWorkspace,
 } from './types'
@@ -29,12 +30,6 @@ type EntitlementPanelProps = {
   onChanged?: () => void
   refreshRevision: number
   reloadRevision: number
-}
-
-const modeLabels: Record<EntitlementMode, string> = {
-  calculated: 'Calculated',
-  calculated_with_override: 'Calculated With Override',
-  manual: 'Manual',
 }
 
 export function EntitlementPanel({
@@ -146,13 +141,12 @@ export function EntitlementPanel({
 
   return (
     <section className="dashboard-panel entitlement-panel" aria-labelledby="entitlement-title">
+      <PanelGlass />
       <header className="dashboard-panel-header">
-        <div>
-          <h4 id="entitlement-title">Annual Entitlement</h4>
-        </div>
+        <h4 id="entitlement-title">Annual Entitlement</h4>
 
         <button
-          className="button button--quiet button--with-icon"
+          className="button button--overview-action button--with-icon"
           type="button"
           onClick={() => {
             setError(null)
@@ -197,10 +191,6 @@ export function EntitlementPanel({
         <div className="entitlement-content">
           <div className="applied-entitlement-summary">
             <div>
-              <span>Application Method</span>
-              <strong>{modeLabels[application.mode]}</strong>
-            </div>
-            <div>
               <span>DCC</span>
               <strong>{formatDecimal(application.entitlement.dcc_hours, 3)}</strong>
             </div>
@@ -215,58 +205,64 @@ export function EntitlementPanel({
           </div>
 
           {recommendation ? (
-            <>
-              <div
-                className="entitlement-component-table"
-                role="table"
-                aria-label="Entitlement Components"
-              >
-                <div className="entitlement-component-heading" role="row">
-                  <span role="columnheader">Policy Component</span>
-                  <span role="columnheader">Full-Time Hours</span>
-                  <span role="columnheader">Calculated Hours</span>
-                </div>
-                {[...recommendation.components]
-                  .sort(
-                    (left, right) =>
-                      (componentOrder[left.kind] ?? 99) - (componentOrder[right.kind] ?? 99),
-                  )
-                  .map((component) => (
-                    <div role="row" key={`${component.label}-${component.kind}`}>
-                      <strong role="cell">{component.label}</strong>
-                      <span role="cell">{formatDecimal(component.full_time_hours, 3)}</span>
-                      <span role="cell">{formatDecimal(component.prorated_hours, 3)}</span>
-                    </div>
-                  ))}
-                <div className="entitlement-component-total" role="row">
-                  <strong role="cell">Base Annual Leave</strong>
-                  <span role="cell">PA and period pro-rata</span>
-                  <span role="cell">
-                    {formatDecimal(recommendation.base_entitlement.total_hours, 3)}
-                  </span>
-                </div>
-                <div className="entitlement-component-total" role="row">
-                  <strong role="cell">Public Holidays</strong>
-                  <span role="cell">Applicable dated holidays</span>
-                  <span role="cell">
-                    {formatDecimal(recommendation.public_holiday_entitlement.total_hours, 3)}
-                  </span>
-                </div>
+            <details className="entitlement-overview-details">
+              <summary>
+                <span>Breakdown &amp; Calculation</span>
+                <small>{recommendation.components.length} Policy Components</small>
+              </summary>
+              <div className="entitlement-overview-details-content">
                 <div
-                  className="entitlement-component-total entitlement-component-total--emphasis"
-                  role="row"
+                  className="entitlement-component-table"
+                  role="table"
+                  aria-label="Entitlement Components"
                 >
-                  <strong role="cell">Recommended Total</strong>
-                  <span role="cell">Base plus public holidays</span>
-                  <span role="cell">
-                    {formatDecimal(recommendation.recommended_entitlement.total_hours, 3)}
-                  </span>
+                  <div className="entitlement-component-heading" role="row">
+                    <span role="columnheader">Policy Component</span>
+                    <span role="columnheader">Full-Time Hours</span>
+                    <span role="columnheader">Calculated Hours</span>
+                  </div>
+                  {[...recommendation.components]
+                    .sort(
+                      (left, right) =>
+                        (componentOrder[left.kind] ?? 99) - (componentOrder[right.kind] ?? 99),
+                    )
+                    .map((component) => (
+                      <div role="row" key={`${component.label}-${component.kind}`}>
+                        <strong role="cell">{component.label}</strong>
+                        <span role="cell">{formatDecimal(component.full_time_hours, 3)}</span>
+                        <span role="cell">{formatDecimal(component.prorated_hours, 3)}</span>
+                      </div>
+                    ))}
+                  <div className="entitlement-component-total" role="row">
+                    <strong role="cell">Base Annual Leave</strong>
+                    <span role="cell">PA and period pro-rata</span>
+                    <span role="cell">
+                      {formatDecimal(recommendation.base_entitlement.total_hours, 3)}
+                    </span>
+                  </div>
+                  <div className="entitlement-component-total" role="row">
+                    <strong role="cell">Public Holidays</strong>
+                    <span role="cell">Applicable dated holidays</span>
+                    <span role="cell">
+                      {formatDecimal(recommendation.public_holiday_entitlement.total_hours, 3)}
+                    </span>
+                  </div>
+                  <div
+                    className="entitlement-component-total entitlement-component-total--emphasis"
+                    role="row"
+                  >
+                    <strong role="cell">Recommended Total</strong>
+                    <span role="cell">Base plus public holidays</span>
+                    <span role="cell">
+                      {formatDecimal(recommendation.recommended_entitlement.total_hours, 3)}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <EntitlementCalculationDetails recommendation={recommendation} />
-              <LeaveYearHolidayPanel consultantId={consultantId} leaveYearId={leaveYearId} />
-            </>
+                <EntitlementCalculationDetails recommendation={recommendation} />
+                <LeaveYearHolidayPanel consultantId={consultantId} leaveYearId={leaveYearId} />
+              </div>
+            </details>
           ) : (
             <p className="manual-entitlement-note">
               These values were entered manually.
@@ -282,38 +278,40 @@ export function EntitlementPanel({
       )}
 
       {editorOpen ? (
-        <div className="modal-backdrop">
-          <section
-            className="record-modal entitlement-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="entitlement-form-title"
-          >
-            <button
-              className="modal-close"
-              type="button"
-              aria-label="Close Entitlement Editor"
-              disabled={saving}
-              onClick={() => setEditorOpen(false)}
+        <ModalLayer>
+          <div className="modal-backdrop">
+            <section
+              className="record-modal entitlement-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="entitlement-form-title"
             >
-              ×
-            </button>
+              <button
+                className="modal-close"
+                type="button"
+                aria-label="Close Entitlement Editor"
+                disabled={saving}
+                onClick={() => setEditorOpen(false)}
+              >
+                ×
+              </button>
 
-            {error ? (
-              <p className="form-notice form-notice--error" role="alert">
-                {error}
-              </p>
-            ) : null}
+              {error ? (
+                <p className="form-notice form-notice--error" role="alert">
+                  {error}
+                </p>
+              ) : null}
 
-            <EntitlementForm
-              initialValue={workspace}
-              busy={saving}
-              onPreview={requestPreview}
-              onSubmit={saveEntitlement}
-              onCancel={() => setEditorOpen(false)}
-            />
-          </section>
-        </div>
+              <EntitlementForm
+                initialValue={workspace}
+                busy={saving}
+                onPreview={requestPreview}
+                onSubmit={saveEntitlement}
+                onCancel={() => setEditorOpen(false)}
+              />
+            </section>
+          </div>
+        </ModalLayer>
       ) : null}
     </section>
   )

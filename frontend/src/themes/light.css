@@ -1,0 +1,337 @@
+/*
+ * Atmospheric light theme
+ *
+ * The first group is the tuning surface. Adjust these values before changing
+ * component selectors below; the material stays consistent across the app.
+ */
+:root[data-theme='light'] {
+  /* Atmospheric backdrop */
+  --light-base: #dfe6e8;
+  --light-pearl: #f5f8f8;
+  --light-sky: rgb(151 195 209 / 0.42);
+  --light-sage: rgb(167 199 187 / 0.34);
+  --light-violet: rgb(187 189 213 / 0.2);
+
+  /* Glass material */
+  --glass-fill: rgb(249 252 252 / 0.4);
+  --glass-fill-raised: rgb(255 255 255 / 0.7);
+  --glass-fill-soft: rgb(255 255 255 / 0.6);
+  --glass-dialog-fill: rgb(244 248 249 / 0.86);
+  --glass-edge: rgb(255 255 255 / 0.72);
+  --glass-edge-low: rgb(46 69 75 / 0.01);
+  --glass-blur: 16px;
+  --glass-saturation: 120%;
+  --glass-panel-opacity: 0.3;
+  --glass-shadow:
+    0 1px 1px rgb(255 255 255 / 0.74) inset, 0 12px 32px rgb(58 78 83 / 0.09),
+    0 2px 8px rgb(58 78 83 / 0.05);
+  --glass-shadow-raised:
+    0 1px 1px rgb(255 255 255 / 0.82) inset, 0 22px 52px rgb(48 68 74 / 0.16),
+    0 4px 12px rgb(48 68 74 / 0.08);
+
+  /* Light palette */
+  --bg: var(--light-base);
+  --canvas: transparent;
+  --panel: var(--glass-fill);
+  --surface: var(--glass-fill-soft);
+  --surface-raised: var(--glass-fill-raised);
+  --control: rgb(248 251 251 / 0.64);
+  --root-surround: #d7dfe1;
+  --rail: rgb(240 246 246 / 0.46);
+  --field: rgb(255 255 255 / 0.6);
+  --field-action: rgb(236 243 244 / 0.7);
+  --interactive-hover: rgb(63 127 143 / 0.09);
+  --surface-subtle: rgb(255 255 255 / 0.25);
+  --overlay: rgb(35 52 57 / 0.3);
+  --border-rgb: 46 69 75;
+  --line-opacity: 0.05;
+  --line-strong-opacity: 0.05;
+  --focus-rgb: 63 127 143;
+  --focus-opacity: 0.55;
+  --control-hover-opacity: 0.16;
+  --control-focus-opacity: 0.36;
+  --panel-shadow: var(--glass-shadow);
+  --frame-shadow: 0 30px 90px rgb(35 55 60 / 0.2);
+  --rail-shadow: inset -1px 0 rgb(46 69 75 / 0.08), 10px 0 32px rgb(58 78 83 / 0.05);
+
+  /* Overview material */
+  --overview-panel-background: rgb(249 252 252 / var(--glass-panel-opacity));
+  --overview-panel-header-background: rgb(255 255 255 / 0.2);
+  --overview-panel-border-opacity: 0.09;
+  --overview-panel-shadow-opacity: 0.08;
+  --overview-gap: 16px;
+  --overview-action-opacity: 0.11;
+  --overview-action-hover-opacity: 0.18;
+  --dialog-action-radius: 6px;
+  --dialog-action-border-opacity: 0.06;
+  --dialog-action-fill-opacity: 0.11;
+  --dialog-action-hover-opacity: 0.18;
+  --dialog-field-rgb: 239 245 246;
+  --dialog-field-opacity: 0.46;
+
+  /* Light semantic colours */
+  --text: #1d2a2e;
+  --quiet: #77878b;
+  --muted: #506267;
+  --accent: #377f95;
+  --nominal: #3e7e70;
+  --warning: #756b91;
+  --danger: #a4514c;
+  --on-accent: #f7fbfb;
+  --accent-hover: #2c6a7d;
+  --overview-action-text: #326f80;
+  --danger-text: #984944;
+  color-scheme: light;
+}
+
+.panel-glass-effect {
+  display: none;
+}
+
+/* The varied field behind the translucent surfaces makes the blur visible. */
+:root[data-theme='light'] body {
+  background:
+    radial-gradient(circle at 14% 88%, rgb(151 195 209 / 0.22), transparent 31%),
+    radial-gradient(circle at 88% 14%, rgb(167 199 187 / 0.2), transparent 34%),
+    var(--root-surround);
+}
+
+:root[data-theme='light'] .application-frame,
+:root[data-theme='light'] .application-shell,
+:root[data-theme='light'] .application-content,
+:root[data-theme='light'] .directory-workspace {
+  background-color: transparent;
+}
+
+:root[data-theme='light'] .application-content {
+  background-image:
+    radial-gradient(ellipse at 86% 8%, var(--light-sage), transparent 38%),
+    radial-gradient(ellipse at 8% 78%, var(--light-sky), transparent 42%),
+    radial-gradient(ellipse at 62% 56%, var(--light-violet), transparent 44%),
+    linear-gradient(135deg, var(--light-pearl), var(--light-base));
+  background-attachment: local;
+}
+
+/* Stable chrome uses a quieter, slightly denser glass than content panels. */
+:root[data-theme='light'] :is(.application-rail, .directory-list-panel, .settings-directory) {
+  border-color: var(--glass-edge-low);
+  background: rgb(244 249 249 / 0.5);
+  backdrop-filter: blur(calc(var(--glass-blur) + 7px)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 7px)) saturate(var(--glass-saturation));
+}
+
+/* Detached glass surfaces. Keep the selector list limited to real panels. */
+:root[data-theme='light']
+  :is(
+    .dashboard-panel,
+    .settings-panel,
+    .calendar-panel,
+    .planning-wallchart,
+    .record-modal,
+    .booking-drawer
+  ) {
+  border-color: var(--glass-edge-low);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  box-shadow: var(--glass-shadow);
+}
+
+/* Overview panels use their own opacity control rather than the shared glass fill. */
+:root[data-theme='light'] .dashboard-panel {
+  background: var(--overview-panel-background);
+}
+
+:root[data-theme='light'] .panel-glass-effect {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+:root[data-theme='light'] .panel-glass-effect__material {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+  opacity: calc(var(--glass-panel-opacity) + 0.32);
+}
+
+:root[data-theme='light'] .panel-glass-effect__material .glass-ui-card-content {
+  overflow: hidden;
+}
+
+:root[data-theme='light'] :is(.record-modal, .booking-drawer) {
+  border-color: rgb(255 255 255 / 0.82);
+  background: var(--glass-dialog-fill);
+  backdrop-filter: blur(calc(var(--glass-blur) + 18px)) saturate(108%);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 18px)) saturate(108%);
+  box-shadow: var(--glass-shadow-raised);
+}
+
+/* Dialog backdrops quiet the workspace so form content remains the clear focal layer. */
+:root[data-theme='light'] .modal-backdrop {
+  background: rgb(96 112 117 / 0.2);
+  backdrop-filter: blur(12px) saturate(82%);
+  -webkit-backdrop-filter: blur(12px) saturate(82%);
+}
+
+:root[data-theme='light'] .planning-drawer-backdrop {
+  background: rgb(96 112 117 / 0.2);
+  backdrop-filter: blur(12px) saturate(82%);
+  -webkit-backdrop-filter: blur(12px) saturate(82%);
+}
+
+/* Actions belong to the dialog material; never render a second footer panel. */
+:root[data-theme='light'] :is(.record-modal, .booking-drawer) .form-actions {
+  border-top-color: rgb(var(--border-rgb) / 0.045);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+/* Inputs use the same translucent material as the dialog instead of flat white. */
+:root[data-theme='light']
+  :is(.record-modal, .booking-drawer)
+  :is(
+    .field > input,
+    .field > textarea,
+    .field > select,
+    .number-input,
+    .date-input,
+    .calculated-field,
+    .removal-modal input,
+    .job-plan-override textarea,
+    .booking-fields input,
+    .booking-fields select,
+    .deduction-row > input
+  ) {
+  border-color: rgb(var(--border-rgb) / 0.07);
+  background-color: rgb(var(--dialog-field-rgb) / var(--dialog-field-opacity));
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.56);
+}
+
+:root[data-theme='light'] :is(.record-modal, .booking-drawer) .date-input-placeholder {
+  background: rgb(var(--dialog-field-rgb) / var(--dialog-field-opacity));
+}
+
+:root[data-theme='light']
+  :is(.record-modal, .booking-drawer)
+  :is(.number-input-controls button, .date-input button) {
+  background-color: rgb(231 240 242 / 0.52);
+}
+
+:root[data-theme='light'] :is(.button, .icon-text-button) {
+  background: rgb(247 251 251 / 0.46);
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.7);
+}
+
+:root[data-theme='light'] :is(.button, .icon-text-button):hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.72);
+}
+
+:root[data-theme='light'] :is(.record-modal, .booking-drawer) .form-actions .button {
+  border-color: rgb(var(--border-rgb) / var(--dialog-action-border-opacity));
+  border-radius: max(var(--dialog-action-radius), var(--corner-control));
+  color: var(--overview-action-text);
+  background: rgb(237 246 248 / 0.72);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.76),
+    0 3px 10px rgb(55 89 97 / 0.06);
+}
+
+:root[data-theme='light']
+  :is(.record-modal, .booking-drawer)
+  .form-actions
+  .button:hover:not(:disabled) {
+  border-color: rgb(var(--focus-rgb) / 0.14);
+  color: var(--accent-hover);
+  background: rgb(247 252 252 / 0.9);
+}
+
+:root[data-theme='light'] :is(.record-modal, .booking-drawer) .form-actions .button--primary {
+  border-color: transparent;
+  color: var(--on-accent);
+  background: var(--accent);
+  box-shadow: 0 4px 12px rgb(var(--focus-rgb) / 0.16);
+}
+
+:root[data-theme='light']
+  :is(.record-modal, .booking-drawer)
+  .form-actions
+  .button--primary:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--on-accent);
+  background: var(--accent-hover);
+}
+
+:root[data-theme='light']
+  :is(.record-modal, .booking-drawer)
+  .form-actions
+  .button--primary:disabled {
+  border-color: rgb(var(--border-rgb) / 0.08);
+  color: var(--quiet);
+  background: rgb(225 232 234 / 0.7);
+  box-shadow: none;
+}
+
+:root[data-theme='light'] .button--overview-action {
+  border-color: rgb(var(--focus-rgb) / 0.1);
+  color: var(--overview-action-text);
+  background: rgb(237 246 248 / 0.82);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.84),
+    0 3px 10px rgb(55 89 97 / 0.08);
+}
+
+:root[data-theme='light'] .button--overview-action:hover:not(:disabled) {
+  border-color: rgb(var(--focus-rgb) / 0.18);
+  color: var(--accent-hover);
+  background: rgb(247 252 252 / 0.94);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.92),
+    0 5px 14px rgb(55 89 97 / 0.11);
+}
+
+/* Empty and failed states use the same readable glass action as the workspace. */
+:root[data-theme='light'] :is(.panel-message-action, .workspace-empty-action) {
+  border-color: rgb(var(--focus-rgb) / 0.14);
+  color: var(--accent-hover);
+  background: rgb(239 247 249 / 0.78);
+}
+
+:root[data-theme='light'] :is(.panel-message-action, .workspace-empty-action):hover:not(:disabled) {
+  border-color: rgb(var(--focus-rgb) / 0.24);
+  color: var(--accent-hover);
+  background: rgb(250 253 253 / 0.94);
+}
+
+/* Destructive actions stay legible without surrounding every one in red. */
+:root[data-theme='light'] .overview-delete-button {
+  border-color: rgb(var(--border-rgb) / 0.08);
+  color: var(--danger-text);
+  background: rgb(255 255 255 / 0.32);
+}
+
+:root[data-theme='light'] .overview-delete-button:hover:not(:disabled) {
+  border-color: rgb(164 81 76 / 0.22);
+  color: var(--danger);
+  background: rgb(164 81 76 / 0.07);
+}
+
+/* Expanding audit content uses native glass so its material grows with the content. */
+:root[data-theme='light'] .summary-audit {
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root[data-theme='light'] {
+    --glass-fill: rgb(247 250 250 / 0.94);
+    --glass-fill-raised: rgb(252 253 253 / 0.98);
+  }
+}

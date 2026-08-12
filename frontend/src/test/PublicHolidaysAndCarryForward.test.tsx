@@ -36,9 +36,10 @@ describe('holiday and carry-forward workflows', () => {
 
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Public Holidays' }))
     expect(await screen.findByRole('heading', { name: 'Public Holidays' })).toBeInTheDocument()
-    expect(screen.getByText('2026')).toBeInTheDocument()
-    expect(screen.getByText('1 date')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /2026/ })).toBeInTheDocument()
+    expect(screen.getByText('1 Date')).toBeInTheDocument()
   })
 
   it('adds workbook carry-forward and shows its calculated total', async () => {

@@ -10,6 +10,8 @@ import {
 import type { ConsultantYearSummary } from '../consultantSummary/types'
 import { JobPlanPanel } from '../jobPlans/JobPlanPanel'
 import { AppIcon } from '../system/AppIcon'
+import { ModalLayer } from '../system/ModalLayer'
+import { PanelGlass } from '../system/PanelGlass'
 import {
   createLeaveYear,
   leaveYearRemovalImpact,
@@ -63,8 +65,6 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [jobPlanCount, setJobPlanCount] = useState<number | null>(null)
-  const [entitlementConfigured, setEntitlementConfigured] = useState<boolean | null>(null)
   const [calculationRevision, setCalculationRevision] = useState(0)
   const [entitlementReloadRevision, setEntitlementReloadRevision] = useState(0)
   const [removalImpact, setRemovalImpact] = useState<RemovalImpact | null>(null)
@@ -178,8 +178,6 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
       const remaining = leaveYears.filter((leaveYear) => leaveYear.id !== selectedLeaveYear.id)
       setLeaveYears(remaining)
       setSelectedId(remaining[0]?.id ?? null)
-      setJobPlanCount(null)
-      setEntitlementConfigured(null)
       setRemovalImpact(null)
       setNotice(result.message)
     } catch (requestError) {
@@ -190,24 +188,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
   }
 
   return (
-    <section className="leave-year-panel" aria-labelledby="leave-years-title">
-      <header className="leave-year-heading">
-        <div>
-          <h3 id="leave-years-title">Overview</h3>
-        </div>
-        <button
-          className="icon-text-button"
-          type="button"
-          onClick={() => {
-            setError(null)
-            setEditorTarget('new')
-          }}
-        >
-          <AppIcon name="plus" />
-          <span>Add Leave Year</span>
-        </button>
-      </header>
-
+    <section className="leave-year-panel" aria-label="Overview">
       {notice ? (
         <p className="form-notice form-notice--success" role="status">
           {notice}
@@ -225,66 +206,23 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
         </div>
       ) : (
         <>
-          <div className="workspace-overview" aria-label="Consultant Setup Overview">
-            <div className={`overview-item${selectedLeaveYear ? '' : ' overview-item--warning'}`}>
-              <AppIcon name="calendar" />
-              <div>
-                <span>Leave Year</span>
-                <strong>
-                  {selectedLeaveYear
-                    ? `${formatDate(selectedLeaveYear.start_date)} – ${formatDate(selectedLeaveYear.end_date)}`
-                    : 'Not Configured'}
-                </strong>
-              </div>
-            </div>
-            <div
-              className={`overview-item${jobPlanCount === 0 ? ' overview-item--warning' : jobPlanCount ? ' overview-item--complete' : ''}`}
-            >
-              <AppIcon name="jobPlan" />
-              <div>
-                <span>Job Plan</span>
-                <strong>
-                  {selectedLeaveYear === null
-                    ? 'Requires Leave Year'
-                    : jobPlanCount === null
-                      ? 'Checking'
-                      : jobPlanCount === 0
-                        ? 'Not Configured'
-                        : `${jobPlanCount} ${jobPlanCount === 1 ? 'Plan' : 'Plans'} Configured`}
-                </strong>
-              </div>
-            </div>
-            <div
-              className={`overview-item${
-                entitlementConfigured === false
-                  ? ' overview-item--warning'
-                  : entitlementConfigured
-                    ? ' overview-item--complete'
-                    : ''
-              }`}
-            >
-              <AppIcon name="calendar" />
-              <div>
-                <span>Entitlement</span>
-                <strong>
-                  {selectedLeaveYear === null
-                    ? 'Requires Leave Year'
-                    : entitlementConfigured === null
-                      ? 'Checking'
-                      : entitlementConfigured
-                        ? 'Applied'
-                        : 'Not Configured'}
-                </strong>
-              </div>
-            </div>
-          </div>
-
           {leaveYears.length === 0 ? (
             <div className="dashboard-empty">
               <div>
                 <h4>No Leave Year Configured</h4>
                 <p>Add the consultant's annual leave period before configuring a job plan.</p>
               </div>
+              <button
+                className="button button--overview-action button--with-icon"
+                type="button"
+                onClick={() => {
+                  setError(null)
+                  setEditorTarget('new')
+                }}
+              >
+                <AppIcon name="plus" />
+                <span>Add Leave Year</span>
+              </button>
             </div>
           ) : selectedLeaveYear ? (
             <div className="year-dashboard">
@@ -292,76 +230,89 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 className="dashboard-panel leave-year-summary"
                 aria-labelledby="year-summary-title"
               >
+                <PanelGlass />
                 <header className="dashboard-panel-header">
-                  <div>
-                    <h4 id="year-summary-title">Current Leave Year</h4>
+                  <div className="leave-year-title-group">
+                    <h4 id="year-summary-title">Leave Year</h4>
+                    {leaveYears.length > 1 ? (
+                      <label className="leave-year-selector">
+                        <span className="visually-hidden">Selected Leave Year</span>
+                        <select
+                          value={selectedLeaveYear.id}
+                          onChange={(event) => setSelectedId(Number(event.target.value))}
+                        >
+                          {leaveYears.map((leaveYear) => (
+                            <option key={leaveYear.id} value={leaveYear.id}>
+                              {formatDate(leaveYear.start_date)} – {formatDate(leaveYear.end_date)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : null}
                   </div>
                   <div className="dashboard-panel-actions">
-                    <button className="button button--quiet" type="button" onClick={beginRemoval}>
+                    <button
+                      className="button button--quiet overview-delete-button"
+                      type="button"
+                      onClick={beginRemoval}
+                    >
                       Delete
                     </button>
                     <button
-                      className="button button--quiet button--with-icon"
+                      className="button button--overview-action button--with-icon"
                       type="button"
                       onClick={() => setEditorTarget(selectedLeaveYear)}
                     >
                       <AppIcon name="edit" />
                       <span>Edit</span>
                     </button>
+                    <button
+                      className="button button--overview-action button--with-icon"
+                      type="button"
+                      onClick={() => {
+                        setError(null)
+                        setEditorTarget('new')
+                      }}
+                    >
+                      <AppIcon name="plus" />
+                      <span>Add Year</span>
+                    </button>
                   </div>
                 </header>
 
-                {leaveYears.length > 1 ? (
-                  <label className="leave-year-selector">
-                    <span>Selected Leave Year</span>
-                    <select
-                      value={selectedLeaveYear.id}
-                      onChange={(event) => {
-                        setJobPlanCount(null)
-                        setEntitlementConfigured(null)
-                        setSelectedId(Number(event.target.value))
-                      }}
-                    >
-                      {leaveYears.map((leaveYear) => (
-                        <option key={leaveYear.id} value={leaveYear.id}>
-                          {formatDate(leaveYear.start_date)} – {formatDate(leaveYear.end_date)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
+                <div className="leave-year-context">
+                  <div className="leave-year-range">
+                    <div>
+                      <span>Start Date</span>
+                      <time dateTime={selectedLeaveYear.start_date}>
+                        {formatDate(selectedLeaveYear.start_date)}
+                      </time>
+                    </div>
+                    <div>
+                      <span>End Date</span>
+                      <time dateTime={selectedLeaveYear.end_date}>
+                        {formatDate(selectedLeaveYear.end_date)}
+                      </time>
+                    </div>
+                  </div>
 
-                <div className="leave-year-range">
-                  <div>
-                    <span>Start Date</span>
-                    <time dateTime={selectedLeaveYear.start_date}>
-                      {formatDate(selectedLeaveYear.start_date)}
-                    </time>
-                  </div>
-                  <div>
-                    <span>End Date</span>
-                    <time dateTime={selectedLeaveYear.end_date}>
-                      {formatDate(selectedLeaveYear.end_date)}
-                    </time>
-                  </div>
+                  {selectedLeaveYear.employment_start || selectedLeaveYear.employment_end ? (
+                    <dl>
+                      {selectedLeaveYear.employment_start ? (
+                        <div>
+                          <dt>Employment From</dt>
+                          <dd>{formatDate(selectedLeaveYear.employment_start)}</dd>
+                        </div>
+                      ) : null}
+                      {selectedLeaveYear.employment_end ? (
+                        <div>
+                          <dt>Employment Until</dt>
+                          <dd>{formatDate(selectedLeaveYear.employment_end)}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  ) : null}
                 </div>
-
-                {selectedLeaveYear.employment_start || selectedLeaveYear.employment_end ? (
-                  <dl>
-                    {selectedLeaveYear.employment_start ? (
-                      <div>
-                        <dt>Employment From</dt>
-                        <dd>{formatDate(selectedLeaveYear.employment_start)}</dd>
-                      </div>
-                    ) : null}
-                    {selectedLeaveYear.employment_end ? (
-                      <div>
-                        <dt>Employment Until</dt>
-                        <dd>{formatDate(selectedLeaveYear.employment_end)}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
-                ) : null}
 
                 <CarryForwardControl
                   consultantId={consultantId}
@@ -375,7 +326,6 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 key={selectedLeaveYear.id}
                 consultantId={consultantId}
                 leaveYear={selectedLeaveYear}
-                onCountChange={setJobPlanCount}
                 onSaved={() => {
                   setCalculationRevision((revision) => revision + 1)
                   refreshSummary()
@@ -389,7 +339,6 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 key={`entitlement-${selectedLeaveYear.id}`}
                 consultantId={consultantId}
                 leaveYearId={selectedLeaveYear.id}
-                onStatusChange={setEntitlementConfigured}
                 onChanged={refreshSummary}
                 refreshRevision={calculationRevision}
                 reloadRevision={entitlementReloadRevision}
@@ -407,41 +356,43 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
       )}
 
       {editorTarget ? (
-        <div className="modal-backdrop">
-          <section
-            className="record-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="leave-year-form-title"
-          >
-            <button
-              className="modal-close"
-              type="button"
-              aria-label="Close Leave Year Editor"
-              disabled={saving}
-              onClick={closeEditor}
+        <ModalLayer>
+          <div className="modal-backdrop">
+            <section
+              className="record-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="leave-year-form-title"
             >
-              ×
-            </button>
+              <button
+                className="modal-close"
+                type="button"
+                aria-label="Close Leave Year Editor"
+                disabled={saving}
+                onClick={closeEditor}
+              >
+                ×
+              </button>
 
-            {error ? (
-              <p className="form-notice form-notice--error" role="alert">
-                {error}
-              </p>
-            ) : null}
+              {error ? (
+                <p className="form-notice form-notice--error" role="alert">
+                  {error}
+                </p>
+              ) : null}
 
-            <LeaveYearForm
-              key={editorTarget === 'new' ? 'new' : editorTarget.id}
-              initialValue={
-                editorTarget === 'new' ? emptyLeaveYearInput() : editableValue(editorTarget)
-              }
-              mode={editorTarget === 'new' ? 'create' : 'edit'}
-              busy={saving}
-              onSubmit={saveLeaveYear}
-              onCancel={closeEditor}
-            />
-          </section>
-        </div>
+              <LeaveYearForm
+                key={editorTarget === 'new' ? 'new' : editorTarget.id}
+                initialValue={
+                  editorTarget === 'new' ? emptyLeaveYearInput() : editableValue(editorTarget)
+                }
+                mode={editorTarget === 'new' ? 'create' : 'edit'}
+                busy={saving}
+                onSubmit={saveLeaveYear}
+                onCancel={closeEditor}
+              />
+            </section>
+          </div>
+        </ModalLayer>
       ) : null}
 
       {removalImpact ? (

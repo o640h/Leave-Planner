@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from ctypes import WinDLL
 from pathlib import Path
+from typing import Literal, cast
 
 import webview
 
@@ -12,11 +13,36 @@ from settings import Settings
 
 from .instance import AlreadyRunningError, SingleInstance
 from .server import start_server, wait_until_ready
-from .windows import apply_window_identity, configure_process_identity
+from .windows import apply_window_identity, apply_window_theme, configure_process_identity
 
 DEVELOPMENT_FRONTEND = "http://127.0.0.1:5173"
 ICON_PATH = Path(__file__).resolve().parent / "assets" / "leave-planner.ico"
 CAPTION_ICON_PATH = Path(__file__).resolve().parent / "assets" / "transparent.ico"
+ThemePreference = Literal["dark", "light", "system"]
+ResolvedTheme = Literal["dark", "light"]
+VALID_THEME_PREFERENCES = {"dark", "light", "system"}
+VALID_RESOLVED_THEMES = {"dark", "light"}
+
+
+class DesktopApi:
+    """Expose the small native operations controlled by the React shell."""
+
+    def __init__(self, window_title: str, preference_path: Path) -> None:
+        self.window_title = window_title
+        self.preference_path = preference_path
+
+    def get_theme_preference(self) -> ThemePreference | None:
+        try:
+            saved = self.preference_path.read_text(encoding="utf-8").strip()
+        except OSError:
+            return None
+        return cast(ThemePreference, saved) if saved in VALID_THEME_PREFERENCES else None
+
+    def set_theme(self, preference: str, resolved_theme: str) -> None:
+        if preference not in VALID_THEME_PREFERENCES or resolved_theme not in VALID_RESOLVED_THEMES:
+            return
+        self.preference_path.write_text(preference, encoding="utf-8")
+        apply_window_theme(self.window_title, resolved_theme)
 
 
 def show_error(message: str) -> None:
@@ -65,6 +91,7 @@ def run_desktop(*, development: bool) -> None:
             window = webview.create_window(
                 settings.app_name,
                 window_url,
+                js_api=DesktopApi(settings.app_name, data_dir / "theme-preference"),
                 width=1440,
                 height=900,
                 min_size=(900, 650),

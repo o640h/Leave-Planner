@@ -14,6 +14,7 @@ import './consultants.css'
 
 import { LeaveYearPanel } from '../leaveYears/LeaveYearPanel'
 import { AppIcon } from '../system/AppIcon'
+import { ModalLayer } from '../system/ModalLayer'
 import { RemovalDialog } from '../system/RemovalDialog'
 import type { RemovalImpact } from '../system/removal'
 
@@ -218,7 +219,11 @@ export function ConsultantDirectory() {
             ) : loadError ? (
               <div className="panel-message panel-message--error" role="alert">
                 <p>{loadError}</p>
-                <button className="text-button" type="button" onClick={retryLoading}>
+                <button
+                  className="button button--overview-action panel-message-action"
+                  type="button"
+                  onClick={retryLoading}
+                >
                   Try Again
                 </button>
               </div>
@@ -289,11 +294,15 @@ export function ConsultantDirectory() {
                   </div>
                 </div>
                 <div className="consultant-header-actions">
-                  <button className="button button--quiet" type="button" onClick={beginArchive}>
+                  <button
+                    className="button button--quiet overview-delete-button"
+                    type="button"
+                    onClick={beginArchive}
+                  >
                     Archive
                   </button>
                   <button
-                    className="button button--quiet button--with-icon"
+                    className="button button--overview-action button--with-icon"
                     type="button"
                     onClick={() => setIdentityEditorOpen(true)}
                   >
@@ -310,7 +319,11 @@ export function ConsultantDirectory() {
               <span className="section-label">Consultant Workspace</span>
               <h3>No Consultant Selected</h3>
               <p>Select a consultant from the list or create a new record.</p>
-              <button className="button button--primary" type="button" onClick={beginCreate}>
+              <button
+                className="button button--overview-action workspace-empty-action"
+                type="button"
+                onClick={beginCreate}
+              >
                 Create First Consultant
               </button>
             </div>
@@ -319,39 +332,43 @@ export function ConsultantDirectory() {
       </div>
 
       {editorTarget === 'new' || (selectedConsultant && identityEditorOpen) ? (
-        <div className="modal-backdrop">
-          <section
-            className="record-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="consultant-form-title"
-          >
-            <button
-              className="modal-close"
-              type="button"
-              aria-label={editorTarget === 'new' ? 'Close Add Consultant' : 'Close Edit Consultant'}
-              disabled={saving}
-              onClick={cancelEditing}
+        <ModalLayer>
+          <div className="modal-backdrop">
+            <section
+              className="record-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="consultant-form-title"
             >
-              ×
-            </button>
+              <button
+                className="modal-close"
+                type="button"
+                aria-label={
+                  editorTarget === 'new' ? 'Close Add Consultant' : 'Close Edit Consultant'
+                }
+                disabled={saving}
+                onClick={cancelEditing}
+              >
+                ×
+              </button>
 
-            {saveError ? (
-              <p className="form-notice form-notice--error" role="alert">
-                {saveError}
-              </p>
-            ) : null}
+              {saveError ? (
+                <p className="form-notice form-notice--error" role="alert">
+                  {saveError}
+                </p>
+              ) : null}
 
-            <ConsultantForm
-              key={editorTarget === 'new' ? 'new' : selectedConsultant?.id}
-              initialValue={editorTarget === 'new' ? emptyConsultantInput() : formValue}
-              mode={editorTarget === 'new' ? 'create' : 'edit'}
-              busy={saving}
-              onSubmit={saveConsultant}
-              onCancel={cancelEditing}
-            />
-          </section>
-        </div>
+              <ConsultantForm
+                key={editorTarget === 'new' ? 'new' : selectedConsultant?.id}
+                initialValue={editorTarget === 'new' ? emptyConsultantInput() : formValue}
+                mode={editorTarget === 'new' ? 'create' : 'edit'}
+                busy={saving}
+                onSubmit={saveConsultant}
+                onCancel={cancelEditing}
+              />
+            </section>
+          </div>
+        </ModalLayer>
       ) : null}
 
       {archiveImpact ? (

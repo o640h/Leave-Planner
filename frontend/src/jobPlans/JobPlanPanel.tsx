@@ -4,6 +4,8 @@ import { operatorErrorMessage } from '../api/client'
 import type { LeaveYear } from '../leaveYears/types'
 import { AppIcon } from '../system/AppIcon'
 import { formatDecimal } from '../system/decimal'
+import { ModalLayer } from '../system/ModalLayer'
+import { PanelGlass } from '../system/PanelGlass'
 import {
   createJobPlan,
   jobPlanRemovalImpact,
@@ -176,13 +178,14 @@ export function JobPlanPanel({
 
   return (
     <section className="dashboard-panel job-plan-panel" aria-labelledby="job-plans-title">
+      <PanelGlass />
       <header className="dashboard-panel-header job-plan-heading">
         <div>
           <h4 id="job-plans-title">Job Plans</h4>
         </div>
 
         <button
-          className="button button--quiet button--with-icon"
+          className="button button--overview-action button--with-icon"
           type="button"
           onClick={() => {
             setError(null)
@@ -219,23 +222,19 @@ export function JobPlanPanel({
         <div className="job-plan-list">
           {jobPlans.map((jobPlan, index) => (
             <article className="job-plan-card" key={jobPlan.id}>
-              <header>
-                <div>
-                  <span className="job-plan-index">Job Plan {index + 1}</span>
-                  <h4>
-                    {formatDate(jobPlan.effective_from)}
-                    {' — '}
-                    {formatDate(jobPlan.effective_until)}
-                  </h4>
-                  <small>Effective Until is not included.</small>
-                </div>
-
+              <div className="job-plan-identity">
+                <span className="job-plan-index">Job Plan {index + 1}</span>
+                <h4>
+                  {formatDate(jobPlan.effective_from)}
+                  {' — '}
+                  {formatDate(jobPlan.effective_until)}
+                </h4>
                 {jobPlan.reconciliation_override_reason ? (
                   <small className="job-plan-override">
                     PA Override: {jobPlan.reconciliation_override_reason}
                   </small>
                 ) : null}
-              </header>
+              </div>
 
               <dl>
                 <div>
@@ -260,21 +259,21 @@ export function JobPlanPanel({
 
               <div className="job-plan-actions">
                 <button
-                  className="button button--quiet"
+                  className="button button--quiet overview-delete-button"
                   type="button"
                   onClick={() => beginRemoval(jobPlan)}
                 >
                   Delete
                 </button>
                 <button
-                  className="button button--quiet"
+                  className="button button--overview-action"
                   type="button"
                   onClick={() => {
                     setError(null)
                     setEditorTarget(jobPlan)
                   }}
                 >
-                  Edit Job Plan
+                  Edit
                 </button>
               </div>
             </article>
@@ -283,40 +282,42 @@ export function JobPlanPanel({
       )}
 
       {editorTarget && initialValue ? (
-        <div className="modal-backdrop">
-          <section
-            className="record-modal job-plan-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="job-plan-form-title"
-          >
-            <button
-              className="modal-close"
-              type="button"
-              aria-label="Close Job Plan Editor"
-              disabled={saving}
-              onClick={closeEditor}
+        <ModalLayer>
+          <div className="modal-backdrop">
+            <section
+              className="record-modal job-plan-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="job-plan-form-title"
             >
-              ×
-            </button>
+              <button
+                className="modal-close"
+                type="button"
+                aria-label="Close Job Plan Editor"
+                disabled={saving}
+                onClick={closeEditor}
+              >
+                ×
+              </button>
 
-            {error ? (
-              <p className="form-notice form-notice--error" role="alert">
-                {error}
-              </p>
-            ) : null}
+              {error ? (
+                <p className="form-notice form-notice--error" role="alert">
+                  {error}
+                </p>
+              ) : null}
 
-            <JobPlanForm
-              key={editorTarget === 'new' ? 'new' : editorTarget.id}
-              initialValue={initialValue}
-              mode={editorTarget === 'new' ? 'create' : 'edit'}
-              busy={saving}
-              onPreview={requestPreview}
-              onSubmit={saveJobPlan}
-              onCancel={closeEditor}
-            />
-          </section>
-        </div>
+              <JobPlanForm
+                key={editorTarget === 'new' ? 'new' : editorTarget.id}
+                initialValue={initialValue}
+                mode={editorTarget === 'new' ? 'create' : 'edit'}
+                busy={saving}
+                onPreview={requestPreview}
+                onSubmit={saveJobPlan}
+                onCancel={closeEditor}
+              />
+            </section>
+          </div>
+        </ModalLayer>
       ) : null}
 
       {removalTarget && removalImpact ? (

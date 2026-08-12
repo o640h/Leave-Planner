@@ -7,6 +7,7 @@ type AppIconProps = {
     | 'plus'
     | 'edit'
     | 'calendar'
+    | 'appearance'
     | 'profile'
     | 'jobPlan'
 }
@@ -49,6 +50,15 @@ export function AppIcon({ name }: AppIconProps) {
       <svg {...commonProps}>
         <circle cx="10.5" cy="10.5" r="5.5" />
         <path d="m15 15 4.5 4.5" />
+      </svg>
+    )
+  }
+
+  if (name === 'appearance') {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5A6.5 6.5 0 0 1 12 3.5Z" />
+        <path d="M12 3.5V20.5" />
       </svg>
     )
   }

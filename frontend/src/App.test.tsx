@@ -10,7 +10,12 @@ function json(body: unknown, ok = true) {
 }
 
 describe('consultant directory', () => {
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    window.localStorage.clear()
+    delete document.documentElement.dataset.theme
+    delete document.documentElement.dataset.themePreference
+  })
 
   it('creates and edits a consultant through the visible workflow', async () => {
     const user = userEvent.setup()
@@ -102,6 +107,47 @@ describe('consultant directory', () => {
       'aria-current',
       'page',
     )
+  })
+
+  it('organises settings into focused categories', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const path = input.toString()
+        if (path === '/api/health') return Promise.resolve(json({ status: 'ok' }))
+        if (path === '/api/consultants') return Promise.resolve(json([]))
+        if (path === '/api/settings/public-holidays') {
+          return Promise.resolve(
+            json({
+              source: 'static_snapshot',
+              source_date: '2026-08-10',
+              holidays: [],
+              corrections: [],
+            }),
+          )
+        }
+        throw new Error(`Unexpected request: GET ${path}`)
+      }),
+    )
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Appearance' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Light' }))
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
+    expect(window.localStorage.getItem('leave-planner-theme')).toBe('light')
+
+    await user.click(screen.getByRole('button', { name: 'Public Holidays' }))
+    expect(await screen.findByRole('heading', { name: 'Public Holidays' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'England & Wales Calendar' })).toBeInTheDocument()
   })
 
   it('filters the consultant directory without changing the selected workspace', async () => {
@@ -320,10 +366,13 @@ describe('consultant directory', () => {
     expect(await within(dialog).findByText('PA Split Reconciled')).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Create Job Plan' }))
     expect(await screen.findByText('Job Plan 1')).toBeInTheDocument()
-    expect(screen.getByText('1 Plan Configured')).toBeInTheDocument()
     await waitFor(() => expect(entitlementRefreshes).toBe(1))
 
-    await user.click(screen.getByRole('button', { name: 'Edit Job Plan' }))
+    await user.click(
+      within(screen.getByRole('region', { name: 'Job Plans' })).getByRole('button', {
+        name: 'Edit',
+      }),
+    )
     const editDialog = screen.getByRole('dialog', { name: 'Edit Job Plan' })
     const spaPas = within(editDialog).getByLabelText('SPA PAs')
     await user.clear(spaPas)

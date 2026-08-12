@@ -5,6 +5,7 @@ from __future__ import annotations
 from ctypes import WinDLL, byref, c_int, c_void_p, sizeof
 from ctypes.wintypes import HWND, LPARAM, LPCWSTR, UINT, WPARAM
 from pathlib import Path
+from typing import Any
 
 APPLICATION_ID = "LeavePlanner.Desktop"
 IMAGE_ICON = 1
@@ -31,39 +32,51 @@ def configure_process_identity() -> None:
     shell32.SetCurrentProcessExplicitAppUserModelID(APPLICATION_ID)
 
 
+def _window_handle(window_title: str) -> tuple[Any, HWND]:
+    user32 = WinDLL("user32", use_last_error=True)
+    user32.FindWindowW.argtypes = [LPCWSTR, LPCWSTR]
+    user32.FindWindowW.restype = HWND
+    return user32, user32.FindWindowW(None, window_title)
+
+
+def apply_window_theme(window_title: str, theme: str) -> None:
+    """Match the native caption to the resolved application theme."""
+
+    _, window_handle = _window_handle(window_title)
+    if not window_handle:
+        return
+
+    dark = theme != "light"
+    caption = (13, 13, 13) if dark else (233, 237, 240)
+    border = (37, 37, 37) if dark else (205, 212, 217)
+    dwmapi = WinDLL("dwmapi", use_last_error=True)
+    dwmapi.DwmSetWindowAttribute.argtypes = [HWND, UINT, c_void_p, UINT]
+    dwmapi.DwmSetWindowAttribute.restype = c_int
+    for attribute, raw_value in (
+        (DWMWA_USE_IMMERSIVE_DARK_MODE, int(dark)),
+        (DWMWA_BORDER_COLOR, _colour_ref(*border)),
+        (DWMWA_CAPTION_COLOR, _colour_ref(*caption)),
+        (DWMWA_TEXT_COLOR, _colour_ref(*caption)),
+    ):
+        value = c_int(raw_value)
+        dwmapi.DwmSetWindowAttribute(window_handle, attribute, byref(value), sizeof(value))
+
+
 def apply_window_identity(
     window_title: str, icon_path: Path, caption_icon_path: Path
 ) -> None:
     """Apply taskbar identity while leaving the native caption visually quiet."""
 
-    user32 = WinDLL("user32", use_last_error=True)
-    user32.FindWindowW.argtypes = [LPCWSTR, LPCWSTR]
-    user32.FindWindowW.restype = HWND
+    user32, window_handle = _window_handle(window_title)
     user32.LoadImageW.argtypes = [c_void_p, LPCWSTR, UINT, c_int, c_int, UINT]
     user32.LoadImageW.restype = c_void_p
     user32.SendMessageW.argtypes = [HWND, UINT, WPARAM, LPARAM]
     user32.SendMessageW.restype = LPARAM
 
-    window_handle = user32.FindWindowW(None, window_title)
     if not window_handle:
         return
 
-    dwmapi = WinDLL("dwmapi", use_last_error=True)
-    dwmapi.DwmSetWindowAttribute.argtypes = [HWND, UINT, c_void_p, UINT]
-    dwmapi.DwmSetWindowAttribute.restype = c_int
-    for attribute, raw_value in (
-        (DWMWA_USE_IMMERSIVE_DARK_MODE, 1),
-        (DWMWA_BORDER_COLOR, _colour_ref(37, 37, 37)),
-        (DWMWA_CAPTION_COLOR, _colour_ref(13, 13, 13)),
-        (DWMWA_TEXT_COLOR, _colour_ref(13, 13, 13)),
-    ):
-        value = c_int(raw_value)
-        dwmapi.DwmSetWindowAttribute(
-            window_handle,
-            attribute,
-            byref(value),
-            sizeof(value),
-        )
+    apply_window_theme(window_title, "dark")
 
     for icon_kind, size, source in (
         (ICON_SMALL, 16, caption_icon_path),

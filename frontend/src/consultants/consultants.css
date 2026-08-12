@@ -17,7 +17,7 @@
   min-width: 0;
   min-height: 0;
   border-right: 1px solid var(--line);
-  background: #101010;
+  background: var(--rail);
 }
 
 .panel-heading {
@@ -57,7 +57,7 @@
   align-items: center;
   margin: 0 16px 16px;
   border: 1px solid var(--line-strong);
-  background: #111;
+  background: var(--field);
 }
 
 .consultant-search:focus-within {
@@ -113,6 +113,16 @@
   color: var(--danger);
 }
 
+.panel-message--error p {
+  line-height: 1.5;
+}
+
+.panel-message-action {
+  min-height: 30px;
+  margin-top: 8px;
+  padding-inline: 11px;
+}
+
 .consultant-list {
   margin: 0;
   padding: 0;
@@ -139,7 +149,7 @@
 }
 
 .consultant-row:hover {
-  background: rgb(255 255 255 / 0.02);
+  background: var(--interactive-hover);
 }
 
 .consultant-row--selected {
@@ -193,7 +203,7 @@
   width: 100%;
   min-height: 100%;
   margin: 0;
-  padding: 28px clamp(28px, 2.8vw, 38px) 38px;
+  padding: 20px clamp(24px, 2.4vw, 32px) 30px;
 }
 
 .consultant-workspace-header {
@@ -201,7 +211,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -215,7 +225,7 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  gap: 16px;
+  gap: 13px;
 }
 
 .consultant-identity > div {
@@ -226,13 +236,13 @@
 
 .consultant-monogram {
   display: grid;
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   flex: 0 0 auto;
   place-items: center;
   border: 1px solid var(--line-strong);
   color: var(--accent);
-  background: #181818;
+  background: var(--field-action);
   font: 430 12px/1 var(--brand);
   letter-spacing: 0.09em;
 }
@@ -240,7 +250,7 @@
 .consultant-workspace-header h3 {
   overflow: hidden;
   margin: 0;
-  font: 400 clamp(25px, 2.2vw, 30px)/1.05 var(--brand);
+  font: 400 clamp(22px, 2vw, 27px)/1.05 var(--brand);
   letter-spacing: -0.025em;
   transform: translateX(-0.035em);
   text-overflow: ellipsis;
@@ -253,7 +263,7 @@
   color: var(--muted);
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .form-notice {
@@ -321,19 +331,19 @@
   border: 1px solid var(--line-strong);
   border-radius: var(--corner-control);
   color: var(--text);
-  background: #111;
+  background: var(--field);
 }
 
 .field > input:hover:not(:disabled),
 .field > textarea:hover:not(:disabled),
 .field > select:hover:not(:disabled) {
-  border-color: var(--quiet);
+  border-color: var(--control-hover-line);
 }
 
 .field > input:focus,
 .field > textarea:focus,
 .field > select:focus {
-  border-color: var(--focus-line);
+  border-color: var(--control-focus-line);
 }
 
 .field > select {
@@ -385,6 +395,11 @@
   color: var(--muted);
 }
 
+.workspace-empty-action {
+  min-height: 36px;
+  padding-inline: 16px;
+}
+
 .modal-backdrop {
   display: grid;
   position: absolute;
@@ -392,7 +407,7 @@
   inset: 0;
   padding: 16px;
   place-items: center;
-  background: rgb(0 0 0 / 0.72);
+  background: var(--overlay);
   backdrop-filter: blur(1px);
 }
 
@@ -404,7 +419,7 @@
   overflow-y: auto;
   border: 1px solid var(--line-strong);
   border-radius: var(--corner-modal);
-  background: #181818;
+  background: var(--surface-raised);
   box-shadow: var(--panel-shadow);
 }
 

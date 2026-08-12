@@ -1,0 +1,200 @@
+.settings-workspace {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.settings-directory {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  background: var(--rail);
+}
+
+.settings-directory > header {
+  min-height: 108px;
+  padding: 27px 22px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-directory h2 {
+  margin: 5px 0 0;
+  font: 430 19px/1.1 var(--brand);
+  letter-spacing: -0.025em;
+}
+
+.settings-directory nav {
+  display: grid;
+  padding: 12px 0;
+}
+
+.settings-category {
+  display: flex;
+  align-items: center;
+  min-height: 50px;
+  gap: 12px;
+  padding: 0 20px;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: var(--muted);
+  background: transparent;
+  font-size: 11px;
+  text-align: left;
+}
+
+.settings-category .app-icon {
+  width: 17px;
+  height: 17px;
+  color: var(--quiet);
+}
+
+.settings-category:hover {
+  color: var(--text);
+  background: var(--interactive-hover);
+}
+
+.settings-category--active {
+  border-left-color: var(--accent);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.settings-category--active .app-icon {
+  color: var(--accent);
+}
+
+.settings-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.settings-section {
+  width: min(1040px, 100%);
+  padding: 30px 34px 42px;
+}
+
+.settings-content-heading {
+  margin-bottom: 22px;
+}
+
+.settings-content-heading h2 {
+  margin: 5px 0 0;
+  font: 430 22px/1.1 var(--brand);
+  letter-spacing: -0.03em;
+}
+
+.appearance-panel {
+  max-width: 760px;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px;
+}
+
+.theme-option {
+  display: grid;
+  min-width: 0;
+  gap: 11px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--corner-control);
+  color: var(--muted);
+  background: var(--surface-subtle);
+  text-align: left;
+}
+
+.theme-option > span:last-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.theme-option strong {
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 470;
+}
+
+.theme-option small {
+  color: var(--quiet);
+  font-size: 8px;
+}
+
+.theme-option--selected {
+  border-color: rgb(var(--focus-rgb) / 0.32);
+  background: rgb(var(--focus-rgb) / 0.04);
+}
+
+.theme-option:disabled {
+  opacity: 0.42;
+}
+
+.theme-preview {
+  display: grid;
+  grid-template-columns: 24% 1fr;
+  grid-template-rows: 11px 1fr;
+  height: 86px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: #111;
+}
+
+.theme-preview i {
+  display: block;
+}
+
+.theme-preview i:first-child {
+  grid-row: 1 / -1;
+  background: #0d0d0d;
+}
+
+.theme-preview i:nth-child(2) {
+  background: #181818;
+}
+
+.theme-preview i:last-child {
+  margin: 8px;
+  background: #1b1b1b;
+  box-shadow: inset 2px 0 var(--accent);
+}
+
+.theme-preview--light {
+  border-color: rgb(24 32 28 / 0.12);
+  background: #f1f3f1;
+}
+
+.theme-preview--light i:first-child {
+  background: #e4e8e5;
+}
+
+.theme-preview--light i:nth-child(2) {
+  background: rgb(255 255 255 / 0.76);
+}
+
+.theme-preview--light i:last-child {
+  background: rgb(255 255 255 / 0.66);
+}
+
+.theme-preview--system {
+  background: linear-gradient(90deg, #111 0 50%, #f1f3f1 50%);
+}
+
+@container (max-width: 700px) {
+  .settings-workspace {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+
+  .settings-section {
+    padding-inline: 22px;
+  }
+
+  .theme-options {
+    grid-template-columns: 1fr;
+  }
+}

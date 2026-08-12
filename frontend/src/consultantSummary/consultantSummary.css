@@ -1,5 +1,5 @@
 .leave-position {
-  border-top: 1px solid var(--line);
+  border-top: 0;
 }
 
 .leave-position > header {
@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 20px 0;
+  padding: 11px 14px 0;
 }
 
 .leave-position h5 {
@@ -37,7 +37,7 @@
 .balance-position {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 14px 20px;
+  padding: 12px 14px 14px;
 }
 
 .balance-position > div {
@@ -58,9 +58,17 @@
 }
 
 .balance-position strong {
-  color: var(--warning);
-  font-size: 14px;
+  color: var(--text);
+  font-size: 15px;
   font-weight: 470;
+}
+
+.balance-position > div:first-child strong {
+  color: var(--accent);
+}
+
+.balance-position > div:last-child strong {
+  color: var(--warning);
 }
 
 .balance-position small {
@@ -80,7 +88,7 @@
 .weekday-counts > div {
   display: flex;
   justify-content: space-between;
-  padding: 9px 11px;
+  padding: 7px 9px;
 }
 
 .weekday-counts > div + div {
@@ -103,15 +111,55 @@
   font-size: 9px;
 }
 
+.summary-panel--periods > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 16px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+}
+
+.summary-panel--periods > summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary-panel--periods > summary::before {
+  width: 5px;
+  height: 5px;
+  margin-right: 9px;
+  border-right: 1px solid var(--accent);
+  border-bottom: 1px solid var(--accent);
+  content: '';
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+
+.summary-panel--periods[open] > summary::before {
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.summary-panel--periods > summary > span {
+  margin-right: auto;
+}
+
+.summary-panel--periods > summary > small {
+  color: var(--quiet);
+  font-size: 9px;
+}
+
 .period-table {
-  padding: 0 20px 12px;
+  padding: 0 14px 10px;
+  border-top: 1px solid var(--line);
 }
 
 .period-row {
   display: grid;
   grid-template-columns: 1.35fr 0.55fr 1fr 1fr 1.15fr;
   align-items: center;
-  min-height: 72px;
+  min-height: 62px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -119,7 +167,7 @@
   display: grid;
   min-width: 0;
   gap: 4px;
-  padding: 12px;
+  padding: 10px;
 }
 
 .period-row > div + div {

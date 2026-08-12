@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from desktop_shell.instance import SingleInstance
-from desktop_shell.launcher import CAPTION_ICON_PATH, ICON_PATH
+from desktop_shell.launcher import CAPTION_ICON_PATH, ICON_PATH, DesktopApi
 from desktop_shell.server import available_port, start_server
 from settings import Settings
 
@@ -24,6 +24,15 @@ def test_single_instance_releases_its_lock(tmp_path: Path) -> None:
 
     with SingleInstance(lock_path):
         assert lock_path.exists()
+
+
+def test_desktop_theme_preference_survives_between_api_instances(tmp_path: Path) -> None:
+    preference_path = tmp_path / "theme-preference"
+    first_instance = DesktopApi("Missing Test Window", preference_path)
+
+    first_instance.set_theme("light", "light")
+
+    assert DesktopApi("Missing Test Window", preference_path).get_theme_preference() == "light"
 
 
 def test_local_server_uses_loopback_and_stops_cleanly(tmp_path: Path) -> None:

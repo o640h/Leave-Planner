@@ -1,8 +1,8 @@
 .leave-year-panel {
-  margin-top: 24px;
+  margin-top: 12px;
+  background: transparent;
 }
 
-.leave-year-heading,
 .dashboard-panel-header {
   display: flex;
   align-items: flex-start;
@@ -10,87 +10,10 @@
   gap: 18px;
 }
 
-.leave-year-heading {
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.leave-year-heading h3 {
-  margin-bottom: 5px;
-  font: 450 18px/1.1 var(--brand);
-  letter-spacing: -0.02em;
-}
-
-.leave-year-heading p,
 .dashboard-panel-header p {
   margin-bottom: 0;
   color: var(--muted);
   font-size: 11px;
-}
-
-.workspace-overview {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  min-height: 80px;
-  margin-bottom: 18px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--corner-panel);
-  overflow: hidden;
-  background: #151515;
-  box-shadow: var(--panel-shadow);
-}
-
-.overview-item {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 14px;
-  padding: 16px 18px;
-}
-
-.overview-item + .overview-item {
-  border-left: 1px solid var(--line-strong);
-}
-
-.overview-item > .app-icon {
-  width: 34px;
-  height: 34px;
-  padding: 7px;
-  flex: 0 0 auto;
-  border: 1px solid var(--line-strong);
-  color: var(--muted);
-  background: #181818;
-}
-
-.overview-item div {
-  display: grid;
-  min-width: 0;
-  gap: 5px;
-}
-
-.overview-item span {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.overview-item strong {
-  overflow: hidden;
-  font-size: 13px;
-  font-weight: 460;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.overview-item--complete > .app-icon,
-.overview-item--complete strong {
-  color: var(--nominal);
-}
-
-.overview-item--warning > .app-icon,
-.overview-item--warning strong,
-.overview-item:first-child > .app-icon,
-.overview-item:first-child strong {
-  color: var(--warning);
 }
 
 .leave-year-message {
@@ -128,10 +51,19 @@
 
 .year-dashboard {
   display: grid;
-  grid-template-columns: minmax(300px, 0.82fr) minmax(430px, 1.38fr);
+  grid-template-columns: minmax(330px, 0.84fr) minmax(470px, 1.36fr);
+  grid-template-areas:
+    'year plans'
+    'entitlement plans';
   align-items: stretch;
-  gap: 18px;
-  min-height: 460px;
+  gap: var(--overview-gap);
+  background: transparent;
+}
+
+.year-dashboard:has(.entitlement-overview-details[open]) {
+  grid-template-areas:
+    'year plans'
+    'entitlement entitlement';
 }
 
 .summary-load-error {
@@ -141,27 +73,40 @@
 }
 
 .dashboard-panel {
+  position: relative;
+  isolation: isolate;
   min-width: 0;
-  height: 100%;
-  border: 1px solid var(--line);
+  height: auto;
+  border: 1px solid rgb(var(--border-rgb) / var(--overview-panel-border-opacity));
   border-radius: var(--corner-panel);
   overflow: hidden;
-  background: #161616;
-  box-shadow: var(--panel-shadow);
+  background: var(--overview-panel-background);
+  box-shadow:
+    0 10px 26px rgb(0 0 0 / var(--overview-panel-shadow-opacity)),
+    inset 0 1px rgb(255 255 255 / 0.012);
+}
+
+.dashboard-panel > :not(.panel-glass-effect) {
+  position: relative;
+  z-index: 1;
+}
+
+:root[data-theme='light'] .dashboard-panel {
+  box-shadow: 0 10px 26px rgb(48 59 68 / var(--overview-panel-shadow-opacity));
 }
 
 .dashboard-panel-header {
   align-items: center;
-  min-height: 68px;
-  padding: 16px 20px;
+  min-height: 48px;
+  padding: 9px 14px;
   border-bottom: 1px solid var(--line);
-  background: rgb(255 255 255 / 0.008);
+  background: var(--overview-panel-header-background);
 }
 
 .dashboard-panel-header h4 {
   margin-bottom: 0;
-  font: 450 15px/1.1 var(--brand);
-  letter-spacing: -0.015em;
+  font: 470 12px/1.1 var(--brand);
+  letter-spacing: -0.01em;
 }
 
 .dashboard-panel-actions {
@@ -170,27 +115,40 @@
   gap: 8px;
 }
 
-.leave-year-selector {
-  display: grid;
-  gap: 7px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--line);
+.dashboard-panel-actions .button {
+  min-height: 29px;
+  padding: 6px 10px;
+  font-size: 9px;
 }
 
-.leave-year-selector span {
-  color: var(--quiet);
-  font-size: 10px;
+.leave-year-summary {
+  grid-area: year;
+}
+
+.leave-year-context {
+  display: grid;
+}
+
+.leave-year-title-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+.leave-year-selector {
+  min-width: 0;
 }
 
 .leave-year-selector select {
-  width: 100%;
+  width: min(190px, 24vw);
   min-width: 0;
-  min-height: 38px;
-  padding: 7px 30px 7px 9px;
-  border: 1px solid var(--line-strong);
+  min-height: 30px;
+  padding: 5px 24px 5px 8px;
+  border: 1px solid var(--line);
   border-radius: var(--corner-control);
-  background: #111;
-  font-size: 11px;
+  background: var(--field);
+  font-size: 9px;
 }
 
 .leave-year-range {
@@ -198,16 +156,16 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: 0;
-  min-height: 146px;
+  min-height: 92px;
   padding: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 0;
 }
 
 .leave-year-range div {
   display: grid;
-  gap: 10px;
+  gap: 7px;
   height: 100%;
-  padding: 26px 20px;
+  padding: 14px;
   align-content: center;
 }
 
@@ -217,13 +175,13 @@
 }
 
 .leave-year-range div > span {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--quiet);
+  font-size: 9px;
 }
 
 .leave-year-range time {
   color: var(--warning);
-  font: 470 clamp(16px, 1.3vw, 18px)/1.2 var(--brand);
+  font: 460 clamp(14px, 1.2vw, 16px)/1.2 var(--brand);
   white-space: nowrap;
 }
 
@@ -231,12 +189,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   margin: 0;
-  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
 }
 
 .leave-year-summary dl div {
   min-width: 0;
-  padding: 24px 22px;
+  padding: 10px 14px;
 }
 
 .leave-year-summary dl div + div {
@@ -244,7 +203,7 @@
 }
 
 .leave-year-summary dt {
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   color: var(--quiet);
   font: 10px/1.2 var(--ui);
 }
@@ -252,9 +211,36 @@
 .leave-year-summary dd {
   margin: 0;
   color: var(--text);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 460;
   line-height: 1.4;
+}
+
+.leave-year-summary > .carry-forward-control {
+  gap: var(--overview-carry-action-gap);
+  min-height: 50px;
+  padding-inline: 12px;
+  border-top: 1px solid var(--line);
+  border-right: 0;
+  background: var(--surface);
+}
+
+.leave-year-summary > .carry-forward-control .carry-forward-value {
+  max-width: none;
+  gap: 10px;
+}
+
+.leave-year-summary > .carry-forward-control .carry-forward-value > span {
+  white-space: nowrap;
+}
+
+.leave-year-summary > .carry-forward-control .carry-forward-value strong small {
+  display: none;
+}
+
+.leave-year-summary > .leave-position {
+  min-width: 0;
+  border-top: 1px solid var(--line);
 }
 
 .leave-year-form {
@@ -268,24 +254,13 @@
   padding: 24px 0;
 }
 
-@media (max-width: 1100px) {
-  .year-dashboard {
-    grid-template-columns: 1fr;
-  }
-}
-
 @container (max-width: 780px) {
-  .workspace-overview {
-    grid-template-columns: 1fr;
-  }
-
-  .overview-item + .overview-item {
-    border-top: 1px solid var(--line-strong);
-    border-left: 0;
-  }
-
   .year-dashboard {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'year'
+      'plans'
+      'entitlement';
   }
 
   .leave-year-range time {
@@ -294,7 +269,6 @@
 }
 
 @media (max-width: 680px) {
-  .leave-year-heading,
   .dashboard-empty {
     align-items: flex-start;
     flex-direction: column;

@@ -130,7 +130,7 @@
   z-index: 5;
   top: 0;
   min-height: 50px;
-  background: #131313;
+  background: var(--surface-subtle);
 }
 
 .wallchart-name,
@@ -149,7 +149,7 @@
   padding: 8px 12px;
   flex-direction: column;
   justify-content: center;
-  background: #151515;
+  background: var(--overview-panel-background);
 }
 
 .wallchart-name {
@@ -163,7 +163,7 @@
 .wallchart-row--header .wallchart-name,
 .wallchart-row--header .wallchart-balance {
   z-index: 6;
-  background: #131313;
+  background: var(--surface-subtle);
   color: var(--muted);
   font-size: 9px;
   font-weight: 430;
@@ -207,7 +207,7 @@
 }
 
 .wallchart-day--weekend {
-  background: rgb(0 0 0 / 0.14);
+  background: var(--interactive-hover);
 }
 
 .wallchart-cell {
@@ -234,7 +234,7 @@
 
 .wallchart-cell:disabled {
   opacity: 0.32;
-  background: rgb(0 0 0 / 0.16);
+  background: var(--interactive-hover);
 }
 
 .wallchart-cell--holiday {
@@ -268,7 +268,7 @@
 }
 
 .wallchart-cell--cancelled {
-  background: rgb(255 255 255 / 0.018);
+  background: var(--interactive-hover);
   color: var(--quiet);
   text-decoration: line-through;
 }
@@ -280,7 +280,7 @@
   right: 12px;
   padding: 4px 8px;
   border: 1px solid var(--line);
-  background: #131313;
+  background: var(--surface-subtle);
   color: var(--quiet);
   font-size: 9px;
 }
@@ -301,7 +301,7 @@
   justify-content: flex-end;
   overflow: hidden;
   border-radius: inherit;
-  background: rgb(0 0 0 / 0.68);
+  background: var(--overlay);
   backdrop-filter: blur(2px);
 }
 
@@ -368,6 +368,16 @@
 .booking-fields input {
   width: 100%;
   padding: 0 10px;
+}
+
+.booking-fields :is(select, input):hover:not(:disabled),
+.deduction-row > input:hover:not(:disabled) {
+  border-color: var(--control-hover-line);
+}
+
+.booking-fields :is(select, input):focus,
+.deduction-row > input:focus {
+  border-color: var(--control-focus-line);
 }
 
 .booking-note {
@@ -468,8 +478,9 @@
   bottom: 0;
   margin-top: auto;
   padding: 14px 0;
-  border-top: 1px solid var(--line);
-  background: var(--panel);
+  border-top: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .form-action-spacer {
