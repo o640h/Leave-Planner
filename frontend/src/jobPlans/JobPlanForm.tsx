@@ -89,8 +89,6 @@ export function JobPlanForm({
       details.dcc_pas,
       details.spa_pas,
       details.hours_per_pa,
-      details.additional_dcc_hours,
-      details.additional_spa_hours,
       ...details.days.flatMap((day) => [day.dcc_hours, day.spa_hours]),
     ]
 
@@ -206,7 +204,7 @@ export function JobPlanForm({
           <div className="field">
             <label htmlFor="job-plan-contracted-pas">Total PA</label>
             <output className="calculated-field" id="job-plan-contracted-pas">
-              {formatDecimal(details.contracted_pas) || '—'}
+              {formatDecimal(details.contracted_pas, 2) || '—'}
             </output>
           </div>
 
@@ -281,44 +279,6 @@ export function JobPlanForm({
           disabled={disabled}
           onChange={changeDay}
         />
-
-        <div className="job-plan-flexible-hours">
-          <header>
-            <h4>Additional Flexible Hours</h4>
-            <p>
-              Weekly hours not tied to a weekday. They increase the standard weekly totals but are
-              not deducted automatically from a leave date.
-            </p>
-          </header>
-          <div className="job-plan-flexible-fields">
-            <div className="field">
-              <label htmlFor="job-plan-additional-dcc">Additional DCC Hours</label>
-              <NumberInput
-                id="job-plan-additional-dcc"
-                label="Additional DCC Hours"
-                min="0"
-                step="0.25"
-                inputMode="decimal"
-                value={details.additional_dcc_hours}
-                disabled={disabled}
-                onChange={(value) => changeDetails({ additional_dcc_hours: value })}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="job-plan-additional-spa">Additional SPA Hours</label>
-              <NumberInput
-                id="job-plan-additional-spa"
-                label="Additional SPA Hours"
-                min="0"
-                step="0.25"
-                inputMode="decimal"
-                value={details.additional_spa_hours}
-                disabled={disabled}
-                onChange={(value) => changeDetails({ additional_spa_hours: value })}
-              />
-            </div>
-          </div>
-        </div>
       </section>
 
       <details className="job-plan-advanced">
@@ -366,31 +326,19 @@ export function JobPlanForm({
           <dl>
             <div>
               <dt>Contracted PAs</dt>
-              <dd>{formatDecimal(preview.contracted_pas)}</dd>
+              <dd>{formatDecimal(preview.contracted_pas, 2)}</dd>
             </div>
             <div>
               <dt>Allocated PAs</dt>
-              <dd>{formatDecimal(preview.allocated_pas)}</dd>
+              <dd>{formatDecimal(preview.allocated_pas, 2)}</dd>
             </div>
             <div>
               <dt>Difference</dt>
-              <dd>{formatDecimal(preview.reconciliation_variance)}</dd>
+              <dd>{formatDecimal(preview.reconciliation_variance, 2)}</dd>
             </div>
             <div>
               <dt>Visible Hours per Week</dt>
-              <dd>{formatDecimal(preview.average_visible_hours)}</dd>
-            </div>
-            <div>
-              <dt>Standard DCC Hours</dt>
-              <dd>{formatDecimal(preview.average_standard_dcc_hours)}</dd>
-            </div>
-            <div>
-              <dt>Standard SPA Hours</dt>
-              <dd>{formatDecimal(preview.average_standard_spa_hours)}</dd>
-            </div>
-            <div>
-              <dt>Standard Weekly Hours</dt>
-              <dd>{formatDecimal(preview.average_standard_hours)}</dd>
+              <dd>{formatDecimal(preview.average_visible_hours, 2)}</dd>
             </div>
           </dl>
 

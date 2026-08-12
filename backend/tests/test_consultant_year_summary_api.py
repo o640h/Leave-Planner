@@ -32,8 +32,6 @@ def job_plan(effective_from: str, effective_until: str) -> dict[str, Any]:
         "spa_pas": "2.56",
         "other_pas": "0",
         "hours_per_pa": "4",
-        "additional_dcc_hours": "3",
-        "additional_spa_hours": "4",
         "reconciliation_override_reason": None,
         "days": [
             {
@@ -68,8 +66,6 @@ def synthetic_job_plan(
         "spa_pas": spa_pas,
         "other_pas": "0",
         "hours_per_pa": "4",
-        "additional_dcc_hours": "0",
-        "additional_spa_hours": "0",
         "reconciliation_override_reason": None,
         "days": [
             {
@@ -150,12 +146,12 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
     assert summary["allocation_source"] == "recommendation"
     assert [period["calendar_days"] for period in summary["job_plan_periods"]] == [337, 28]
     assert [Decimal(period["standard_dcc_hours"]) for period in summary["job_plan_periods"]] == [
-        Decimal("23.5"),
-        Decimal("23.5"),
+        Decimal("20.5"),
+        Decimal("20.5"),
     ]
     assert [Decimal(period["standard_spa_hours"]) for period in summary["job_plan_periods"]] == [
-        Decimal("8"),
-        Decimal("8"),
+        Decimal("4"),
+        Decimal("4"),
     ]
     assert sum(
         Decimal(period["gross_entitlement_hours"])

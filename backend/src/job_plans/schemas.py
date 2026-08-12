@@ -83,8 +83,6 @@ class JobPlanFields(BaseModel):
     spa_pas: NonNegativeDecimal
     other_pas: NonNegativeDecimal
     hours_per_pa: PositiveDecimal = Decimal("4")
-    additional_dcc_hours: NonNegativeDecimal = Decimal("0")
-    additional_spa_hours: NonNegativeDecimal = Decimal("0")
 
     reconciliation_override_reason: str | None = Field(
         default=None,
@@ -164,8 +162,5 @@ class JobPlanPreview(JobPlanFields):
     average_dcc_hours: ExactDecimal
     average_spa_hours: ExactDecimal
     average_other_hours: ExactDecimal
-    average_standard_dcc_hours: ExactDecimal
-    average_standard_spa_hours: ExactDecimal
-    average_standard_hours: ExactDecimal
     scheduled_average_pas: ExactDecimal
     warning: str | None

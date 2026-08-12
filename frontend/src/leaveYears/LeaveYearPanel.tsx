@@ -227,7 +227,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
         <>
           <div className="workspace-overview" aria-label="Consultant Setup Overview">
             <div className={`overview-item${selectedLeaveYear ? '' : ' overview-item--warning'}`}>
-              <AppIcon name="brand" />
+              <AppIcon name="calendar" />
               <div>
                 <span>Leave Year</span>
                 <strong>
@@ -263,7 +263,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                     : ''
               }`}
             >
-              <AppIcon name="brand" />
+              <AppIcon name="calendar" />
               <div>
                 <span>Entitlement</span>
                 <strong>

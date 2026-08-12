@@ -108,3 +108,36 @@ it('requires an explanation when the operator enters manual values', async () =>
     reason: 'Trust-approved starting values',
   })
 })
+
+it('keeps API decimal noise out of editable entitlement fields', () => {
+  const workspace: EntitlementWorkspace = {
+    recommendation: null,
+    application: {
+      id: 1,
+      leave_year_id: 2,
+      recommendation_id: null,
+      mode: 'manual',
+      entitlement: {
+        dcc_hours: '203.3040000000000000000000000',
+        spa_hours: '88.06400000000000000000000003',
+        other_hours: '0',
+        total_hours: '291.3680000000000000000000000',
+      },
+      reason: 'Trust-approved values',
+      updated_at: '2026-08-12T10:00:00',
+    },
+  }
+
+  render(
+    <EntitlementForm
+      initialValue={workspace}
+      busy={false}
+      onPreview={vi.fn()}
+      onSubmit={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+
+  expect(screen.getByLabelText('DCC Hours')).toHaveValue(203.304)
+  expect(screen.getByLabelText('SPA Hours')).toHaveValue(88.064)
+})

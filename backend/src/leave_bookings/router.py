@@ -74,3 +74,12 @@ def cancel_booking(
 ) -> PlanningRead:
     return service.cancel_booking(session, consultant_id, leave_year_id, booking_id)
 
+
+@router.delete("/bookings/{booking_id}", response_model=PlanningRead)
+def remove_booking(
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+    session: DatabaseSession,
+) -> PlanningRead:
+    return service.remove_booking(session, consultant_id, leave_year_id, booking_id)

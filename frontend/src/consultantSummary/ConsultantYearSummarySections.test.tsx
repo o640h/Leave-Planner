@@ -45,8 +45,8 @@ const summary = {
       contracted_pas: '8.47',
       dcc_pas: '5.91',
       spa_pas: '2.56',
-      standard_dcc_hours: '23.5',
-      standard_spa_hours: '8',
+      standard_dcc_hours: '20.5',
+      standard_spa_hours: '4',
       gross_entitlement_hours: '269.0164821917808219',
       dcc_entitlement_hours: '187.7080767',
       spa_entitlement_hours: '81.3084055',
@@ -103,8 +103,9 @@ describe('consultant year summary', () => {
     render(<ConsultantYearSummarySections summary={summary} />)
 
     expect(screen.getByText('337')).toBeInTheDocument()
-    expect(screen.getByText('23.5 DCC · 8 SPA')).toBeInTheDocument()
-    expect(screen.getByText('269.016h')).toBeInTheDocument()
+    expect(screen.getByText('20.5 DCC · 4 SPA')).toBeInTheDocument()
+    expect(screen.getByText('269h')).toBeInTheDocument()
+    expect(screen.getByText('DCC 187.7 · SPA 81.3')).toBeInTheDocument()
     expect(screen.getByText('Workbook reference')).toBeInTheDocument()
     expect(screen.getByText('8.5h')).toBeInTheDocument()
     expect(screen.getByText('1 Events')).toBeInTheDocument()
@@ -113,8 +114,8 @@ describe('consultant year summary', () => {
   it('switches among actual, confirmed, and projected balances', () => {
     render(<LeaveBalanceSummary summary={summary} />)
 
-    expect(screen.getByText('247.5h')).toBeInTheDocument()
-    expect(screen.getByText('85.12h')).toBeInTheDocument()
+    expect(screen.getByText('248h')).toBeInTheDocument()
+    expect(screen.getByText('85h')).toBeInTheDocument()
     expect(screen.getByText('14')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Projected' }))

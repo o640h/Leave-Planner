@@ -71,10 +71,10 @@ export function EntitlementForm({
     storedRecommendation?.inputs.consultant_service_start_date ?? '',
   )
   const [dccHours, setDccHours] = useState(
-    application ? formatDecimal(application.entitlement.dcc_hours) : '',
+    application ? formatDecimal(application.entitlement.dcc_hours, 3) : '',
   )
   const [spaHours, setSpaHours] = useState(
-    application ? formatDecimal(application.entitlement.spa_hours) : '',
+    application ? formatDecimal(application.entitlement.spa_hours, 3) : '',
   )
   const [reason, setReason] = useState(application?.reason ?? '')
   const [preview, setPreview] = useState<EntitlementRecommendation | null>(storedRecommendation)
@@ -96,8 +96,8 @@ export function EntitlementForm({
     setError(null)
 
     if (nextMode === 'calculated_with_override' && preview !== null) {
-      setDccHours(formatDecimal(preview.recommended_entitlement.dcc_hours))
-      setSpaHours(formatDecimal(preview.recommended_entitlement.spa_hours))
+      setDccHours(formatDecimal(preview.recommended_entitlement.dcc_hours, 3))
+      setSpaHours(formatDecimal(preview.recommended_entitlement.spa_hours, 3))
     }
   }
 
@@ -115,8 +115,8 @@ export function EntitlementForm({
       setPreview(result)
 
       if (mode === 'calculated_with_override') {
-        setDccHours(formatDecimal(result.recommended_entitlement.dcc_hours))
-        setSpaHours(formatDecimal(result.recommended_entitlement.spa_hours))
+        setDccHours(formatDecimal(result.recommended_entitlement.dcc_hours, 3))
+        setSpaHours(formatDecimal(result.recommended_entitlement.spa_hours, 3))
       }
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))

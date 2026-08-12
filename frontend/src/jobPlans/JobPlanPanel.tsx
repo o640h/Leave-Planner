@@ -240,29 +240,21 @@ export function JobPlanPanel({
               <dl>
                 <div>
                   <dt>Total PA</dt>
-                  <dd>{formatDecimal(jobPlan.contracted_pas)}</dd>
+                  <dd>{formatDecimal(jobPlan.contracted_pas, 2)}</dd>
                 </div>
                 <div>
                   <dt>DCC</dt>
-                  <dd>{formatDecimal(jobPlan.dcc_pas)}</dd>
+                  <dd>{formatDecimal(jobPlan.dcc_pas, 2)}</dd>
                 </div>
                 <div>
                   <dt>SPA</dt>
-                  <dd>{formatDecimal(jobPlan.spa_pas)}</dd>
+                  <dd>{formatDecimal(jobPlan.spa_pas, 2)}</dd>
                 </div>
                 <div>
                   <dt>Pattern</dt>
                   <dd>
                     {jobPlan.week_count} {jobPlan.week_count === 1 ? 'Week' : 'Weeks'}
                   </dd>
-                </div>
-                <div>
-                  <dt>Flexible DCC</dt>
-                  <dd>{formatDecimal(jobPlan.additional_dcc_hours)}</dd>
-                </div>
-                <div>
-                  <dt>Flexible SPA</dt>
-                  <dd>{formatDecimal(jobPlan.additional_spa_hours)}</dd>
                 </div>
               </dl>
 

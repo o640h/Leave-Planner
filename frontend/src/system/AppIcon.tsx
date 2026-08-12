@@ -1,6 +1,5 @@
 type AppIconProps = {
   name:
-    | 'brand'
     | 'consultants'
     | 'wallchart'
     | 'settings'
@@ -20,7 +19,7 @@ export function AppIcon({ name }: AppIconProps) {
     viewBox: '0 0 24 24',
   }
 
-  if (name === 'brand' || name === 'calendar') {
+  if (name === 'calendar') {
     return (
       <svg {...commonProps}>
         <path d="M5 4.5h14v15H5zM8 2.5v4M16 2.5v4M5 9h14M8.5 14l2 2 4.5-5" />

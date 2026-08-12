@@ -13,7 +13,7 @@ For a booking, the operator selects:
 - Planned, Approved, Taken, or Cancelled;
 - an optional note.
 
-The preview finds the job plan effective on every date and shows the normal DCC and SPA deduction for that weekday. Flexible weekly hours are not assigned to a date, so they are not deducted automatically.
+The preview finds the job plan effective on every date and shows the normal DCC and SPA deduction for that weekday. Values that are not assigned to a weekday cannot create a dated leave deduction and are not stored separately.
 
 The operator may replace a generated daily value, for example when only DCC activity was cancelled. A replacement reason is required so the saved record still explains why it differs from the normal job plan.
 

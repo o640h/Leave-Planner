@@ -23,7 +23,7 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
     getCarryForward(consultantId, leaveYearId)
       .then((result) => {
         setRecord(result)
-        setHours(result.hours)
+        setHours(formatDecimal(result.hours, 2))
       })
       .catch((requestError: unknown) => setError(operatorErrorMessage(requestError)))
   }, [consultantId, leaveYearId])
@@ -35,7 +35,7 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
     try {
       const saved = await setCarryForward(consultantId, leaveYearId, hours)
       setRecord(saved)
-      setHours(saved.hours)
+      setHours(formatDecimal(saved.hours, 2))
       setOpen(false)
       onSaved?.()
     } catch (requestError) {
@@ -50,7 +50,7 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
       <div className="carry-forward-value">
         <span>Carry Forward</span>
         <strong>
-          {record ? formatDecimal(record.hours) : '—'}
+          {record ? formatDecimal(record.hours, 2) : '—'}
           {record ? <small>hours</small> : null}
         </strong>
       </div>

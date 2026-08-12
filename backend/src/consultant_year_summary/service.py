@@ -124,12 +124,10 @@ def _periods(
                 standard_dcc_hours=(
                     sum((day.dcc_hours for day in plan.days), ZERO)
                     / Decimal(plan.week_count)
-                    + plan.additional_dcc_hours
                 ),
                 standard_spa_hours=(
                     sum((day.spa_hours for day in plan.days), ZERO)
                     / Decimal(plan.week_count)
-                    + plan.additional_spa_hours
                 ),
                 gross_entitlement_hours=gross,
                 dcc_entitlement_hours=dcc,

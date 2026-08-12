@@ -64,8 +64,6 @@ def workbook_job_plan() -> dict[str, Any]:
         "spa_pas": "2.560",
         "other_pas": "0",
         "hours_per_pa": "4",
-        "additional_dcc_hours": "3",
-        "additional_spa_hours": "4",
         "reconciliation_override_reason": None,
         "days": days,
     }
@@ -83,11 +81,6 @@ def test_preview_save_edit_restart_and_audit_job_plan(tmp_path: Path) -> None:
         assert preview.status_code == 200
         assert preview.json()["is_reconciled"] is True
         assert preview.json()["average_visible_hours"] == "24.5"
-        # The workbook adds flexible work to its standard weekly totals, but
-        # the dated weekday grid remains the source of leave deductions.
-        assert preview.json()["average_standard_dcc_hours"] == "23.5"
-        assert preview.json()["average_standard_spa_hours"] == "8.0"
-        assert preview.json()["average_standard_hours"] == "31.5"
 
         created = client.post(path, json=details)
         assert created.status_code == 201

@@ -50,26 +50,26 @@ function BalancePositionView({ position }: { position: BalancePosition | null })
     <div className="balance-position">
       <div>
         <span>Available</span>
-        <strong>{hours(position.available.total_hours)}</strong>
+        <strong>{hours(position.available.total_hours, 0)}</strong>
         <small>
-          DCC {formatDecimal(position.available.dcc_hours, 2)} · SPA{' '}
-          {formatDecimal(position.available.spa_hours, 2)}
+          DCC {formatDecimal(position.available.dcc_hours, 0)} · SPA{' '}
+          {formatDecimal(position.available.spa_hours, 0)}
         </small>
       </div>
       <div>
         <span>Leave Taken</span>
-        <strong>{hours(position.used.total_hours)}</strong>
+        <strong>{hours(position.used.total_hours, 0)}</strong>
         <small>
-          DCC {formatDecimal(position.used.dcc_hours, 2)} · SPA{' '}
-          {formatDecimal(position.used.spa_hours, 2)}
+          DCC {formatDecimal(position.used.dcc_hours, 0)} · SPA{' '}
+          {formatDecimal(position.used.spa_hours, 0)}
         </small>
       </div>
       <div>
         <span>Leave Remaining</span>
-        <strong>{hours(position.remaining.total_hours)}</strong>
+        <strong>{hours(position.remaining.total_hours, 0)}</strong>
         <small>
-          DCC {formatDecimal(position.remaining.dcc_hours, 2)} · SPA{' '}
-          {formatDecimal(position.remaining.spa_hours, 2)}
+          DCC {formatDecimal(position.remaining.dcc_hours, 0)} · SPA{' '}
+          {formatDecimal(position.remaining.spa_hours, 0)}
         </small>
       </div>
     </div>
@@ -138,10 +138,10 @@ function PeriodRow({ period, index }: { period: JobPlanPeriodSummary; index: num
       </div>
       <div role="cell">
         <span>Leave Calculated</span>
-        <strong>{hours(period.gross_entitlement_hours, 3)}</strong>
+        <strong>{hours(period.gross_entitlement_hours, 1)}</strong>
         <small>
-          DCC {formatDecimal(period.dcc_entitlement_hours, 3)} · SPA{' '}
-          {formatDecimal(period.spa_entitlement_hours, 3)}
+          DCC {formatDecimal(period.dcc_entitlement_hours, 1)} · SPA{' '}
+          {formatDecimal(period.spa_entitlement_hours, 1)}
         </small>
       </div>
     </div>

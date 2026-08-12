@@ -31,8 +31,6 @@ def job_plan() -> dict[str, Any]:
         "spa_pas": "2.56",
         "other_pas": "0",
         "hours_per_pa": "4",
-        "additional_dcc_hours": "3",
-        "additional_spa_hours": "4",
         "reconciliation_override_reason": None,
         "days": [
             {
@@ -188,6 +186,38 @@ def test_existing_booking_can_be_updated_with_an_optional_override_reason(
         assert Decimal(saved_day["deduction"]["dcc_hours"]) == Decimal("4")
         assert Decimal(saved_day["deduction"]["spa_hours"]) == 0
         assert saved_day["override_reason"] is None
+
+
+def test_incorrect_booking_can_be_removed_without_losing_audit_evidence(tmp_path: Path) -> None:
+    with TestClient(app_for(tmp_path)) as client:
+        consultant_id, _leave_year_id, root = setup_workspace(client)
+        created = client.post(
+            f"{root}/bookings",
+            json={
+                "start_date": "2025-12-31",
+                "end_date": "2025-12-31",
+                "state": "taken",
+                "overrides": [],
+            },
+        )
+        booking_id = created.json()["bookings"][0]["id"]
+
+        removed = client.delete(f"{root}/bookings/{booking_id}")
+
+        assert removed.status_code == 200
+        assert removed.json()["bookings"] == []
+        assert Decimal(removed.json()["actual"]["bookings"]["total_hours"]) == 0
+
+    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
+        event = connection.execute(
+            "SELECT action, details FROM audit_events "
+            "WHERE consultant_id = ? AND entity_type = 'leave_booking' "
+            "ORDER BY id DESC LIMIT 1",
+            (consultant_id,),
+        ).fetchone()
+    assert event is not None
+    assert event[0] == "deleted"
+    assert '"state": "taken"' in event[1]
 
 
 def test_overlap_warning_and_audit_history(tmp_path: Path) -> None:

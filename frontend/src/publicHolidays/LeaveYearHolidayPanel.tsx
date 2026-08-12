@@ -54,10 +54,10 @@ export function LeaveYearHolidayPanel({ consultantId, leaveYearId }: Props) {
           <summary>Public Holidays ({data.occurrences.length})</summary>
           <div className="holiday-disclosure-summary">
             <span>
-              Entitlement <strong>{formatDecimal(data.entitlement_hours, 3)}</strong>
+              Entitlement <strong>{formatDecimal(data.entitlement_hours, 1)}</strong>
             </span>
             <span>
-              Standard Deductions <strong>{formatDecimal(data.deduction_hours, 3)}</strong>
+              Standard Deductions <strong>{formatDecimal(data.deduction_hours, 1)}</strong>
             </span>
             <small>
               {data.source.replaceAll('_', ' ')} · {data.source_date}
@@ -71,7 +71,7 @@ export function LeaveYearHolidayPanel({ consultantId, leaveYearId }: Props) {
                   <span>{item.holiday_date}</span>
                 </div>
                 <span>
-                  {formatDecimal(item.entitlement_hours, 3)} hours ·{' '}
+                  {formatDecimal(item.entitlement_hours, 1)} hours ·{' '}
                   {item.basis.replaceAll('_', ' ')}
                 </span>
                 <button className="text-button" type="button" onClick={() => edit(item)}>

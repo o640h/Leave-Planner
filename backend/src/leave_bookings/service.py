@@ -492,6 +492,27 @@ def cancel_booking(
     return planning(session, consultant_id, leave_year_id)
 
 
+def remove_booking(
+    session: Session, consultant_id: int, leave_year_id: int, booking_id: int
+) -> PlanningRead:
+    """Permanently remove an incorrectly entered booking while retaining audit evidence."""
+
+    leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    record = _record(session, leave_year_id, booking_id)
+    before = _snapshot(record)
+    session.delete(record)
+    session.flush()
+    record_audit_event(
+        session,
+        consultant_id=consultant_id,
+        entity_type="leave_booking",
+        entity_id=booking_id,
+        action="deleted",
+        details={"before": before},
+    )
+    return planning(session, consultant_id, leave_year_id)
+
+
 def planning(session: Session, consultant_id: int, leave_year_id: int) -> PlanningRead:
     leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     result, holidays, records, has_entitlement = _calculation(session, consultant_id, leave_year_id)

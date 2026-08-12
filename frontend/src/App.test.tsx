@@ -281,9 +281,6 @@ describe('consultant directory', () => {
             average_dcc_hours: '0',
             average_spa_hours: '0',
             average_other_hours: '0',
-            average_standard_dcc_hours: '0',
-            average_standard_spa_hours: '0',
-            average_standard_hours: '0',
             scheduled_average_pas: '0',
             warning: variance === 0 ? null : 'Enter an override reason before saving.',
           })

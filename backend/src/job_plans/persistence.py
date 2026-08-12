@@ -41,14 +41,6 @@ class JobPlanRecord(Base):
         CheckConstraint("spa_pas >= 0", name="ck_job_plan_spa_pas"),
         CheckConstraint("other_pas >= 0", name="ck_job_plan_other_pas"),
         CheckConstraint(
-            "additional_dcc_hours >= 0",
-            name="ck_job_plan_additional_dcc_hours",
-        ),
-        CheckConstraint(
-            "additional_spa_hours >= 0",
-            name="ck_job_plan_additional_spa_hours",
-        ),
-        CheckConstraint(
             "hours_per_pa > 0",
             name="ck_job_plan_hours_per_pa",
         ),
@@ -71,13 +63,6 @@ class JobPlanRecord(Base):
     spa_pas: Mapped[Decimal] = mapped_column(Numeric(9, 3), nullable=False)
     other_pas: Mapped[Decimal] = mapped_column(Numeric(9, 3), nullable=False)
     hours_per_pa: Mapped[Decimal] = mapped_column(Numeric(9, 3), nullable=False)
-    additional_dcc_hours: Mapped[Decimal] = mapped_column(
-        Numeric(9, 3), nullable=False, default=Decimal("0")
-    )
-    additional_spa_hours: Mapped[Decimal] = mapped_column(
-        Numeric(9, 3), nullable=False, default=Decimal("0")
-    )
-
     reconciliation_override_reason: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,

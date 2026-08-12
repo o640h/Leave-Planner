@@ -339,33 +339,6 @@
   box-shadow: 0 -16px 32px rgb(0 0 0 / 0.24);
 }
 
-.job-plan-flexible-hours {
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
-
-.job-plan-flexible-hours > header {
-  margin-bottom: 14px;
-}
-
-.job-plan-flexible-hours h4 {
-  margin-bottom: 5px;
-}
-
-.job-plan-flexible-hours p {
-  max-width: 650px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.job-plan-flexible-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 260px));
-  gap: 16px;
-}
-
 @media (max-width: 760px) {
   .job-plan-card dl,
   .job-plan-preview dl {

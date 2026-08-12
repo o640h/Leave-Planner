@@ -8,7 +8,7 @@ import type { LeaveYear } from '../leaveYears/types'
 import { getHolidaySettings } from '../publicHolidays/api'
 import type { Holiday } from '../publicHolidays/types'
 import { BookingDrawer } from './BookingDrawer'
-import { cancelBooking, getPlanning, previewBooking, saveBooking } from './api'
+import { getPlanning, previewBooking, removeBooking, saveBooking } from './api'
 import { PlanningCalendar } from './PlanningCalendar'
 import type { PlanningRow } from './PlanningCalendar'
 import type { LeaveBooking, LeaveBookingInput, LeavePreview } from './types'
@@ -162,12 +162,12 @@ export function PlanningPage() {
     }
   }
 
-  async function handleCancel(bookingId: number) {
+  async function handleRemove(bookingId: number) {
     if (!context?.row.leaveYear) return
     setBusy(true)
     try {
       replaceWorkspace(
-        await cancelBooking(context.row.consultant.id, context.row.leaveYear.id, bookingId),
+        await removeBooking(context.row.consultant.id, context.row.leaveYear.id, bookingId),
       )
       setContext(null)
     } finally {
@@ -245,7 +245,7 @@ export function PlanningPage() {
           busy={busy}
           onPreview={handlePreview}
           onSave={handleSave}
-          onCancelBooking={handleCancel}
+          onRemoveBooking={handleRemove}
           onClose={() => setContext(null)}
         />
       )}

@@ -21,7 +21,7 @@ type Props = {
   busy: boolean
   onPreview: (details: LeaveBookingInput, bookingId?: number) => Promise<LeavePreview>
   onSave: (details: LeaveBookingInput, bookingId?: number) => Promise<void>
-  onCancelBooking: (bookingId: number) => Promise<void>
+  onRemoveBooking: (bookingId: number) => Promise<void>
   onClose: () => void
 }
 
@@ -78,7 +78,7 @@ export function BookingDrawer({
   busy,
   onPreview,
   onSave,
-  onCancelBooking,
+  onRemoveBooking,
   onClose,
 }: Props) {
   const [details, setDetails] = useState<LeaveBookingInput>(() =>
@@ -95,6 +95,7 @@ export function BookingDrawer({
   const [preview, setPreview] = useState<LeavePreview | null>(null)
   const [drafts, setDrafts] = useState<Record<string, OverrideDraft>>(() => bookingDrafts(booking))
   const [error, setError] = useState<string | null>(null)
+  const [confirmRemoval, setConfirmRemoval] = useState(false)
 
   function overrideInputs(days: LeaveDay[]): DailyOverrideInput[] {
     return days.flatMap((day) => {
@@ -344,14 +345,17 @@ export function BookingDrawer({
           )}
 
           <footer className="form-actions">
-            {booking && booking.state !== 'cancelled' && (
+            {booking && (
               <button
                 className="button button--danger"
                 type="button"
                 disabled={disabled}
-                onClick={() => onCancelBooking(booking.id)}
+                onClick={() => {
+                  if (confirmRemoval) void onRemoveBooking(booking.id)
+                  else setConfirmRemoval(true)
+                }}
               >
-                Cancel Booking
+                {confirmRemoval ? 'Confirm Removal' : 'Remove Booking'}
               </button>
             )}
             <span className="form-action-spacer" />

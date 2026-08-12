@@ -34,13 +34,12 @@ export function saveBooking(
   )
 }
 
-export function cancelBooking(
+export function removeBooking(
   consultantId: number,
   leaveYearId: number,
   bookingId: number,
 ): Promise<PlanningWorkspace> {
-  return apiRequest<PlanningWorkspace>(
-    `${root(consultantId, leaveYearId)}/bookings/${bookingId}/cancel`,
-    { method: 'POST' },
-  )
+  return apiRequest<PlanningWorkspace>(`${root(consultantId, leaveYearId)}/bookings/${bookingId}`, {
+    method: 'DELETE',
+  })
 }

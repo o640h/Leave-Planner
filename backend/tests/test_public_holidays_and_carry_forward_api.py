@@ -42,8 +42,6 @@ def job_plan() -> dict[str, Any]:
         "spa_pas": "2.56",
         "other_pas": "0",
         "hours_per_pa": "4",
-        "additional_dcc_hours": "3",
-        "additional_spa_hours": "4",
         "reconciliation_override_reason": None,
         "days": [
             {

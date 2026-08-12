@@ -185,8 +185,6 @@ def calculation_cycle(
         other_pas=ProgrammedActivities(details.other_pas),
         hours_per_pa=Hours(details.hours_per_pa),
         days=days,
-        additional_dcc_hours=Hours(details.additional_dcc_hours),
-        additional_spa_hours=Hours(details.additional_spa_hours),
         reconciliation_override_reason=reason,
     )
 
@@ -227,8 +225,6 @@ def calculation_history(
             other_pas=ProgrammedActivities(record.other_pas),
             hours_per_pa=Hours(record.hours_per_pa),
             days=days,
-            additional_dcc_hours=Hours(record.additional_dcc_hours),
-            additional_spa_hours=Hours(record.additional_spa_hours),
             reconciliation_override_reason=(record.reconciliation_override_reason),
         )
 
@@ -279,9 +275,6 @@ def preview_job_plan(
         average_dcc_hours=(cycle.activity_hours(ActivityType.DCC).value / divisor),
         average_spa_hours=(cycle.activity_hours(ActivityType.SPA).value / divisor),
         average_other_hours=(cycle.activity_hours(ActivityType.OTHER).value / divisor),
-        average_standard_dcc_hours=cycle.average_standard_activity_hours(ActivityType.DCC).value,
-        average_standard_spa_hours=cycle.average_standard_activity_hours(ActivityType.SPA).value,
-        average_standard_hours=cycle.average_standard_weekly_hours.value,
         scheduled_average_pas=cycle.scheduled_average_weekly_pas.value,
         warning=warning,
     )
@@ -315,8 +308,6 @@ def assign_fields(
     job_plan.spa_pas = details.spa_pas
     job_plan.other_pas = details.other_pas
     job_plan.hours_per_pa = details.hours_per_pa
-    job_plan.additional_dcc_hours = details.additional_dcc_hours
-    job_plan.additional_spa_hours = details.additional_spa_hours
     job_plan.reconciliation_override_reason = details.reconciliation_override_reason
 
     job_plan.days.extend(day_record(day) for day in details.days)
@@ -335,8 +326,6 @@ def snapshot(job_plan: JobPlanRecord) -> dict[str, object]:
         "spa_pas": format(job_plan.spa_pas, "f"),
         "other_pas": format(job_plan.other_pas, "f"),
         "hours_per_pa": format(job_plan.hours_per_pa, "f"),
-        "additional_dcc_hours": format(job_plan.additional_dcc_hours, "f"),
-        "additional_spa_hours": format(job_plan.additional_spa_hours, "f"),
         "reconciliation_override_reason": (job_plan.reconciliation_override_reason),
         "days": [
             {

@@ -5,12 +5,12 @@ import { PlanningPage } from './PlanningPage'
 import { BookingDrawer } from './BookingDrawer'
 
 const mocks = vi.hoisted(() => ({
-  cancelBooking: vi.fn(),
   getPlanning: vi.fn(),
   getHolidaySettings: vi.fn(),
   listConsultants: vi.fn(),
   listLeaveYears: vi.fn(),
   previewBooking: vi.fn(),
+  removeBooking: vi.fn(),
   saveBooking: vi.fn(),
 }))
 
@@ -25,9 +25,9 @@ vi.mock('../consultants/api', () => ({ listConsultants: mocks.listConsultants })
 vi.mock('../leaveYears/api', () => ({ listLeaveYears: mocks.listLeaveYears }))
 vi.mock('../publicHolidays/api', () => ({ getHolidaySettings: mocks.getHolidaySettings }))
 vi.mock('./api', () => ({
-  cancelBooking: mocks.cancelBooking,
   getPlanning: mocks.getPlanning,
   previewBooking: mocks.previewBooking,
+  removeBooking: mocks.removeBooking,
   saveBooking: mocks.saveBooking,
 }))
 
@@ -138,7 +138,7 @@ describe('PlanningPage', () => {
         busy={false}
         onPreview={mocks.previewBooking}
         onSave={vi.fn()}
-        onCancelBooking={vi.fn()}
+        onRemoveBooking={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -197,7 +197,7 @@ describe('PlanningPage', () => {
         busy={false}
         onPreview={mocks.previewBooking}
         onSave={onSave}
-        onCancelBooking={vi.fn()}
+        onRemoveBooking={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -216,5 +216,45 @@ describe('PlanningPage', () => {
         12,
       ),
     )
+  })
+
+  it('requires confirmation before permanently removing a booking', async () => {
+    const booking = {
+      id: 12,
+      leave_year_id: 3,
+      start_date: '2025-12-31',
+      end_date: '2025-12-31',
+      state: 'taken' as const,
+      note: null,
+      days: [],
+      created_at: '2026-08-11T12:00:00',
+      updated_at: '2026-08-11T12:00:00',
+    }
+    mocks.previewBooking.mockResolvedValue({
+      days: [],
+      projected: balance,
+      confirmed: balance,
+      actual: balance,
+      warnings: [],
+    })
+    const onRemove = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <BookingDrawer
+        consultantName="Dr Alex Morgan"
+        booking={booking}
+        initialDate={null}
+        busy={false}
+        onPreview={mocks.previewBooking}
+        onSave={vi.fn()}
+        onRemoveBooking={onRemove}
+        onClose={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Booking' }))
+    expect(onRemove).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Removal' }))
+    await waitFor(() => expect(onRemove).toHaveBeenCalledWith(12))
   })
 })

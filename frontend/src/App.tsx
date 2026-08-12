@@ -8,20 +8,14 @@ import { HealthStatus } from './system/HealthStatus'
 
 export function App() {
   const [page, setPage] = useState<'consultants' | 'planning' | 'settings'>('consultants')
+  const desktopHost = new URLSearchParams(window.location.search).get('desktop') === '1'
 
   return (
-    <div className="application-frame">
-      <header className="application-titlebar">
-        <div className="titlebar-brand">
-          <AppIcon name="brand" />
-          <h1>Leave Planner</h1>
-        </div>
-      </header>
-
+    <div className={`application-frame${desktopHost ? ' application-frame--desktop' : ''}`}>
       <div className="application-shell">
         <aside className="application-rail">
           <div className="brand" aria-hidden="true">
-            <AppIcon name="brand" />
+            <AppIcon name="calendar" />
           </div>
 
           <nav className="primary-navigation" aria-label="Primary navigation">

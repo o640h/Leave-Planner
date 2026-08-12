@@ -151,7 +151,7 @@ p {
 .application-frame {
   display: grid;
   position: relative;
-  grid-template-rows: 40px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   width: min(1440px, 100vw);
   height: min(900px, 100dvh);
   overflow: hidden;
@@ -161,31 +161,13 @@ p {
   box-shadow: 0 30px 90px rgb(0 0 0 / 0.42);
 }
 
-.application-titlebar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--line);
-  background: #0d0d0d;
-  user-select: none;
-}
-
-.titlebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.titlebar-brand .app-icon {
-  width: 17px;
-  height: 17px;
-  color: var(--accent);
-}
-
-.titlebar-brand h1 {
-  margin: 0;
-  font: 430 11px/1 var(--brand);
+.application-frame--desktop {
+  grid-template-rows: minmax(0, 1fr);
+  width: 100vw;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .application-shell {
@@ -579,10 +561,6 @@ p {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
-  }
-
-  .application-titlebar {
-    height: 42px;
   }
 
   .application-shell {

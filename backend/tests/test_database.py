@@ -27,6 +27,11 @@ def test_alembic_upgrade_creates_foundation_schema(tmp_path: Path) -> None:
         "job_plan_versions",
         "job_plan_days",
     } <= set(inspect(engine).get_table_names())
+    job_plan_columns = {
+        column["name"] for column in inspect(engine).get_columns("job_plan_versions")
+    }
+    assert "additional_dcc_hours" not in job_plan_columns
+    assert "additional_spa_hours" not in job_plan_columns
     engine.dispose()
 
 
