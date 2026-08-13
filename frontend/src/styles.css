@@ -50,6 +50,11 @@
   --dialog-action-hover-opacity: 0.14;
   --dialog-field-rgb: 17 17 17;
   --dialog-field-opacity: 0.78;
+  --dialog-field-border-opacity: 0.055;
+  --dialog-field-hover-opacity: 0.16;
+  --dialog-section-opacity: 0.045;
+  --dialog-inset-rgb: 10 10 10;
+  --dialog-inset-opacity: 0.34;
   --text: #dedbd7;
   --quiet: #74736f;
   --muted: #9c9a95;

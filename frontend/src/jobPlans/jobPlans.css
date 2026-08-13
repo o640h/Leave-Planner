@@ -240,6 +240,8 @@
 
 .job-plan-grid-scroll {
   overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--corner-control);
 }
 
 .job-plan-grid {
@@ -251,13 +253,22 @@
 .job-plan-grid td {
   height: 42px;
   padding: 7px 9px;
-  border: 1px solid var(--line);
+  border: 0;
+  border-bottom: 1px solid var(--line);
   text-align: left;
+}
+
+.job-plan-grid tr:last-child > * {
+  border-bottom: 0;
+}
+
+.job-plan-grid tr > * + * {
+  border-left: 1px solid var(--line);
 }
 
 .job-plan-grid thead th {
   color: var(--quiet);
-  background: var(--field);
+  background: rgb(var(--dialog-inset-rgb) / calc(var(--dialog-inset-opacity) * 0.72));
   font-size: 10px;
   font-weight: 550;
 }
@@ -271,7 +282,7 @@
 .job-plan-grid .number-input {
   width: 100%;
   min-width: 90px;
-  border: 1px solid transparent;
+  border-color: transparent;
 }
 
 .job-plan-grid .number-input:focus-within {

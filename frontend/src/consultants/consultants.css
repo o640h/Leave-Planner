@@ -423,6 +423,84 @@
   box-shadow: var(--panel-shadow);
 }
 
+/* Shared modal material: one raised shell with recessed, clearly distinct controls. */
+:is(.record-modal, .booking-drawer) {
+  --line: rgb(var(--border-rgb) / var(--dialog-section-opacity));
+}
+
+:is(.record-modal, .booking-drawer) :is(.form-introduction, header) h2,
+:is(.record-modal, .booking-drawer) .form-introduction h3 {
+  color: var(--text);
+  font-weight: 430;
+  letter-spacing: -0.025em;
+}
+
+:is(.record-modal, .booking-drawer)
+  :is(
+    .field > input,
+    .field > textarea,
+    .field > select,
+    .number-input,
+    .date-input,
+    .calculated-field,
+    .removal-modal input,
+    .job-plan-override textarea,
+    .booking-fields input,
+    .booking-fields select,
+    .deduction-row > input
+  ) {
+  border: 1px solid rgb(var(--border-rgb) / var(--dialog-field-border-opacity));
+  border-radius: var(--corner-control);
+  background: rgb(var(--dialog-inset-rgb) / var(--dialog-inset-opacity));
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.12);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+:is(.record-modal, .booking-drawer)
+  :is(
+    .field > input,
+    .field > textarea,
+    .field > select,
+    .number-input,
+    .date-input,
+    .removal-modal input,
+    .job-plan-override textarea,
+    .booking-fields input,
+    .booking-fields select,
+    .deduction-row > input
+  ):hover:not(:disabled) {
+  border-color: rgb(var(--focus-rgb) / var(--dialog-field-hover-opacity));
+}
+
+:is(.record-modal, .booking-drawer)
+  :is(
+    .field > input,
+    .field > textarea,
+    .field > select,
+    .number-input,
+    .date-input,
+    .removal-modal input,
+    .job-plan-override textarea,
+    .booking-fields input,
+    .booking-fields select,
+    .deduction-row > input
+  ):focus,
+:is(.record-modal, .booking-drawer) :is(.number-input, .date-input):focus-within {
+  border-color: var(--control-focus-line);
+  outline: 0;
+  box-shadow: inset 0 0 0 1px rgb(var(--focus-rgb) / 0.06);
+}
+
+:is(.record-modal, .booking-drawer) :is(.number-input-controls, .date-input button) {
+  border-left-color: var(--line);
+}
+
+:is(.record-modal, .booking-drawer) :is(.number-input-controls button, .date-input button) {
+  background: rgb(var(--border-rgb) / 0.025);
+}
+
 .record-modal .form-introduction {
   padding-right: 34px;
 }
@@ -439,10 +517,14 @@
   color: var(--muted);
   background: transparent;
   font: 20px/1 var(--ui);
+  border-radius: var(--corner-control);
+  opacity: 0.72;
 }
 
 .modal-close:hover:not(:disabled) {
   color: var(--text);
+  background: rgb(var(--border-rgb) / 0.035);
+  opacity: 1;
 }
 
 @media (max-width: 1050px) {

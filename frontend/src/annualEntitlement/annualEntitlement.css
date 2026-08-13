@@ -377,9 +377,9 @@
 .entitlement-mode-options {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  padding: 1px;
-  background: var(--line);
+  gap: 8px;
+  padding: 0;
+  background: transparent;
 }
 
 .entitlement-mode-selector label {
@@ -387,13 +387,16 @@
   min-width: 0;
   gap: 10px;
   padding: 14px;
-  background: var(--surface);
+  border: 1px solid rgb(var(--border-rgb) / var(--dialog-field-border-opacity));
+  border-radius: var(--corner-control);
+  background: rgb(var(--dialog-inset-rgb) / var(--dialog-inset-opacity));
   cursor: pointer;
 }
 
 .entitlement-mode-selector label:has(input:checked) {
-  background: var(--surface-raised);
-  box-shadow: inset 0 -1px var(--accent);
+  border-color: rgb(var(--focus-rgb) / 0.34);
+  background: rgb(var(--focus-rgb) / 0.065);
+  box-shadow: inset 0 0 0 1px rgb(var(--focus-rgb) / 0.045);
 }
 
 .entitlement-mode-selector input {
@@ -443,15 +446,22 @@
 .entitlement-preview {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
+  gap: 0;
   margin: 4px 0 20px;
-  padding: 1px;
-  background: var(--line);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--corner-control);
+  background: rgb(var(--dialog-inset-rgb) / calc(var(--dialog-inset-opacity) * 0.6));
 }
 
 .entitlement-breakdown {
   padding: 15px;
-  background: var(--surface);
+  background: transparent;
+}
+
+.entitlement-breakdown + .entitlement-breakdown {
+  border-left: 1px solid var(--line);
 }
 
 .entitlement-breakdown--emphasis {

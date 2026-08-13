@@ -66,9 +66,14 @@
   --dialog-action-radius: 6px;
   --dialog-action-border-opacity: 0.06;
   --dialog-action-fill-opacity: 0.11;
-  --dialog-action-hover-opacity: 0.18;
+  --dialog-action-hover-opacity: 0.2;
   --dialog-field-rgb: 239 245 246;
-  --dialog-field-opacity: 0.46;
+  --dialog-field-opacity: 0.72;
+  --dialog-field-border-opacity: 0.02;
+  --dialog-field-hover-opacity: 0.2;
+  --dialog-section-opacity: 0.065;
+  --dialog-inset-rgb: 255 255 255;
+  --dialog-inset-opacity: 0.6;
 
   /* Light semantic colours */
   --text: #1d2a2e;
@@ -169,7 +174,7 @@
   box-shadow: none;
 }
 
-/* Inputs use the same translucent material as the dialog instead of flat white. */
+/* Form controls are a cooler recessed glass layer, distinct from the modal shell. */
 :root[data-theme='light']
   :is(.record-modal, .booking-drawer)
   :is(
@@ -185,19 +190,21 @@
     .booking-fields select,
     .deduction-row > input
   ) {
-  border-color: rgb(var(--border-rgb) / 0.07);
-  background-color: rgb(var(--dialog-field-rgb) / var(--dialog-field-opacity));
-  box-shadow: inset 0 1px rgb(255 255 255 / 0.56);
+  border-color: rgb(var(--border-rgb) / var(--dialog-field-border-opacity));
+  background-color: rgb(var(--dialog-inset-rgb) / var(--dialog-inset-opacity));
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.84),
+    0 1px 2px rgb(55 78 84 / 0.025);
 }
 
 :root[data-theme='light'] :is(.record-modal, .booking-drawer) .date-input-placeholder {
-  background: rgb(var(--dialog-field-rgb) / var(--dialog-field-opacity));
+  background: transparent;
 }
 
 :root[data-theme='light']
   :is(.record-modal, .booking-drawer)
   :is(.number-input-controls button, .date-input button) {
-  background-color: rgb(231 240 242 / 0.52);
+  background-color: rgb(239 246 247 / 0.58);
 }
 
 :root[data-theme='light'] :is(.button, .icon-text-button) {
