@@ -26,6 +26,7 @@ export function DateInput({ id, label, value, disabled, required, onChange }: Pr
       <input
         ref={inputRef}
         id={id}
+        className={!value ? 'date-input-native--empty' : undefined}
         type="date"
         value={value}
         disabled={disabled}

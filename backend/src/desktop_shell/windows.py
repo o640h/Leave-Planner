@@ -47,8 +47,8 @@ def apply_window_theme(window_title: str, theme: str) -> None:
         return
 
     dark = theme != "light"
-    caption = (13, 13, 13) if dark else (233, 237, 240)
-    border = (37, 37, 37) if dark else (205, 212, 217)
+    caption = (13, 13, 13) if dark else (253, 254, 255)
+    border = (37, 37, 37) if dark else (235, 239, 241)
     dwmapi = WinDLL("dwmapi", use_last_error=True)
     dwmapi.DwmSetWindowAttribute.argtypes = [HWND, UINT, c_void_p, UINT]
     dwmapi.DwmSetWindowAttribute.restype = c_int

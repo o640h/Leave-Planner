@@ -20,7 +20,7 @@
 
 .settings-directory h2 {
   margin: 5px 0 0;
-  font: 430 19px/1.1 var(--brand);
+  font: 430 1.46154rem/1.1 var(--brand);
   letter-spacing: -0.025em;
 }
 
@@ -39,7 +39,7 @@
   border-left: 2px solid transparent;
   color: var(--muted);
   background: transparent;
-  font-size: 11px;
+  font-size: 0.84615rem;
   text-align: left;
 }
 
@@ -81,7 +81,7 @@
 
 .settings-content-heading h2 {
   margin: 5px 0 0;
-  font: 430 22px/1.1 var(--brand);
+  font: 430 1.69231rem/1.1 var(--brand);
   letter-spacing: -0.03em;
 }
 
@@ -117,13 +117,13 @@
 
 .theme-option strong {
   color: var(--text);
-  font-size: 10px;
+  font-size: 0.76923rem;
   font-weight: 470;
 }
 
 .theme-option small {
   color: var(--quiet);
-  font-size: 8px;
+  font-size: 0.61538rem;
 }
 
 .theme-option--selected {

@@ -12,7 +12,7 @@
 
 .leave-position h5 {
   margin: 0;
-  font-size: 11px;
+  font-size: 0.84615rem;
   font-weight: 470;
 }
 
@@ -26,7 +26,7 @@
   border-bottom: 1px solid transparent;
   color: var(--quiet);
   background: transparent;
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .balance-tab--active {
@@ -54,12 +54,12 @@
 .leave-ledger-row small,
 .summary-audit time {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .balance-position strong {
   color: var(--text);
-  font-size: 15px;
+  font-size: 1.15385rem;
   font-weight: 470;
 }
 
@@ -74,7 +74,7 @@
 .balance-position small {
   overflow: hidden;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 0.61538rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -96,7 +96,7 @@
 }
 
 .weekday-counts strong {
-  font-size: 10px;
+  font-size: 0.76923rem;
   font-weight: 480;
 }
 
@@ -108,7 +108,7 @@
 
 .summary-panel > .dashboard-panel-header > span {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .summary-panel--periods > summary {
@@ -119,7 +119,7 @@
   padding: 0 16px;
   cursor: pointer;
   list-style: none;
-  font-size: 12px;
+  font-size: 0.92308rem;
 }
 
 .summary-panel--periods > summary::-webkit-details-marker {
@@ -147,7 +147,7 @@
 
 .summary-panel--periods > summary > small {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .period-table {
@@ -175,7 +175,7 @@
 }
 
 .period-row strong {
-  font-size: 10px;
+  font-size: 0.76923rem;
   font-weight: 470;
 }
 
@@ -185,14 +185,14 @@
 
 .period-row > div:last-child strong {
   color: var(--warning);
-  font-size: 12px;
+  font-size: 0.92308rem;
 }
 
 .summary-empty {
   margin: 0;
   padding: 20px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .summary-warnings {
@@ -203,13 +203,13 @@
 
 .summary-warnings h4 {
   margin-bottom: 5px;
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .summary-warnings p {
   margin: 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .leave-ledger {
@@ -224,7 +224,7 @@
   min-height: 48px;
   padding: 8px 20px;
   border-bottom: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .leave-ledger-row > * {
@@ -267,7 +267,7 @@
   padding: 0 20px;
   cursor: pointer;
   list-style: none;
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .summary-audit > summary::-webkit-details-marker {
@@ -287,7 +287,7 @@
   margin: 0;
   padding: 9px 0;
   border-top: 1px solid var(--line);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .summary-audit strong {

@@ -4,6 +4,7 @@ import '@fontsource-variable/montserrat'
 
 import { App } from './App'
 import { initialiseTheme } from './settings/theme'
+import './themes/dark.css'
 import './styles.css'
 import './themes/light.css'
 

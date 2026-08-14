@@ -13,7 +13,7 @@
 .dashboard-panel-header p {
   margin-bottom: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .leave-year-message {
@@ -40,7 +40,7 @@
 
 .dashboard-empty h4 {
   margin-bottom: 7px;
-  font-size: 15px;
+  font-size: 1.15385rem;
   font-weight: 600;
 }
 
@@ -100,7 +100,7 @@
 
 .dashboard-panel-header h4 {
   margin-bottom: 0;
-  font: 470 12px/1.1 var(--brand);
+  font: 470 0.92308rem/1.1 var(--brand);
   letter-spacing: -0.01em;
 }
 
@@ -113,7 +113,7 @@
 .dashboard-panel-actions .button {
   min-height: 29px;
   padding: 6px 10px;
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .leave-year-summary {
@@ -143,7 +143,7 @@
   border: 1px solid var(--line);
   border-radius: var(--corner-control);
   background: var(--field);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .leave-year-range {
@@ -171,7 +171,7 @@
 
 .leave-year-range div > span {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .leave-year-range time {
@@ -200,13 +200,13 @@
 .leave-year-summary dt {
   margin-bottom: 5px;
   color: var(--quiet);
-  font: 10px/1.2 var(--ui);
+  font: 0.76923rem/1.2 var(--ui);
 }
 
 .leave-year-summary dd {
   margin: 0;
   color: var(--text);
-  font-size: 10px;
+  font-size: 0.76923rem;
   font-weight: 460;
   line-height: 1.4;
 }
@@ -259,7 +259,7 @@
   }
 
   .leave-year-range time {
-    font-size: 14px;
+    font-size: 1.07692rem;
   }
 }
 

@@ -10,7 +10,7 @@
 }
 .settings-heading h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 1.69231rem;
   font-weight: 420;
 }
 .settings-panel {
@@ -27,13 +27,13 @@
 }
 .settings-panel h3 {
   margin-bottom: 5px;
-  font-size: 14px;
+  font-size: 1.07692rem;
   font-weight: 440;
 }
 .settings-panel p {
   margin: 0;
   color: var(--quiet);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 .holiday-calendar-header {
   min-height: 76px;
@@ -46,11 +46,11 @@
 }
 .holiday-source > span {
   color: var(--accent);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .holiday-source > strong {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
   font-weight: 380;
 }
 .holiday-year-tabs {
@@ -81,13 +81,13 @@
   background: rgb(var(--focus-rgb) / 0.04);
 }
 .holiday-year-tab strong {
-  font-size: 11px;
+  font-size: 0.84615rem;
   font-weight: 460;
 }
 .holiday-year-tab span,
 .correction-list span {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .holiday-year-detail {
   padding: 18px 20px 20px;
@@ -99,11 +99,11 @@
   margin-bottom: 12px;
 }
 .holiday-year-detail > header strong {
-  font: 450 16px/1 var(--brand);
+  font: 450 1.23077rem/1 var(--brand);
 }
 .holiday-year-detail > header span {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .holiday-year-detail ul {
   display: grid;
@@ -130,11 +130,11 @@
 }
 .holiday-year-detail time {
   color: var(--warning);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 .holiday-year-detail li strong {
   overflow: hidden;
-  font-size: 10px;
+  font-size: 0.76923rem;
   font-weight: 420;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -167,7 +167,7 @@
 }
 .dashboard-panel-header > div > span {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .entitlement-holidays {
   border-top: 1px solid var(--line);
@@ -180,7 +180,7 @@
   padding: 2px 0 12px;
   border-bottom: 1px solid var(--line);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 .holiday-disclosure-summary strong {
   margin-left: 6px;
@@ -190,13 +190,13 @@
 .holiday-disclosure-summary small {
   margin-left: auto;
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .holiday-disclosure summary {
   padding: 13px 0;
   color: var(--accent);
   cursor: pointer;
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 .entitlement-holidays .holiday-disclosure ul {
   padding: 0;
@@ -204,7 +204,7 @@
 .holiday-disclosure li > span {
   margin-left: auto;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 @container (max-width: 760px) {

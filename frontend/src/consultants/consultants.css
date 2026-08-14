@@ -30,13 +30,13 @@
 
 .panel-heading h2 {
   margin-bottom: 6px;
-  font: 450 19px/1 var(--brand);
+  font: 450 1.46154rem/1 var(--brand);
   letter-spacing: -0.025em;
 }
 
 .panel-heading div > span {
   color: var(--quiet);
-  font: 380 9px/1 var(--ui);
+  font: 380 0.69231rem/1 var(--ui);
   letter-spacing: 0.025em;
 }
 
@@ -78,7 +78,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  font-size: 12px;
+  font-size: 0.92308rem;
 }
 
 .consultant-search input:focus-visible {
@@ -106,7 +106,7 @@
 
 .panel-message span {
   color: var(--quiet);
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .panel-message--error {
@@ -160,7 +160,7 @@
 .consultant-index,
 .consultant-action {
   color: var(--quiet);
-  font: 400 9px/1 var(--ui);
+  font: 400 0.69231rem/1 var(--ui);
   letter-spacing: 0.04em;
 }
 
@@ -178,13 +178,13 @@
 }
 
 .consultant-summary strong {
-  font-size: 12px;
+  font-size: 0.92308rem;
   font-weight: 480;
 }
 
 .consultant-summary small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .consultant-row--selected .consultant-action {
@@ -243,7 +243,7 @@
   border: 1px solid var(--line-strong);
   color: var(--accent);
   background: var(--field-action);
-  font: 430 12px/1 var(--brand);
+  font: 430 0.92308rem/1 var(--brand);
   letter-spacing: 0.09em;
 }
 
@@ -263,7 +263,7 @@
   color: var(--muted);
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .form-notice {
@@ -271,7 +271,7 @@
   padding: 10px 12px;
   border-left: 2px solid currentColor;
   background: var(--surface);
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .form-notice--success {
@@ -295,7 +295,7 @@
 
 .form-introduction h3 {
   margin-bottom: 10px;
-  font: 500 24px/1.1 var(--brand);
+  font: 500 1.84615rem/1.1 var(--brand);
   letter-spacing: -0.03em;
 }
 
@@ -318,7 +318,7 @@
 }
 
 .field label {
-  font-size: 10px;
+  font-size: 0.76923rem;
   font-weight: 480;
 }
 
@@ -363,7 +363,7 @@
 
 .field small {
   color: var(--quiet);
-  font: 450 10px/1.4 var(--ui);
+  font: 450 0.76923rem/1.4 var(--ui);
 }
 
 .field .field-error {
@@ -386,7 +386,7 @@
 
 .workspace-empty h3 {
   margin-bottom: 10px;
-  font: 600 26px/1.1 var(--brand);
+  font: 600 2rem/1.1 var(--brand);
   letter-spacing: -0.03em;
 }
 
@@ -409,6 +409,7 @@
   place-items: center;
   background: var(--overlay);
   backdrop-filter: blur(1px);
+  animation: backdrop-enter var(--motion-fast) ease-out both;
 }
 
 .record-modal {
@@ -421,6 +422,7 @@
   border-radius: var(--corner-modal);
   background: var(--surface-raised);
   box-shadow: var(--panel-shadow);
+  animation: dialog-enter var(--motion-base) var(--motion-ease) both;
 }
 
 /* Shared modal material: one raised shell with recessed, clearly distinct controls. */
@@ -516,7 +518,7 @@
   border: 0;
   color: var(--muted);
   background: transparent;
-  font: 20px/1 var(--ui);
+  font: 1.53846rem/1 var(--ui);
   border-radius: var(--corner-control);
   opacity: 0.72;
 }

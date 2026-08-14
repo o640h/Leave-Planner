@@ -20,13 +20,13 @@
 .planning-toolbar h2,
 .booking-drawer h2 {
   margin: 2px 0 0;
-  font-size: 24px;
+  font-size: 1.84615rem;
   font-weight: 390;
 }
 
 .section-kicker {
   color: var(--accent);
-  font-size: 10px;
+  font-size: 0.76923rem;
   letter-spacing: 0.05em;
 }
 
@@ -40,7 +40,7 @@
 .planning-month h3 {
   min-width: 150px;
   margin: 0;
-  font-size: 14px;
+  font-size: 1.07692rem;
   font-weight: 430;
   text-align: center;
 }
@@ -53,7 +53,7 @@
   border-radius: var(--corner-control);
   background: transparent;
   color: var(--muted);
-  font-size: 20px;
+  font-size: 1.53846rem;
 }
 
 .planning-month button:hover {
@@ -66,7 +66,7 @@
   justify-content: flex-end;
   gap: 15px;
   color: var(--quiet);
-  font-size: 10.5px;
+  font-size: 0.80769rem;
 }
 
 .calendar-legend span::before {
@@ -165,13 +165,13 @@
   z-index: 6;
   background: var(--surface-subtle);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 0.69231rem;
   font-weight: 430;
 }
 
 .wallchart-name strong {
   overflow: hidden;
-  font-size: 12px;
+  font-size: 0.92308rem;
   font-weight: 470;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -181,7 +181,7 @@
 .wallchart-balance small {
   overflow: hidden;
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
   font-weight: 340;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -189,7 +189,7 @@
 
 .wallchart-balance strong {
   color: var(--warning);
-  font-size: 14px;
+  font-size: 1.07692rem;
   font-weight: 420;
 }
 
@@ -197,13 +197,13 @@
   display: grid;
   place-content: center;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 0.80769rem;
   text-align: center;
 }
 
 .wallchart-day-heading small {
   color: var(--quiet);
-  font-size: 8px;
+  font-size: 0.61538rem;
 }
 
 .wallchart-day--weekend {
@@ -218,7 +218,7 @@
   border-style: solid;
   background: transparent;
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
   font-weight: 500;
   text-align: center;
 }
@@ -282,7 +282,7 @@
   border: 1px solid var(--line);
   background: var(--surface-subtle);
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .planning-empty {
@@ -303,6 +303,7 @@
   border-radius: inherit;
   background: var(--overlay);
   backdrop-filter: blur(2px);
+  animation: backdrop-enter var(--motion-fast) ease-out both;
 }
 
 .booking-drawer {
@@ -314,6 +315,7 @@
   border-left: 1px solid var(--line-strong);
   background: var(--panel);
   box-shadow: -20px 0 60px rgb(0 0 0 / 0.45);
+  animation: drawer-enter var(--motion-slow) var(--motion-ease) both;
 }
 
 .booking-drawer > header {
@@ -328,7 +330,7 @@
 .booking-consultant {
   margin: 3px 0 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .booking-drawer form {
@@ -352,7 +354,7 @@
 
 .booking-fields label > span {
   color: var(--quiet);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .booking-fields select,
@@ -398,13 +400,13 @@
 
 .deduction-heading h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 1.07692rem;
   font-weight: 430;
 }
 
 .deduction-heading > span {
   color: var(--warning);
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .booking-warnings {
@@ -413,7 +415,7 @@
   border-left: 1px solid var(--warning);
   background: rgb(199 161 109 / 0.035);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .booking-warnings p {
@@ -457,7 +459,7 @@
 .deduction-row small {
   overflow: hidden;
   color: var(--accent);
-  font-size: 8px;
+  font-size: 0.61538rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -465,7 +467,7 @@
 .deduction-row--heading {
   min-height: 28px;
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .deduction-row .number-input,

@@ -14,7 +14,7 @@
 }
 
 .entitlement-message span {
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .entitlement-content {
@@ -44,12 +44,12 @@
 .applied-entitlement-summary span,
 .entitlement-components span {
   color: var(--quiet);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .applied-entitlement-summary strong {
   color: var(--accent);
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 460;
 }
 
@@ -59,7 +59,7 @@
 
 .applied-entitlement-summary > div:last-child strong {
   color: var(--text);
-  font-size: 15px;
+  font-size: 1.15385rem;
 }
 
 .entitlement-components {
@@ -69,7 +69,7 @@
 
 .entitlement-components strong {
   color: var(--accent);
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 440;
 }
 
@@ -93,7 +93,7 @@
   padding: 0 12px;
   cursor: pointer;
   list-style: none;
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .entitlement-overview-details > summary::-webkit-details-marker {
@@ -121,7 +121,7 @@
 
 .entitlement-overview-details > summary small {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .entitlement-overview-details-content {
@@ -151,10 +151,10 @@
 .entitlement-component-heading {
   color: var(--quiet);
   background: transparent;
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .entitlement-component-table strong {
-  font-size: 10px;
+  font-size: 0.76923rem;
   font-weight: 440;
 }
 .entitlement-component-table [role='cell']:last-child {
@@ -165,7 +165,7 @@
 }
 .entitlement-component-total > span:nth-child(2) {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .entitlement-component-total--emphasis {
   box-shadow: inset 2px 0 var(--accent);
@@ -182,7 +182,7 @@
   padding: 13px 0;
   color: var(--accent);
   cursor: pointer;
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 .entitlement-basis-grid {
   display: grid;
@@ -199,12 +199,12 @@
 }
 .entitlement-basis-grid span {
   color: var(--quiet);
-  font-size: 8px;
+  font-size: 0.61538rem;
 }
 .entitlement-basis-grid strong {
   overflow: hidden;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 0.69231rem;
   font-weight: 420;
   text-overflow: ellipsis;
 }
@@ -222,16 +222,16 @@
   border-bottom: 1px solid var(--line);
 }
 .calculation-lines strong {
-  font-size: 9px;
+  font-size: 0.69231rem;
   font-weight: 440;
 }
 .calculation-lines span {
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 .calculation-lines small {
   grid-column: 2;
   color: var(--quiet);
-  font-size: 8px;
+  font-size: 0.61538rem;
 }
 
 .entitlement-trace {
@@ -243,7 +243,7 @@
   padding: 14px 0;
   color: var(--accent);
   cursor: pointer;
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .entitlement-trace ol {
@@ -266,19 +266,19 @@
 }
 
 .entitlement-trace li strong {
-  font-size: 11px;
+  font-size: 0.84615rem;
   font-weight: 430;
 }
 
 .entitlement-trace li p {
   margin: 0;
   color: var(--text);
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .entitlement-trace li span {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .entitlement-calculation-basis {
@@ -291,7 +291,7 @@
   max-width: 720px;
   margin-bottom: 14px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .entitlement-calculation-basis > .entitlement-total-formula {
@@ -334,21 +334,21 @@
 
 .entitlement-calculation-basis dt {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .entitlement-calculation-basis dd {
   margin: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
   text-overflow: ellipsis;
 }
 
 .manual-entitlement-note {
   margin: 14px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.84615rem;
 }
 
 .entitlement-modal {
@@ -371,7 +371,7 @@
   margin-bottom: 9px;
   padding: 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.76923rem;
 }
 
 .entitlement-mode-options {
@@ -410,13 +410,13 @@
 }
 
 .entitlement-mode-selector strong {
-  font-size: 11px;
+  font-size: 0.84615rem;
   font-weight: 460;
 }
 
 .entitlement-mode-selector small {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
   line-height: 1.4;
 }
 
@@ -431,7 +431,7 @@
 
 .entitlement-input-section h4 {
   margin-bottom: 0;
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 460;
 }
 
@@ -470,7 +470,7 @@
 
 .entitlement-breakdown h4 {
   margin-bottom: 13px;
-  font-size: 11px;
+  font-size: 0.84615rem;
   font-weight: 460;
 }
 
@@ -487,13 +487,13 @@
 
 .entitlement-breakdown dt {
   color: var(--quiet);
-  font-size: 9px;
+  font-size: 0.69231rem;
 }
 
 .entitlement-breakdown dd {
   margin: 0;
   color: var(--accent);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 @container (max-width: 760px) {
