@@ -70,6 +70,3 @@ blob-report/
 
 # Downloaded Windows installer prerequisite
 packaging/prerequisites/*.exe
-
-# Generated release installers
-/Leave-Planner-Setup-*.exe
