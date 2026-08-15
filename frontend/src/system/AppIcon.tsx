@@ -10,6 +10,7 @@ type AppIconProps = {
     | 'appearance'
     | 'profile'
     | 'jobPlan'
+    | 'database'
 }
 
 export function AppIcon({ name }: AppIconProps) {
@@ -101,6 +102,16 @@ export function AppIcon({ name }: AppIconProps) {
       <svg {...commonProps}>
         <path d="M9.5 3.5h5l.5 2.2 1.3.8 2.2-.7L21 10.2l-1.7 1.5v1.6l1.7 1.5-2.5 4.4-2.2-.7-1.3.8-.5 2.2h-5L9 19.3l-1.3-.8-2.2.7L3 14.8l1.7-1.5v-1.6L3 10.2l2.5-4.4 2.2.7L9 5.7z" />
         <circle cx="12" cy="12.5" r="3" />
+      </svg>
+    )
+  }
+
+  if (name === 'database') {
+    return (
+      <svg {...commonProps}>
+        <ellipse cx="12" cy="5.5" rx="7.5" ry="3" />
+        <path d="M4.5 5.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" />
+        <path d="M4.5 11.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" />
       </svg>
     )
   }

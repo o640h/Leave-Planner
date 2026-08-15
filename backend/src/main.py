@@ -20,6 +20,8 @@ from logging_config import configure_logging
 from migrations import upgrade_database
 from public_holidays.router import settings_router as holiday_settings_router
 from public_holidays.router import year_router as holiday_year_router
+from recovery import create_startup_backups
+from recovery import router as recovery_router
 from settings import Settings
 
 
@@ -37,6 +39,7 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         """Prepare and close application-owned database resources."""
 
+        create_startup_backups(runtime)
         upgrade_database(runtime.database_path)
         engine = create_database_engine(runtime.database_path)
 
@@ -46,7 +49,7 @@ def create_app(
         try:
             yield
         finally:
-            engine.dispose()
+            app.state.database_engine.dispose()
 
     app = FastAPI(
         title=runtime.app_name,
@@ -63,6 +66,7 @@ def create_app(
             "environment": runtime.environment,
         }
 
+    app.include_router(recovery_router)
     app.include_router(consultant_router)
     app.include_router(leave_year_router)
     app.include_router(job_plan_router)

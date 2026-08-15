@@ -17,13 +17,14 @@ export function RemovalDialog({ title, impact, busy, error, onConfirm, onCancel 
   const matches = confirmation.trim() === impact.confirmation_text
 
   return (
-    <ModalLayer>
+    <ModalLayer onClose={onCancel}>
       <div className="modal-backdrop">
         <section
           className="record-modal removal-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="removal-title"
+          tabIndex={-1}
         >
           <button
             className="modal-close"

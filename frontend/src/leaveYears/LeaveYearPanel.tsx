@@ -354,13 +354,14 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
       )}
 
       {editorTarget ? (
-        <ModalLayer>
+        <ModalLayer onClose={closeEditor}>
           <div className="modal-backdrop">
             <section
               className="record-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="leave-year-form-title"
+              tabIndex={-1}
             >
               <button
                 className="modal-close"

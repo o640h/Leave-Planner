@@ -5,6 +5,7 @@ import { operatorErrorMessage } from '../api/client'
 import { DateInput } from '../system/DateInput'
 import { addNonNegativeDecimals, formatDecimal } from '../system/decimal'
 import { NumberInput } from '../system/NumberInput'
+import { ModalLayer } from '../system/ModalLayer'
 import type {
   DailyOverrideInput,
   LeaveBooking,
@@ -198,180 +199,188 @@ export function BookingDrawer({
   }, '0')
 
   return (
-    <div className="planning-drawer-backdrop" role="presentation">
-      <aside className="booking-drawer" aria-labelledby="booking-title">
-        <header>
-          <div>
-            <span className="section-kicker">Leave Booking</span>
-            <h2 id="booking-title">{booking ? 'Edit Leave' : 'Book Leave'}</h2>
-            <p className="booking-consultant">{consultantName}</p>
-          </div>
-          <button className="modal-close" type="button" aria-label="Close" onClick={onClose}>
-            ×
-          </button>
-        </header>
+    <ModalLayer onClose={onClose}>
+      <div className="planning-drawer-backdrop" role="presentation">
+        <aside
+          className="booking-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="booking-title"
+          tabIndex={-1}
+        >
+          <header>
+            <div>
+              <span className="section-kicker">Leave Booking</span>
+              <h2 id="booking-title">{booking ? 'Edit Leave' : 'Book Leave'}</h2>
+              <p className="booking-consultant">{consultantName}</p>
+            </div>
+            <button className="modal-close" type="button" aria-label="Close" onClick={onClose}>
+              ×
+            </button>
+          </header>
 
-        <form noValidate onSubmit={submit}>
-          {error && <div className="form-notice form-notice--error">{error}</div>}
-          <div className="booking-fields">
-            <label>
-              <span>Start Date</span>
-              <DateInput
-                id="booking-start"
-                label="Start Date"
-                value={details.start_date}
-                disabled={disabled}
-                onChange={(start_date) => {
-                  setDetails((current) => ({ ...current, start_date, overrides: [] }))
-                  setDrafts({})
-                  setPreview(null)
-                }}
-              />
-            </label>
-            <label>
-              <span>End Date</span>
-              <DateInput
-                id="booking-end"
-                label="End Date"
-                value={details.end_date}
-                disabled={disabled}
-                onChange={(end_date) => {
-                  setDetails((current) => ({ ...current, end_date, overrides: [] }))
-                  setDrafts({})
-                  setPreview(null)
-                }}
-              />
-            </label>
-            <label>
-              <span>Status</span>
-              <select
-                value={details.state}
-                disabled={disabled}
-                onChange={(event) => {
-                  const overrides = preview ? overrideInputs(preview.days) : details.overrides
-                  setDetails((current) => ({
-                    ...current,
-                    state: event.target.value as LeaveState,
-                    overrides,
-                  }))
-                  setPreview(null)
-                }}
-              >
-                <option value="planned">Planned</option>
-                <option value="approved">Approved</option>
-                <option value="taken">Taken</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </label>
-            <label className="booking-note">
-              <span>Note</span>
-              <input
-                value={details.note ?? ''}
-                maxLength={500}
-                disabled={disabled}
-                onChange={(event) =>
-                  setDetails((current) => ({ ...current, note: event.target.value || null }))
-                }
-              />
-            </label>
-          </div>
+          <form noValidate onSubmit={submit}>
+            {error && <div className="form-notice form-notice--error">{error}</div>}
+            <div className="booking-fields">
+              <label>
+                <span>Start Date</span>
+                <DateInput
+                  id="booking-start"
+                  label="Start Date"
+                  value={details.start_date}
+                  disabled={disabled}
+                  onChange={(start_date) => {
+                    setDetails((current) => ({ ...current, start_date, overrides: [] }))
+                    setDrafts({})
+                    setPreview(null)
+                  }}
+                />
+              </label>
+              <label>
+                <span>End Date</span>
+                <DateInput
+                  id="booking-end"
+                  label="End Date"
+                  value={details.end_date}
+                  disabled={disabled}
+                  onChange={(end_date) => {
+                    setDetails((current) => ({ ...current, end_date, overrides: [] }))
+                    setDrafts({})
+                    setPreview(null)
+                  }}
+                />
+              </label>
+              <label>
+                <span>Status</span>
+                <select
+                  value={details.state}
+                  disabled={disabled}
+                  onChange={(event) => {
+                    const overrides = preview ? overrideInputs(preview.days) : details.overrides
+                    setDetails((current) => ({
+                      ...current,
+                      state: event.target.value as LeaveState,
+                      overrides,
+                    }))
+                    setPreview(null)
+                  }}
+                >
+                  <option value="planned">Planned</option>
+                  <option value="approved">Approved</option>
+                  <option value="taken">Taken</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </label>
+              <label className="booking-note">
+                <span>Note</span>
+                <input
+                  value={details.note ?? ''}
+                  maxLength={500}
+                  disabled={disabled}
+                  onChange={(event) =>
+                    setDetails((current) => ({ ...current, note: event.target.value || null }))
+                  }
+                />
+              </label>
+            </div>
 
-          {preview && (
-            <section className="deduction-preview" aria-labelledby="deduction-title">
-              <div className="deduction-heading">
-                <h3 id="deduction-title">Daily Deductions</h3>
-                <span>{formatDecimal(deductionTotal ?? '0', 2)} hours</span>
-              </div>
-              {preview.warnings.some(
-                (warning) => warning.code !== 'leave-balance.carry-forward',
-              ) && (
-                <div className="booking-warnings">
-                  {preview.warnings
-                    .filter((warning) => warning.code !== 'leave-balance.carry-forward')
-                    .map((warning) => (
-                      <p key={`${warning.code}-${warning.message}`}>{warning.message}</p>
-                    ))}
+            {preview && (
+              <section className="deduction-preview" aria-labelledby="deduction-title">
+                <div className="deduction-heading">
+                  <h3 id="deduction-title">Daily Deductions</h3>
+                  <span>{formatDecimal(deductionTotal ?? '0', 2)} hours</span>
                 </div>
-              )}
-              <div className="deduction-table">
-                <div className="deduction-row deduction-row--heading">
-                  <span>Date</span>
-                  <span>DCC</span>
-                  <span>SPA</span>
-                  <span>Reason</span>
+                {preview.warnings.some(
+                  (warning) => warning.code !== 'leave-balance.carry-forward',
+                ) && (
+                  <div className="booking-warnings">
+                    {preview.warnings
+                      .filter((warning) => warning.code !== 'leave-balance.carry-forward')
+                      .map((warning) => (
+                        <p key={`${warning.code}-${warning.message}`}>{warning.message}</p>
+                      ))}
+                  </div>
+                )}
+                <div className="deduction-table">
+                  <div className="deduction-row deduction-row--heading">
+                    <span>Date</span>
+                    <span>DCC</span>
+                    <span>SPA</span>
+                    <span>Reason</span>
+                  </div>
+                  {preview.days.map((day) => {
+                    const draft = drafts[day.leave_date]
+                    return (
+                      <div className="deduction-row" key={day.leave_date}>
+                        <span>
+                          {new Date(`${day.leave_date}T00:00:00`).toLocaleDateString('en-GB', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
+                          })}
+                          {day.public_holiday_name && <small>{day.public_holiday_name}</small>}
+                        </span>
+                        <NumberInput
+                          label={`DCC on ${day.leave_date}`}
+                          value={draft?.dcc ?? day.deduction.dcc_hours}
+                          min="0"
+                          step="0.25"
+                          disabled={disabled || Boolean(day.public_holiday_name)}
+                          onChange={(dcc) => changeDraft(day.leave_date, { dcc })}
+                        />
+                        <NumberInput
+                          label={`SPA on ${day.leave_date}`}
+                          value={draft?.spa ?? day.deduction.spa_hours}
+                          min="0"
+                          step="0.25"
+                          disabled={disabled || Boolean(day.public_holiday_name)}
+                          onChange={(spa) => changeDraft(day.leave_date, { spa })}
+                        />
+                        <input
+                          aria-label={`Replacement reason for ${day.leave_date}`}
+                          placeholder="Optional"
+                          value={draft?.reason ?? ''}
+                          disabled={disabled || Boolean(day.public_holiday_name)}
+                          onChange={(event) =>
+                            changeDraft(day.leave_date, { reason: event.target.value })
+                          }
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
-                {preview.days.map((day) => {
-                  const draft = drafts[day.leave_date]
-                  return (
-                    <div className="deduction-row" key={day.leave_date}>
-                      <span>
-                        {new Date(`${day.leave_date}T00:00:00`).toLocaleDateString('en-GB', {
-                          weekday: 'short',
-                          day: 'numeric',
-                          month: 'short',
-                        })}
-                        {day.public_holiday_name && <small>{day.public_holiday_name}</small>}
-                      </span>
-                      <NumberInput
-                        label={`DCC on ${day.leave_date}`}
-                        value={draft?.dcc ?? day.deduction.dcc_hours}
-                        min="0"
-                        step="0.25"
-                        disabled={disabled || Boolean(day.public_holiday_name)}
-                        onChange={(dcc) => changeDraft(day.leave_date, { dcc })}
-                      />
-                      <NumberInput
-                        label={`SPA on ${day.leave_date}`}
-                        value={draft?.spa ?? day.deduction.spa_hours}
-                        min="0"
-                        step="0.25"
-                        disabled={disabled || Boolean(day.public_holiday_name)}
-                        onChange={(spa) => changeDraft(day.leave_date, { spa })}
-                      />
-                      <input
-                        aria-label={`Replacement reason for ${day.leave_date}`}
-                        placeholder="Optional"
-                        value={draft?.reason ?? ''}
-                        disabled={disabled || Boolean(day.public_holiday_name)}
-                        onChange={(event) =>
-                          changeDraft(day.leave_date, { reason: event.target.value })
-                        }
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          )}
-
-          <footer className="form-actions">
-            {booking && (
-              <button
-                className="button button--danger"
-                type="button"
-                disabled={disabled}
-                onClick={() => {
-                  if (confirmRemoval) void onRemoveBooking(booking.id)
-                  else setConfirmRemoval(true)
-                }}
-              >
-                {confirmRemoval ? 'Confirm Removal' : 'Remove Booking'}
-              </button>
+              </section>
             )}
-            <span className="form-action-spacer" />
-            <button className="button" type="button" disabled={disabled} onClick={onClose}>
-              Close
-            </button>
-            <button
-              className="button button--primary"
-              type="submit"
-              disabled={disabled || !preview}
-            >
-              {booking ? 'Save Changes' : 'Save Booking'}
-            </button>
-          </footer>
-        </form>
-      </aside>
-    </div>
+
+            <footer className="form-actions">
+              {booking && (
+                <button
+                  className="button button--danger"
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    if (confirmRemoval) void onRemoveBooking(booking.id)
+                    else setConfirmRemoval(true)
+                  }}
+                >
+                  {confirmRemoval ? 'Confirm Removal' : 'Remove Booking'}
+                </button>
+              )}
+              <span className="form-action-spacer" />
+              <button className="button" type="button" disabled={disabled} onClick={onClose}>
+                Close
+              </button>
+              <button
+                className="button button--primary"
+                type="submit"
+                disabled={disabled || !preview}
+              >
+                {booking ? 'Save Changes' : 'Save Booking'}
+              </button>
+            </footer>
+          </form>
+        </aside>
+      </div>
+    </ModalLayer>
   )
 }

@@ -276,13 +276,14 @@ export function EntitlementPanel({
       )}
 
       {editorOpen ? (
-        <ModalLayer>
+        <ModalLayer onClose={() => setEditorOpen(false)}>
           <div className="modal-backdrop">
             <section
               className="record-modal entitlement-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="entitlement-form-title"
+              tabIndex={-1}
             >
               <button
                 className="modal-close"

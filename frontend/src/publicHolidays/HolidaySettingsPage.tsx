@@ -233,13 +233,14 @@ export function HolidaySettingsPage() {
         <p className="settings-empty">Loading the saved calendar…</p>
       )}
       {open ? (
-        <ModalLayer>
+        <ModalLayer onClose={() => setOpen(false)}>
           <div className="modal-backdrop">
             <section
               className="record-modal adjustment-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="holiday-correction-title"
+              tabIndex={-1}
             >
               <button
                 className="modal-close"

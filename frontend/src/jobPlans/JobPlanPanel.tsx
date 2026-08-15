@@ -280,13 +280,14 @@ export function JobPlanPanel({
       )}
 
       {editorTarget && initialValue ? (
-        <ModalLayer>
+        <ModalLayer onClose={closeEditor}>
           <div className="modal-backdrop">
             <section
               className="record-modal job-plan-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="job-plan-form-title"
+              tabIndex={-1}
             >
               <button
                 className="modal-close"

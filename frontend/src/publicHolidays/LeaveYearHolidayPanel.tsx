@@ -84,13 +84,14 @@ export function LeaveYearHolidayPanel({ consultantId, leaveYearId }: Props) {
         </details>
       ) : null}
       {editing ? (
-        <ModalLayer>
+        <ModalLayer onClose={() => setEditing(null)}>
           <div className="modal-backdrop">
             <section
               className="record-modal adjustment-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="holiday-treatment-title"
+              tabIndex={-1}
             >
               <button
                 className="modal-close"

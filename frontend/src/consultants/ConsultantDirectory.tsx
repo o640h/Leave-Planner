@@ -332,13 +332,14 @@ export function ConsultantDirectory() {
       </div>
 
       {editorTarget === 'new' || (selectedConsultant && identityEditorOpen) ? (
-        <ModalLayer>
+        <ModalLayer onClose={cancelEditing}>
           <div className="modal-backdrop">
             <section
               className="record-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="consultant-form-title"
+              tabIndex={-1}
             >
               <button
                 className="modal-close"

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 
 import { HolidaySettingsPage } from '../publicHolidays/HolidaySettingsPage'
+import { DataRecoverySettings } from './DataRecoverySettings'
 import { AppIcon } from '../system/AppIcon'
 import { getThemePreference, saveThemePreference } from './theme'
 import type { ThemePreference } from './theme'
 import './settings.css'
 
-type SettingsSection = 'appearance' | 'public-holidays'
+type SettingsSection = 'appearance' | 'public-holidays' | 'data-recovery'
 
 const sections = [
   { id: 'appearance', label: 'Appearance', icon: 'appearance' },
   { id: 'public-holidays', label: 'Public Holidays', icon: 'calendar' },
+  { id: 'data-recovery', label: 'Data & Recovery', icon: 'database' },
 ] as const
 
 function AppearanceSettings() {
@@ -119,7 +121,9 @@ export function SettingsPage() {
       </aside>
 
       <div className="settings-content">
-        {activeSection === 'appearance' ? <AppearanceSettings /> : <HolidaySettingsPage />}
+        {activeSection === 'appearance' ? <AppearanceSettings /> : null}
+        {activeSection === 'public-holidays' ? <HolidaySettingsPage /> : null}
+        {activeSection === 'data-recovery' ? <DataRecoverySettings /> : null}
       </div>
     </section>
   )

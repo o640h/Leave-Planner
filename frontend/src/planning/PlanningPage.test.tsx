@@ -105,7 +105,7 @@ describe('PlanningPage', () => {
     expect(screen.getAllByText('291h')).toHaveLength(2)
 
     fireEvent.click(screen.getByRole('gridcell', { name: `Dr Alex Morgan, ${currentIsoMonth}-01` }))
-    const drawer = screen.getByRole('complementary', { name: 'Book Leave' })
+    const drawer = screen.getByRole('dialog', { name: 'Book Leave' })
     expect(within(drawer).getByText('Dr Alex Morgan')).toBeInTheDocument()
   })
 

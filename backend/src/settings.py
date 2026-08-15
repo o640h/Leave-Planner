@@ -59,6 +59,10 @@ class Settings(BaseSettings):
         return self.resolved_data_dir / "leave-planner.sqlite3"
 
     @property
+    def backup_directory(self) -> Path:
+        return self.resolved_data_dir / "backups"
+
+    @property
     def resolved_frontend_dist(self) -> Path:
         if self.frontend_dist:
             return self.frontend_dist.expanduser().resolve()

@@ -69,6 +69,8 @@ def test_session_scope_commits_successful_work(tmp_path: Path) -> None:
 def test_online_backup_is_consistent_and_readable(tmp_path: Path) -> None:
     source = tmp_path / "live" / "leave-planner.sqlite3"
     source.parent.mkdir()
+    upgrade_database(source)
+
     with sqlite3.connect(source) as connection:
         connection.execute("CREATE TABLE example (value TEXT NOT NULL)")
         connection.execute("INSERT INTO example VALUES ('preserved')")
@@ -79,7 +81,7 @@ def test_online_backup_is_consistent_and_readable(tmp_path: Path) -> None:
         timestamp=datetime(2026, 8, 6, 10, 30, tzinfo=UTC),
     )
 
-    assert backup.name == "leave-planner-20260806T103000Z.sqlite3"
+    assert backup.name == "leave-planner-manual-20260806T103000Z.sqlite3"
     with sqlite3.connect(backup) as connection:
         assert connection.execute("SELECT value FROM example").fetchone() == ("preserved",)
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)

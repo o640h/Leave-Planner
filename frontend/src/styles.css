@@ -49,6 +49,10 @@ body,
   background: var(--root-surround);
 }
 
+.modal-layer {
+  display: contents;
+}
+
 button,
 input,
 textarea,
