@@ -7,12 +7,16 @@ from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from resources import alembic_configuration, migration_directory
+
 
 def alembic_config(database_path: Path) -> Config:
-    backend_root = Path(__file__).resolve().parents[1]
-    config = Config(backend_root / "alembic.ini")
-    config.set_main_option("script_location", str(backend_root / "migrations"))
-    config.set_main_option("sqlalchemy.url", f"sqlite:///{database_path.resolve().as_posix()}")
+    config = Config(alembic_configuration())
+    config.set_main_option("script_location", str(migration_directory()))
+    config.set_main_option(
+        "sqlalchemy.url",
+        f"sqlite:///{database_path.resolve().as_posix()}",
+    )
     return config
 
 

@@ -1,7 +1,7 @@
 """Operator-facing data backup and recovery API."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, cast
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
@@ -54,7 +54,7 @@ def backup_read(backup: BackupFile) -> BackupRead:
 
 
 def runtime_settings(request: Request) -> Settings:
-    return request.app.state.settings
+    return cast(Settings, request.app.state.settings)
 
 
 @router.get("", response_model=RecoveryStatus)

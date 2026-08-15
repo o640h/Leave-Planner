@@ -18,6 +18,7 @@ build/
 dist/
 *.egg-info/
 *.spec
+!packaging/*.spec
 
 # Node and frontend build
 node_modules/
@@ -66,3 +67,9 @@ blob-report/
 # Local agent instructions and delivery planning
 /AGENTS.md
 /Implementation.md
+
+# Downloaded Windows installer prerequisite
+packaging/prerequisites/*.exe
+
+# Generated release installers
+/Leave-Planner-Setup-*.exe

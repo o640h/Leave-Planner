@@ -9,6 +9,8 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from resources import frontend_distribution
+
 Environment = Literal["development", "production", "test"]
 
 
@@ -66,4 +68,5 @@ class Settings(BaseSettings):
     def resolved_frontend_dist(self) -> Path:
         if self.frontend_dist:
             return self.frontend_dist.expanduser().resolve()
-        return Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+        return frontend_distribution()
