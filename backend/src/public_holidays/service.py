@@ -250,6 +250,8 @@ def calculate_leave_year_holidays(
                 basis=item.treatment.basis,
                 treatment_note=item.treatment.note,
                 worked_date=item.treatment.worked_date,
+                contracted_pas=item.contracted_pas.value,
+                deduction_factor=item.deduction_factor,
                 entitlement_hours=item.entitlement_hours.value,
                 dcc_entitlement_hours=item.dcc_entitlement_hours.value,
                 spa_entitlement_hours=item.spa_entitlement_hours.value,

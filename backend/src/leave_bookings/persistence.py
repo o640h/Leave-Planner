@@ -65,13 +65,11 @@ class LeaveBookingDayRecord(Base):
     __table_args__ = (
         UniqueConstraint("booking_id", "leave_date", name="uq_leave_booking_day_date"),
         CheckConstraint(
-            "standard_dcc_hours >= 0 AND standard_spa_hours >= 0 "
-            "AND standard_other_hours >= 0",
+            "standard_dcc_hours >= 0 AND standard_spa_hours >= 0 AND standard_other_hours >= 0",
             name="ck_leave_booking_day_standard_hours",
         ),
         CheckConstraint(
-            "deduction_dcc_hours >= 0 AND deduction_spa_hours >= 0 "
-            "AND deduction_other_hours >= 0",
+            "deduction_dcc_hours >= 0 AND deduction_spa_hours >= 0 AND deduction_other_hours >= 0",
             name="ck_leave_booking_day_deduction_hours",
         ),
     )
@@ -84,6 +82,8 @@ class LeaveBookingDayRecord(Base):
         ForeignKey("job_plan_versions.id", ondelete="RESTRICT"), nullable=True, index=True
     )
     leave_date: Mapped[date] = mapped_column(Date, nullable=False)
+    contracted_pas: Mapped[Decimal | None] = mapped_column(Numeric(9, 3), nullable=True)
+    deduction_factor: Mapped[str | None] = mapped_column(String(64), nullable=True)
     standard_dcc_hours: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False)
     standard_spa_hours: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False)
     standard_other_hours: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False)
@@ -93,4 +93,3 @@ class LeaveBookingDayRecord(Base):
     override_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     booking: Mapped[LeaveBookingRecord] = relationship(back_populates="days")
-

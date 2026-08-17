@@ -8,6 +8,7 @@ import { ModalLayer } from '../system/ModalLayer'
 import {
   createJobPlan,
   jobPlanRemovalImpact,
+  jobPlanUpdateImpact,
   listJobPlans,
   previewJobPlan,
   removeJobPlan,
@@ -20,12 +21,19 @@ import {
   type JobPlan,
   type JobPlanInput,
   type JobPlanPreview,
+  type JobPlanUpdateImpact,
 } from './types'
 import './jobPlans.css'
 import { RemovalDialog } from '../system/RemovalDialog'
 import type { RemovalImpact } from '../system/removal'
 
 type EditorTarget = JobPlan | 'new' | null
+
+type PendingUpdate = {
+  jobPlan: JobPlan
+  details: JobPlanInput
+  impact: JobPlanUpdateImpact
+}
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
@@ -70,6 +78,7 @@ export function JobPlanPanel({
   const [removalImpact, setRemovalImpact] = useState<RemovalImpact | null>(null)
   const [removalError, setRemovalError] = useState<string | null>(null)
   const [removing, setRemoving] = useState(false)
+  const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null)
 
   useEffect(() => {
     onCountChange?.(null)
@@ -103,6 +112,19 @@ export function JobPlanPanel({
     setNotice(null)
 
     try {
+      if (editorTarget !== 'new') {
+        const impact = await jobPlanUpdateImpact(
+          consultantId,
+          leaveYear.id,
+          editorTarget.id,
+          details,
+        )
+        if (impact.requires_confirmation) {
+          setPendingUpdate({ jobPlan: editorTarget, details, impact })
+          return
+        }
+      }
+
       const saved =
         editorTarget === 'new'
           ? await createJobPlan(consultantId, leaveYear.id, details)
@@ -121,6 +143,32 @@ export function JobPlanPanel({
       onSaved?.()
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function confirmUpdateImpact() {
+    if (!pendingUpdate) return
+    setSaving(true)
+    setError(null)
+    try {
+      const saved = await updateJobPlan(
+        consultantId,
+        leaveYear.id,
+        pendingUpdate.jobPlan.id,
+        pendingUpdate.details,
+        true,
+      )
+      const next = jobPlans.map((jobPlan) => (jobPlan.id === saved.id ? saved : jobPlan))
+      setJobPlans(sortJobPlans(next))
+      setPendingUpdate(null)
+      setEditorTarget(null)
+      setNotice('The job plan and affected leave deductions were updated.')
+      onSaved?.()
+    } catch (requestError) {
+      setError(operatorErrorMessage(requestError))
+      setPendingUpdate(null)
     } finally {
       setSaving(false)
     }
@@ -202,7 +250,7 @@ export function JobPlanPanel({
       ) : null}
 
       {loading ? (
-        <p className="job-plan-message">Loading job plans…</p>
+        <p className="job-plan-message">Loading job plans...</p>
       ) : error && editorTarget === null ? (
         <div className="job-plan-message form-notice--error" role="alert">
           <p>{error}</p>
@@ -224,7 +272,7 @@ export function JobPlanPanel({
                 <span className="job-plan-index">Job Plan {index + 1}</span>
                 <h4>
                   {formatDate(jobPlan.effective_from)}
-                  {' — '}
+                  {' - '}
                   {formatDate(jobPlan.effective_until)}
                 </h4>
                 {jobPlan.reconciliation_override_reason ? (
@@ -279,7 +327,7 @@ export function JobPlanPanel({
         </div>
       )}
 
-      {editorTarget && initialValue ? (
+      {editorTarget && initialValue && !pendingUpdate ? (
         <ModalLayer onClose={closeEditor}>
           <div className="modal-backdrop">
             <section
@@ -296,7 +344,7 @@ export function JobPlanPanel({
                 disabled={saving}
                 onClick={closeEditor}
               >
-                ×
+                x
               </button>
 
               {error ? (
@@ -334,6 +382,82 @@ export function JobPlanPanel({
             }
           }}
         />
+      ) : null}
+
+      {pendingUpdate ? (
+        <ModalLayer onClose={() => !saving && setPendingUpdate(null)}>
+          <div className="modal-backdrop">
+            <section
+              className="record-modal removal-modal job-plan-impact-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="job-plan-impact-title"
+              tabIndex={-1}
+            >
+              <button
+                className="modal-close"
+                type="button"
+                aria-label="Close Recalculation Confirmation"
+                disabled={saving}
+                onClick={() => setPendingUpdate(null)}
+              >
+                x
+              </button>
+              <header>
+                <h2 id="job-plan-impact-title">Recalculate Leave Deductions</h2>
+                <p>This job-plan edit changes saved leave calculations.</p>
+              </header>
+              <dl className="job-plan-impact-summary">
+                <div>
+                  <dt>Affected Bookings</dt>
+                  <dd>{pendingUpdate.impact.affected_bookings}</dd>
+                </div>
+                <div>
+                  <dt>Affected Days</dt>
+                  <dd>{pendingUpdate.impact.affected_booking_days}</dd>
+                </div>
+                <div>
+                  <dt>Current Deduction</dt>
+                  <dd>{formatDecimal(pendingUpdate.impact.current_total_hours, 2)}h</dd>
+                  <small>
+                    DCC {formatDecimal(pendingUpdate.impact.current_dcc_hours, 2)} / SPA{' '}
+                    {formatDecimal(pendingUpdate.impact.current_spa_hours, 2)}
+                  </small>
+                </div>
+                <div>
+                  <dt>Updated Deduction</dt>
+                  <dd>{formatDecimal(pendingUpdate.impact.updated_total_hours, 2)}h</dd>
+                  <small>
+                    DCC {formatDecimal(pendingUpdate.impact.updated_dcc_hours, 2)} / SPA{' '}
+                    {formatDecimal(pendingUpdate.impact.updated_spa_hours, 2)}
+                  </small>
+                </div>
+              </dl>
+              <p className="job-plan-impact-note">
+                Confirming updates the Leave Log and all balance views. The previous calculations
+                remain in audit history.
+              </p>
+              <footer className="form-actions">
+                <button
+                  className="button button--quiet"
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setPendingUpdate(null)}
+                >
+                  Keep Editing
+                </button>
+                <button
+                  className="button button--primary"
+                  type="button"
+                  disabled={saving}
+                  onClick={confirmUpdateImpact}
+                >
+                  {saving ? 'Updating...' : 'Update and Recalculate'}
+                </button>
+              </footer>
+            </section>
+          </div>
+        </ModalLayer>
       ) : null}
     </section>
   )

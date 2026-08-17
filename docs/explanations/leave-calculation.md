@@ -10,7 +10,7 @@ The implementation is in `backend/src/leave_calculation/`:
 - `calculator.py` performs date splitting, partial-year calculation, and DCC/SPA/Other allocation.
 - `__init__.py` lists the small public interface used by later API and persistence code.
 
-The package was named `leave_calculation` rather than `accrual`. In this project, “accrual” only
+The package was named `leave_calculation` rather than `accrual`. In this project, "accrual" only
 means calculating the share of an annual entitlement that applies to part of a year. The plainer
 name is easier to find and does not imply payroll or accounting behaviour.
 
@@ -29,21 +29,21 @@ The workbook starts with one gross annual entitlement and two job-plan date peri
 Its gross annual entitlement is `291.368` hours. The formula for each period is:
 
 ```text
-period entitlement = annual entitlement × period calendar days ÷ leave-year calendar days
+period entitlement = annual entitlement x period calendar days / leave-year calendar days
 ```
 
 That produces:
 
 ```text
-291.368 × 337 ÷ 365 = 269.0164821917808219... hours
-291.368 ×  28 ÷ 365 =  22.3515178082191780... hours
+291.368 x 337 / 365 = 269.0164821917808219... hours
+291.368 x  28 / 365 =  22.3515178082191780... hours
 ```
 
 The workbook then divides each result using the overall PA proportions:
 
 ```text
-DCC share = period entitlement × 5.910 ÷ 8.470
-SPA share = period entitlement × 2.560 ÷ 8.470
+DCC share = period entitlement x 5.910 / 8.470
+SPA share = period entitlement x 2.560 / 8.470
 ```
 
 Across the complete leave year, this gives the workbook's `203.304` DCC hours and `88.064` SPA
@@ -89,7 +89,7 @@ overall contracted PAs from the applicable job-plan version.
 The current HR78 policy calculation gives a seven-year, 8.47-PA consultant `243.936` annual hours:
 
 ```text
-288 policy hours × 8.47 ÷ 10 = 243.936 hours
+288 policy hours x 8.47 / 10 = 243.936 hours
 ```
 
 The workbook's `291.368` gross total includes `47.432` hours of public-holiday value. The integrated

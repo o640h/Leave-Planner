@@ -20,6 +20,8 @@ export type HolidayOccurrence = Holiday & {
   basis: HolidayTreatmentBasis
   treatment_note: string | null
   worked_date: string | null
+  contracted_pas: string
+  deduction_factor: string
   entitlement_hours: string
   dcc_entitlement_hours: string
   spa_entitlement_hours: string

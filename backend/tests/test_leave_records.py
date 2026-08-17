@@ -2,9 +2,10 @@
 
 from dataclasses import replace
 from datetime import date
+from decimal import Decimal
 
 import pytest
-from reference_cases import full_time_request, workbook_reference_request
+from reference_cases import capped_multiweek_request, full_time_request, workbook_reference_request
 
 from domain import DateRange, Hours, LeaveState
 from leave_records import (
@@ -42,6 +43,19 @@ def test_partial_day_override_replaces_only_supplied_activity() -> None:
     assert day.standard_hours == ActivityHours(dcc=hours("8"), spa=hours("0.5"))
     assert day.deduction_hours == ActivityHours(dcc=hours("4"), spa=hours("0.5"))
     assert day.is_overridden
+
+
+def test_pa_cap_is_applied_after_daily_hours_are_entered() -> None:
+    request = capped_multiweek_request()
+    day = expand_booking(request.bookings[0], request.job_plans)[1]
+
+    entered = ActivityHours(dcc=hours("8"), other=hours("4"))
+    assert day.standard_hours == entered
+    assert day.deduction_hours == entered
+    assert day.calculated_deduction_hours == ActivityHours(
+        dcc=hours("8").scale(day.deduction_factor or Decimal("1")),
+        other=hours("4").scale(day.deduction_factor or Decimal("1")),
+    )
 
 
 @pytest.mark.parametrize(

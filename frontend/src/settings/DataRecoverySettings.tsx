@@ -153,7 +153,7 @@ export function DataRecoverySettings() {
             disabled={busy || !status}
             onClick={createBackup}
           >
-            {busy ? 'Creating…' : 'Create Backup'}
+            {busy ? 'Creating...' : 'Create Backup'}
           </button>
         </header>
 
@@ -219,7 +219,7 @@ export function DataRecoverySettings() {
                 disabled={busy}
                 onClick={closeRestore}
               >
-                ×
+                x
               </button>
 
               <header>
@@ -266,7 +266,7 @@ export function DataRecoverySettings() {
                   disabled={busy || confirmation !== 'RESTORE'}
                   onClick={restoreBackup}
                 >
-                  {busy ? 'Restoring…' : 'Restore Backup'}
+                  {busy ? 'Restoring...' : 'Restore Backup'}
                 </button>
               </footer>
             </section>

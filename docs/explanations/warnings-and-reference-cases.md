@@ -89,8 +89,10 @@ qualifying on-call with its deduction retained.
 
 A 12-PA consultant has two-week patterns, reaches seven years of consultant service during the
 leave year, and changes job plan later in the year. The case proves that overall entitlement is
-still capped at 10 PAs while activity proportions, effective dates, and daily deductions continue
-to use the applicable 12-PA job plan.
+still capped at 10 PAs while activity proportions and effective dates continue to use the applicable
+12-PA job plan. Ordinary booking and public-holiday deductions use the reciprocal `10 / 12` factor.
+The checked results include `6.667 DCC / 3.333 SPA / 3.333 Other` ordinary booking hours and
+`30 DCC / 3.333 SPA` public-holiday deductions.
 
 ## Property check
 

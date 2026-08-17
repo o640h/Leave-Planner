@@ -12,8 +12,11 @@ export type ActivityHours = {
 export type LeaveDay = {
   leave_date: string
   job_plan_id: number | null
+  contracted_pas: string | null
+  deduction_factor: string | null
   standard: ActivityHours
   deduction: ActivityHours
+  calculated_deduction: ActivityHours
   override_reason: string | null
   public_holiday_name: string | null
 }

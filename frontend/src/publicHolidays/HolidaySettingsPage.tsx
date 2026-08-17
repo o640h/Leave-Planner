@@ -136,7 +136,7 @@ export function HolidaySettingsPage() {
                   disabled={busy}
                   onClick={() => void sync()}
                 >
-                  {busy ? 'Updating…' : 'Sync GOV.UK'}
+                  {busy ? 'Updating...' : 'Sync GOV.UK'}
                 </button>
               </div>
             </header>
@@ -208,7 +208,7 @@ export function HolidaySettingsPage() {
                   <li key={item.id}>
                     <div>
                       <strong>
-                        {item.holiday_date} ·{' '}
+                        {item.holiday_date} /{' '}
                         {item.action === 'remove' ? 'Removed' : item.replacement_name}
                       </strong>
                       <span>{item.reason}</span>
@@ -230,7 +230,7 @@ export function HolidaySettingsPage() {
           </section>
         </>
       ) : (
-        <p className="settings-empty">Loading the saved calendar…</p>
+        <p className="settings-empty">Loading the saved calendar...</p>
       )}
       {open ? (
         <ModalLayer onClose={() => setOpen(false)}>
@@ -248,7 +248,7 @@ export function HolidaySettingsPage() {
                 aria-label="Close Holiday Correction"
                 onClick={() => setOpen(false)}
               >
-                ×
+                x
               </button>
               <form noValidate onSubmit={(event) => void submit(event)}>
                 <header>

@@ -1,5 +1,6 @@
 """Integration tests for the persisted leave-booking workflow."""
 
+import json
 import sqlite3
 from decimal import Decimal
 from pathlib import Path
@@ -45,7 +46,11 @@ def job_plan() -> dict[str, Any]:
     }
 
 
-def setup_workspace(client: TestClient) -> tuple[int, int, str]:
+def setup_workspace(
+    client: TestClient,
+    *,
+    plan: dict[str, Any] | None = None,
+) -> tuple[int, int, str]:
     consultant = client.post(
         "/api/consultants",
         json={"name": "Workbook Consultant", "post_title": "Consultant"},
@@ -57,7 +62,13 @@ def setup_workspace(client: TestClient) -> tuple[int, int, str]:
     ).json()
     leave_year_id = int(year["id"])
     root = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
-    assert client.post(f"{root}/job-plans", json=job_plan()).status_code == 201
+    assert (
+        client.post(
+            f"{root}/job-plans",
+            json=plan if plan is not None else job_plan(),
+        ).status_code
+        == 201
+    )
     assert (
         client.put(
             f"{root}/entitlement",
@@ -112,6 +123,139 @@ def test_preview_save_reload_and_cancel_booking(tmp_path: Path) -> None:
         assert cancelled.status_code == 200
         assert cancelled.json()["bookings"][0]["state"] == "cancelled"
         assert Decimal(cancelled.json()["projected"]["bookings"]["total_hours"]) == 0
+
+
+def test_capped_deduction_details_survive_save_and_restart(tmp_path: Path) -> None:
+    capped_plan = {
+        **job_plan(),
+        "contracted_pas": "12",
+        "dcc_pas": "9",
+        "spa_pas": "3",
+    }
+    booking: dict[str, Any] = {
+        "start_date": "2025-10-20",
+        "end_date": "2025-10-20",
+        "state": "taken",
+        "note": None,
+        "overrides": [],
+    }
+    expected_factor = Decimal("10") / Decimal("12")
+
+    with TestClient(app_for(tmp_path)) as client:
+        _consultant_id, _leave_year_id, root = setup_workspace(client, plan=capped_plan)
+
+        preview = client.post(f"{root}/bookings/preview", json=booking)
+        assert preview.status_code == 200
+        preview_day = preview.json()["days"][0]
+
+        assert Decimal(preview_day["contracted_pas"]) == Decimal("12")
+        assert Decimal(preview_day["deduction_factor"]) == expected_factor
+        assert Decimal(preview_day["standard"]["dcc_hours"]) == Decimal("8")
+        assert Decimal(preview_day["standard"]["spa_hours"]) == Decimal("0.5")
+        assert Decimal(preview_day["deduction"]["dcc_hours"]) == Decimal("8")
+        assert Decimal(preview_day["deduction"]["spa_hours"]) == Decimal("0.5")
+        assert Decimal(preview_day["calculated_deduction"]["dcc_hours"]) == (
+            Decimal("8") * expected_factor
+        )
+        assert Decimal(preview_day["calculated_deduction"]["spa_hours"]) == (
+            Decimal("0.5") * expected_factor
+        )
+        assert Decimal(preview.json()["actual"]["bookings"]["total_hours"]) == (
+            Decimal("8.5") * expected_factor
+        )
+
+        created = client.post(f"{root}/bookings", json=booking)
+        assert created.status_code == 201
+
+    # A fresh application instance proves these values came from the saved
+    # booking-day snapshot rather than the current job plan.
+    with TestClient(app_for(tmp_path)) as client:
+        planning = client.get(f"{root}/planning")
+        assert planning.status_code == 200
+
+        saved_day = planning.json()["bookings"][0]["days"][0]
+        assert Decimal(saved_day["contracted_pas"]) == Decimal("12")
+        assert Decimal(saved_day["deduction_factor"]) == expected_factor
+        assert Decimal(saved_day["standard"]["dcc_hours"]) == Decimal("8")
+        assert Decimal(saved_day["standard"]["spa_hours"]) == Decimal("0.5")
+        assert Decimal(saved_day["deduction"]["dcc_hours"]) == Decimal("8")
+        assert Decimal(saved_day["deduction"]["spa_hours"]) == Decimal("0.5")
+        assert Decimal(saved_day["calculated_deduction"]["dcc_hours"]) == (
+            Decimal("8") * expected_factor
+        )
+        assert Decimal(saved_day["calculated_deduction"]["spa_hours"]) == (
+            Decimal("0.5") * expected_factor
+        )
+
+
+def test_job_plan_edit_previews_and_regenerates_booking_deductions(tmp_path: Path) -> None:
+    booking: dict[str, object] = {
+        "start_date": "2025-10-20",
+        "end_date": "2025-10-20",
+        "state": "taken",
+        "note": None,
+        "overrides": [],
+    }
+    changed_plan = {
+        **job_plan(),
+        "contracted_pas": "10.5",
+        "dcc_pas": "8",
+        "spa_pas": "2.5",
+    }
+    expected_factor = Decimal("10") / Decimal("10.5")
+
+    with TestClient(app_for(tmp_path)) as client:
+        _consultant_id, _leave_year_id, root = setup_workspace(client)
+        created = client.post(f"{root}/bookings", json=booking)
+        assert created.status_code == 201
+        job_plan_id = client.get(f"{root}/job-plans").json()[0]["id"]
+
+        impact = client.post(
+            f"{root}/job-plans/{job_plan_id}/update-impact",
+            json=changed_plan,
+        )
+        assert impact.status_code == 200
+        assert impact.json()["affected_bookings"] == 1
+        assert impact.json()["affected_booking_days"] == 1
+        assert Decimal(impact.json()["current_total_hours"]) == Decimal("8.5")
+        assert Decimal(impact.json()["updated_total_hours"]) == Decimal("8.5") * expected_factor
+        assert impact.json()["requires_confirmation"] is True
+
+        rejected = client.put(f"{root}/job-plans/{job_plan_id}", json=changed_plan)
+        assert rejected.status_code == 409
+        assert (
+            rejected.json()["error"]["code"]
+            == "job_plan_booking_impact_confirmation_required"
+        )
+        unchanged = client.get(f"{root}/planning").json()["bookings"][0]["days"][0]
+        assert Decimal(unchanged["deduction_factor"]) == Decimal("1")
+
+        updated = client.put(
+            f"{root}/job-plans/{job_plan_id}?regenerate_booking_days=true",
+            json=changed_plan,
+        )
+        assert updated.status_code == 200
+        planning = client.get(f"{root}/planning").json()
+        regenerated = planning["bookings"][0]["days"][0]
+        assert Decimal(regenerated["deduction_factor"]) == expected_factor
+        assert Decimal(regenerated["deduction"]["total_hours"]) == Decimal("8.5")
+        assert Decimal(regenerated["calculated_deduction"]["total_hours"]) == (
+            Decimal("8.5") * expected_factor
+        )
+        assert Decimal(planning["actual"]["bookings"]["total_hours"]) == (
+            Decimal("8.5") * expected_factor
+        )
+
+    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
+        event = connection.execute(
+            "SELECT details FROM audit_events "
+            "WHERE entity_type = 'leave_booking' AND action = 'deductions_regenerated'"
+        ).fetchone()
+
+    assert event is not None
+    details = json.loads(event[0])
+    assert Decimal(details["before"][0]["calculated_dcc_hours"]) == Decimal("8")
+    assert Decimal(details["after"][0]["calculated_dcc_hours"]) == Decimal("8") * expected_factor
 
 
 def test_daily_override_and_public_holiday_are_not_double_deducted(tmp_path: Path) -> None:

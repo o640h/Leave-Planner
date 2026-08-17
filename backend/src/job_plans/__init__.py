@@ -1,6 +1,6 @@
 """Public interface for effective-dated job plans."""
 
-from .allocation import allocate_hours_by_pa
+from .allocation import allocate_hours_by_pa, leave_deduction_factor
 from .models import (
     ActivityAllocation,
     JobPlanCycle,
@@ -17,4 +17,5 @@ __all__ = [
     "JobPlanVersion",
     "Weekday",
     "allocate_hours_by_pa",
+    "leave_deduction_factor",
 ]

@@ -336,6 +336,20 @@ describe('consultant directory', () => {
           jobPlans.push(created)
           return json(created)
         }
+        if (path.endsWith('/job-plans/1/update-impact') && method === 'POST') {
+          return json({
+            affected_bookings: 0,
+            affected_booking_days: 0,
+            current_dcc_hours: '0',
+            current_spa_hours: '0',
+            current_total_hours: '0',
+            updated_dcc_hours: '0',
+            updated_spa_hours: '0',
+            updated_total_hours: '0',
+            difference_hours: '0',
+            requires_confirmation: false,
+          })
+        }
         if (path.endsWith('/job-plans/1') && method === 'PUT') {
           jobPlans[0] = { id: 1, leave_year_id: 1, ...details }
           return json(jobPlans[0])

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 from enum import StrEnum
 
 from annual_entitlement import AppliedEntitlement
@@ -12,6 +13,7 @@ from domain import (
     DateRange,
     Hours,
     LeaveState,
+    ProgrammedActivities,
     RuleId,
 )
 from job_plans import JobPlanHistory
@@ -46,6 +48,15 @@ class ActivityHours:
             dcc=self.dcc - other.dcc,
             spa=self.spa - other.spa,
             other=self.other - other.other,
+        )
+
+    def scale(self, factor: Decimal) -> ActivityHours:
+        """Scale every activity while preserving the DCC/SPA/Other split."""
+
+        return ActivityHours(
+            dcc=self.dcc.scale(factor),
+            spa=self.spa.scale(factor),
+            other=self.other.scale(factor),
         )
 
     @property
@@ -131,7 +142,7 @@ class LeaveBooking:
 
 @dataclass(frozen=True, slots=True)
 class LeaveDay:
-    """One calculated date generated from a booking."""
+    """One booking date with entered hours and its calculation metadata."""
 
     booking_id: str
     leave_date: date
@@ -140,10 +151,18 @@ class LeaveDay:
     standard_hours: ActivityHours
     deduction_hours: ActivityHours
     override_reason: str | None = None
+    contracted_pas: ProgrammedActivities | None = None
+    deduction_factor: Decimal | None = None
 
     @property
     def is_overridden(self) -> bool:
         return self.override_reason is not None
+
+    @property
+    def calculated_deduction_hours(self) -> ActivityHours:
+        """Apply the dated PA cap without changing the entered daily hours."""
+
+        return self.deduction_hours.scale(self.deduction_factor or Decimal("1"))
 
 
 @dataclass(frozen=True, slots=True)

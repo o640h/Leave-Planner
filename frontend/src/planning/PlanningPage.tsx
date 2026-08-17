@@ -193,7 +193,7 @@ export function PlanningPage() {
                 setMonth(moveMonth(month, -1))
               }}
             >
-              ‹
+              &lt;
             </button>
             <h3>{monthLabel(month)}</h3>
             <button
@@ -205,7 +205,7 @@ export function PlanningPage() {
                 setMonth(moveMonth(month, 1))
               }}
             >
-              ›
+              &gt;
             </button>
           </div>
         )}
@@ -221,11 +221,11 @@ export function PlanningPage() {
         <div className="planning-empty form-notice form-notice--error">{error}</div>
       ) : !month || catalogue.length === 0 ? (
         <div className="planning-empty">
-          {loading ? 'Loading planning calendar…' : 'No consultants have been configured.'}
+          {loading ? 'Loading planning calendar...' : 'No consultants have been configured.'}
         </div>
       ) : (
         <section className="calendar-panel" aria-busy={loading}>
-          {loading && <div className="wallchart-loading">Updating…</div>}
+          {loading && <div className="wallchart-loading">Updating...</div>}
           <PlanningCalendar
             month={month}
             rows={rows}

@@ -1,2 +1,1 @@
 """Persisted leave booking workflow."""
-

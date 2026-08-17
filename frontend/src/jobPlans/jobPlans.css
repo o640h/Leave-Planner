@@ -246,6 +246,7 @@
 
 .job-plan-grid {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -273,8 +274,11 @@
   font-weight: 550;
 }
 
-.job-plan-grid tbody th {
+.job-plan-grid tr > :first-child {
   width: 25%;
+}
+
+.job-plan-grid tbody th {
   font-size: 0.84615rem;
   font-weight: 550;
 }
@@ -282,6 +286,7 @@
 .job-plan-grid .number-input {
   width: 100%;
   min-width: 90px;
+  box-sizing: border-box;
   border-color: transparent;
 }
 
@@ -375,6 +380,55 @@
 .job-plan-modal .form-actions {
   margin-top: 20px;
   padding-top: 16px;
+}
+
+.job-plan-impact-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.job-plan-impact-summary > div {
+  min-width: 0;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.job-plan-impact-summary > div:nth-child(odd) {
+  border-right: 1px solid var(--line);
+}
+
+.job-plan-impact-summary > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.job-plan-impact-summary dt,
+.job-plan-impact-summary small,
+.job-plan-impact-note {
+  color: var(--muted);
+  font-size: 0.76923rem;
+}
+
+.job-plan-impact-summary dd {
+  margin: 5px 0 0;
+  color: var(--text);
+  font-size: 1.07692rem;
+}
+
+.job-plan-impact-summary small {
+  display: block;
+  margin-top: 4px;
+}
+
+.job-plan-impact-note {
+  margin: 18px 0 0;
+  line-height: 1.55;
+}
+
+.job-plan-impact-modal .form-actions {
+  margin-top: 20px;
 }
 
 @media (max-width: 760px) {

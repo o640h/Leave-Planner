@@ -40,7 +40,12 @@ export function PlanningCalendar({ month, rows, holidays, onSelectDate, onSelect
     { length: new Date(year, monthNumber, 0).getDate() },
     (_, index) => index + 1,
   )
-  const gridStyle = { '--calendar-days': days.length } as CSSProperties
+  const fixedColumnWidth = 210 + 106
+  const minimumDayWidth = 28
+  const gridStyle = {
+    '--calendar-days': days.length,
+    '--wallchart-min-width': `${fixedColumnWidth + days.length * minimumDayWidth}px`,
+  } as CSSProperties
 
   return (
     <div className="wallchart-scroll">
@@ -81,7 +86,7 @@ export function PlanningCalendar({ month, rows, holidays, onSelectDate, onSelect
                   <>
                     <strong>{roundedHours(balance.total_hours)}h</strong>
                     <small>
-                      DCC {roundedHours(balance.dcc_hours)} · SPA {roundedHours(balance.spa_hours)}
+                      DCC {roundedHours(balance.dcc_hours)} / SPA {roundedHours(balance.spa_hours)}
                     </small>
                   </>
                 ) : (

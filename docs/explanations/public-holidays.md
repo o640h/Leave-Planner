@@ -28,7 +28,7 @@ medical staff this is one fifth of a 40-hour week. The value is prorated against
 at the full-time value:
 
 ```text
-public-holiday entitlement = 8 hours × minimum(contracted PAs, 10) ÷ 10
+public-holiday entitlement = 8 hours x minimum(contracted PAs, 10) / 10
 ```
 
 This amount is added for every official public holiday that falls inside both the leave year and
@@ -39,7 +39,15 @@ worked.
 
 The deduction represents what the holiday consumes from the resulting leave allowance. For the
 standard treatment, the calculation looks up the effective job plan on the holiday date and uses
-that weekday's visible DCC, SPA, and Other hours.
+that weekday's visible DCC, SPA, and Other hours. It applies the workbook deduction factor separately
+to each activity:
+
+```text
+public-holiday deduction factor = 10 / maximum(contracted PAs, 10)
+```
+
+The factor is one at or below 10 PAs. Above 10 PAs it reduces the dated deduction without changing
+the DCC/SPA/Other proportions or the separately calculated public-holiday entitlement.
 
 A holiday on a normal non-working day therefore has a zero deduction. A holiday on a long Monday
 can deduct more than a holiday on a shorter Wednesday. This is the same distinction shown by the
@@ -64,8 +72,8 @@ the leave year from 29 August 2025 to 28 August 2026:
 The summer bank holiday on 31 August 2026 is outside that leave year. The added entitlement is:
 
 ```text
-one holiday = 8 × 8.47 ÷ 10 = 6.776 hours
-seven holidays = 7 × 6.776 = 47.432 hours
+one holiday = 8 x 8.47 / 10 = 6.776 hours
+seven holidays = 7 x 6.776 = 47.432 hours
 
 HR78 policy entitlement                 243.936 hours
 public-holiday entitlement               47.432 hours

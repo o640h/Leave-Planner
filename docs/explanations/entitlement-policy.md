@@ -1,4 +1,4 @@
-﻿# Consultant Entitlement Policy
+# Consultant Entitlement Policy
 
 This document explains how the application chooses a consultant's full-year annual-leave
 entitlement. It is for maintainers who may need to inspect or update a policy version.
@@ -60,7 +60,7 @@ One PA is four hours. Annual entitlement is prorated against ten PAs and capped 
 
 ```text
 factor = minimum(contracted PAs, 10) / 10
-annual entitlement = full-time entitlement Ã— factor
+annual entitlement = full-time entitlement x factor
 ```
 
 Examples:
@@ -108,7 +108,7 @@ Policy effective periods must not overlap. A calculation date must match exactly
 
 Two details are kept beside the encoded policy data so they remain easy to find:
 
-- Section 7.4 uses both â€œfrom 1 April 2005â€ and â€œafter 1 April 2005â€. The implementation treats
+- Section 7.4 uses both "from 1 April 2005" and "after 1 April 2005". The implementation treats
   1 April 2005 as part of the newer era so there is no one-day gap.
 - The PDF says version 3 was ratified in July 2025 but gives no exact operational day. The
   working effective date is 1 July 2025.

@@ -1,8 +1,21 @@
 """Allocation of leave hours using a job plan's contracted PA split."""
 
+from decimal import Decimal
+
 from domain import ZERO_HOURS, ActivityType, Hours
 
 from .models import JobPlanCycle
+
+_LEAVE_DEDUCTION_PA_CAP = Decimal("10")
+
+
+def leave_deduction_factor(cycle: JobPlanCycle) -> Decimal:
+    """Return the workbook factor applied to dated leave deductions."""
+
+    return _LEAVE_DEDUCTION_PA_CAP / max(
+        cycle.contracted_pas.value,
+        _LEAVE_DEDUCTION_PA_CAP,
+    )
 
 
 def allocate_hours_by_pa(

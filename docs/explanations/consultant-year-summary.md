@@ -20,14 +20,14 @@ The implementation is in `backend/src/consultant_year_summary/service.py`. Its A
 The workbook starts with the complete annual entitlement, including public holidays, and divides it between job-plan periods by calendar days. For each period:
 
 ```text
-period leave = complete annual entitlement × period calendar days ÷ active leave-year days
+period leave = complete annual entitlement x period calendar days / active leave-year days
 ```
 
 The result is then split using that period's contracted DCC and SPA PA proportions:
 
 ```text
-DCC leave = period leave × DCC PA ÷ total PA
-SPA leave = period leave × SPA PA ÷ total PA
+DCC leave = period leave x DCC PA / total PA
+SPA leave = period leave x SPA PA / total PA
 ```
 
 For the supplied example, `291.368` hours becomes a 337-day result plus a 28-day result. The two period results add back to `291.368` hours. These are the figures shown under **Annual Leave by Job Plan**.
@@ -41,7 +41,7 @@ Balances are derived each time the summary is requested:
 ```text
 available = applied entitlement + carry-forward
 used = public-holiday deductions + booking deductions
-remaining = available − used
+remaining = available - used
 ```
 
 Carry-forward is added to DCC, matching the workbook. A booking never changes entitlement; its saved daily deductions change the used and remaining figures.

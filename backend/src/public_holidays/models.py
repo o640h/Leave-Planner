@@ -160,6 +160,7 @@ class PublicHolidayOccurrence:
     contracted_pas: ProgrammedActivities
     capped_pas: ProgrammedActivities
     pa_factor: Decimal
+    deduction_factor: Decimal
     entitlement_hours: Hours
     dcc_entitlement_hours: Hours
     spa_entitlement_hours: Hours

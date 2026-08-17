@@ -13,7 +13,7 @@ from domain import (
     ProgrammedActivities,
     RuleId,
 )
-from job_plans import allocate_hours_by_pa
+from job_plans import allocate_hours_by_pa, leave_deduction_factor
 
 from .calendar import holidays_in_period, resolved_holidays
 from .models import (
@@ -69,6 +69,7 @@ def calculate_public_holidays(
             )
         )
         pa_factor = capped_pas.value / PUBLIC_HOLIDAY_PA_CAP
+        deduction_factor = leave_deduction_factor(job_plan.cycle)
         entitlement_hours = PUBLIC_HOLIDAY_FULL_TIME_HOURS.scale(pa_factor)
         dcc_entitlement, spa_entitlement, other_entitlement = allocate_hours_by_pa(
             entitlement_hours,
@@ -89,9 +90,9 @@ def calculate_public_holidays(
             other_deduction = ZERO_HOURS
         else:
             planned_day = job_plan.day_on(holiday.holiday_date)
-            dcc_deduction = planned_day.hours_for(ActivityType.DCC)
-            spa_deduction = planned_day.hours_for(ActivityType.SPA)
-            other_deduction = planned_day.hours_for(ActivityType.OTHER)
+            dcc_deduction = planned_day.hours_for(ActivityType.DCC).scale(deduction_factor)
+            spa_deduction = planned_day.hours_for(ActivityType.SPA).scale(deduction_factor)
+            other_deduction = planned_day.hours_for(ActivityType.OTHER).scale(deduction_factor)
 
         occurrences.append(
             PublicHolidayOccurrence(
@@ -100,6 +101,7 @@ def calculate_public_holidays(
                 contracted_pas=contracted_pas,
                 capped_pas=capped_pas,
                 pa_factor=pa_factor,
+                deduction_factor=deduction_factor,
                 entitlement_hours=entitlement_hours,
                 dcc_entitlement_hours=dcc_entitlement,
                 spa_entitlement_hours=spa_entitlement,
@@ -127,6 +129,13 @@ def calculate_public_holidays(
                     occurrence.pa_factor,
                     "f",
                 ),
+                "deduction_factor": format(
+                    occurrence.deduction_factor,
+                    "f",
+                ),
+                "dcc_deduction_hours": str(occurrence.dcc_deduction_hours),
+                "spa_deduction_hours": str(occurrence.spa_deduction_hours),
+                "other_deduction_hours": str(occurrence.other_deduction_hours),
                 "treatment": (occurrence.treatment.basis.value),
                 "retains_leave": str(occurrence.treatment.retains_leave).lower(),
                 "dcc_entitlement_hours": str(occurrence.dcc_entitlement_hours),

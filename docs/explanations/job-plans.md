@@ -54,7 +54,7 @@ day in this table when a leave date is entered.
 
 ## Effective-dated versions
 
-The workbook has “Job plan 1” and “Job plan 2”, each with From and To dates. The application
+The workbook has "Job plan 1" and "Job plan 2", each with From and To dates. The application
 represents these as `JobPlanVersion` records.
 
 When calculating a date, `JobPlanHistory` selects the version whose effective period contains

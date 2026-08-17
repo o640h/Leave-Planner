@@ -1,6 +1,6 @@
 import { apiRequest } from '../api/client'
 import type { RemovalImpact, RemovalResult } from '../system/removal'
-import type { JobPlan, JobPlanInput, JobPlanPreview } from './types'
+import type { JobPlan, JobPlanInput, JobPlanPreview, JobPlanUpdateImpact } from './types'
 
 function jobPlanPath(consultantId: number, leaveYearId: number): string {
   return `/api/consultants/${consultantId}/leave-years/${leaveYearId}/job-plans`
@@ -37,11 +37,28 @@ export function updateJobPlan(
   leaveYearId: number,
   jobPlanId: number,
   details: JobPlanInput,
+  regenerateBookingDays = false,
 ): Promise<JobPlan> {
-  return apiRequest<JobPlan>(`${jobPlanPath(consultantId, leaveYearId)}/${jobPlanId}`, {
+  const query = regenerateBookingDays ? '?regenerate_booking_days=true' : ''
+  return apiRequest<JobPlan>(`${jobPlanPath(consultantId, leaveYearId)}/${jobPlanId}${query}`, {
     method: 'PUT',
     body: JSON.stringify(details),
   })
+}
+
+export function jobPlanUpdateImpact(
+  consultantId: number,
+  leaveYearId: number,
+  jobPlanId: number,
+  details: JobPlanInput,
+): Promise<JobPlanUpdateImpact> {
+  return apiRequest<JobPlanUpdateImpact>(
+    `${jobPlanPath(consultantId, leaveYearId)}/${jobPlanId}/update-impact`,
+    {
+      method: 'POST',
+      body: JSON.stringify(details),
+    },
+  )
 }
 
 export function jobPlanRemovalImpact(

@@ -85,9 +85,9 @@ leave year. The resulting calculation is:
 
 ```text
 30 basic days + 2 statutory days + 2 seniority days + 2 local/R&R days = 36 days
-36 days × 8 hours = 288 full-time hours before public holidays
-288 × 8.47 PA ÷ 10 PA = 243.936 base hours
-7 public holidays × 8 hours × 8.47 PA ÷ 10 PA = 47.432 holiday hours
+36 days x 8 hours = 288 full-time hours before public holidays
+288 x 8.47 PA / 10 PA = 243.936 base hours
+7 public holidays x 8 hours x 8.47 PA / 10 PA = 47.432 holiday hours
 243.936 + 47.432 = 291.368 recommended hours
 ```
 
@@ -101,16 +101,16 @@ reckonable service for production use.
 The detailed screen currently divides the **base** `243.936` hours across the two job-plan periods:
 
 ```text
-243.936 × 337 ÷ 365 = 225.223 hours
-243.936 ×  28 ÷ 365 =  18.713 hours
+243.936 x 337 / 365 = 225.223 hours
+243.936 x  28 / 365 =  18.713 hours
 ```
 
 The workbook's `Annual Leave accrued` boxes instead divide the **gross** `291.368` hours, including
 public holidays, over the same periods:
 
 ```text
-291.368 × 337 ÷ 365 = 269.016 hours
-291.368 ×  28 ÷ 365 =  22.352 hours
+291.368 x 337 / 365 = 269.016 hours
+291.368 x  28 / 365 =  22.352 hours
 ```
 
 The application calculates each public holiday separately on its actual date, so its detailed

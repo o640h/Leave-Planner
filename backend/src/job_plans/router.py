@@ -13,6 +13,7 @@ from .schemas import (
     JobPlanPreview,
     JobPlanRead,
     JobPlanUpdate,
+    JobPlanUpdateImpact,
 )
 
 router = APIRouter(
@@ -68,6 +69,23 @@ def create_job_plan(
     )
 
 
+@router.post("/{job_plan_id}/update-impact", response_model=JobPlanUpdateImpact)
+def update_impact(
+    consultant_id: int,
+    leave_year_id: int,
+    job_plan_id: int,
+    details: JobPlanUpdate,
+    session: DatabaseSession,
+) -> JobPlanUpdateImpact:
+    return service.update_impact(
+        session,
+        consultant_id,
+        leave_year_id,
+        job_plan_id,
+        details,
+    )
+
+
 @router.put("/{job_plan_id}", response_model=JobPlanRead)
 def update_job_plan(
     consultant_id: int,
@@ -75,6 +93,7 @@ def update_job_plan(
     job_plan_id: int,
     details: JobPlanUpdate,
     session: DatabaseSession,
+    regenerate_booking_days: bool = False,
 ) -> JobPlanRecord:
     return service.update_job_plan(
         session,
@@ -82,6 +101,7 @@ def update_job_plan(
         leave_year_id,
         job_plan_id,
         details,
+        regenerate_booking_days=regenerate_booking_days,
     )
 
 

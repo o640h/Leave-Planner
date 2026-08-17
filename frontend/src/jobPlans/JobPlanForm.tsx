@@ -204,7 +204,7 @@ export function JobPlanForm({
           <div className="field">
             <label htmlFor="job-plan-contracted-pas">Total PA</label>
             <output className="calculated-field" id="job-plan-contracted-pas">
-              {formatDecimal(details.contracted_pas, 2) || '—'}
+              {formatDecimal(details.contracted_pas, 2) || '-'}
             </output>
           </div>
 
@@ -268,7 +268,7 @@ export function JobPlanForm({
                   })
                 }
               />
-              <small>Optional — otherwise the Monday before Effective From is used.</small>
+              <small>Optional - otherwise the Monday before Effective From is used.</small>
             </div>
           ) : null}
         </div>
@@ -307,7 +307,7 @@ export function JobPlanForm({
           disabled={disabled}
           onClick={() => void requestPreview()}
         >
-          {previewing ? 'Calculating…' : 'Preview Job Plan'}
+          {previewing ? 'Calculating...' : 'Preview Job Plan'}
         </button>
       </div>
 
@@ -370,7 +370,7 @@ export function JobPlanForm({
         </button>
 
         <button className="button button--primary" type="submit" disabled={disabled}>
-          {busy ? 'Saving…' : mode === 'create' ? 'Create Job Plan' : 'Save Changes'}
+          {busy ? 'Saving...' : mode === 'create' ? 'Create Job Plan' : 'Save Changes'}
         </button>
       </div>
     </form>

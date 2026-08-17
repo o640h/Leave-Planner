@@ -115,7 +115,7 @@ export function ConsultantForm({
         </button>
 
         <button className="button button--primary" type="submit" disabled={busy}>
-          {busy ? 'Saving…' : mode === 'create' ? 'Create Consultant' : 'Save Changes'}
+          {busy ? 'Saving...' : mode === 'create' ? 'Create Consultant' : 'Save Changes'}
         </button>
       </div>
     </form>

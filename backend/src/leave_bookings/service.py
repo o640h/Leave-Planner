@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -12,7 +13,15 @@ from annual_entitlement import AppliedEntitlement
 from annual_entitlement import service as entitlement_service
 from audit import record_audit_event
 from carry_forward import service as carry_forward_service
-from domain import CalculationResult, CalculationWarning, DateRange, Hours, LeaveState, RuleId
+from domain import (
+    CalculationResult,
+    CalculationWarning,
+    DateRange,
+    Hours,
+    LeaveState,
+    ProgrammedActivities,
+    RuleId,
+)
 from errors import ApiError
 from job_plans import JobPlanHistory
 from job_plans import service as job_plan_service
@@ -38,6 +47,7 @@ from .persistence import LeaveBookingDayRecord, LeaveBookingRecord
 from .schemas import (
     ActivityHoursRead,
     BalanceRead,
+    DailyOverrideWrite,
     LeaveBookingRead,
     LeaveBookingWrite,
     LeaveDayRead,
@@ -45,6 +55,23 @@ from .schemas import (
     LeaveWarningRead,
     PlanningRead,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class BookingRegenerationImpact:
+    """Aggregate effect of rebuilding active booking-day snapshots."""
+
+    affected_bookings: int
+    affected_booking_days: int
+    current: ActivityHours
+    updated: ActivityHours
+
+
+@dataclass(frozen=True, slots=True)
+class _BookingSnapshotChange:
+    record: LeaveBookingRecord
+    generated_days: tuple[LeaveDay, ...]
+    affected_dates: frozenset[date]
 
 
 def _records(session: Session, leave_year_id: int) -> tuple[LeaveBookingRecord, ...]:
@@ -136,6 +163,14 @@ def _domain_day(record: LeaveBookingDayRecord, state: LeaveState) -> LeaveDay:
             record.deduction_other_hours,
         ),
         override_reason=record.override_reason,
+        contracted_pas=(
+            ProgrammedActivities(record.contracted_pas)
+            if record.contracted_pas is not None
+            else None
+        ),
+        deduction_factor=(
+            Decimal(record.deduction_factor) if record.deduction_factor is not None else None
+        ),
     )
 
 
@@ -202,8 +237,190 @@ def _generated_days(
                 ZERO_ACTIVITY_HOURS if day.leave_date in holiday_names else day.deduction_hours
             ),
             override_reason=day.override_reason,
+            contracted_pas=day.contracted_pas,
+            deduction_factor=day.deduction_factor,
         )
         for day in generated
+    )
+
+
+def _booking_write(
+    record: LeaveBookingRecord,
+    holiday_dates: set[date],
+) -> LeaveBookingWrite:
+    overrides = []
+    for day in record.days:
+        changed = (
+            day.deduction_dcc_hours != day.standard_dcc_hours
+            or day.deduction_spa_hours != day.standard_spa_hours
+            or day.deduction_other_hours != day.standard_other_hours
+        )
+        if day.leave_date not in holiday_dates and (changed or day.override_reason is not None):
+            overrides.append(
+                DailyOverrideWrite(
+                    leave_date=day.leave_date,
+                    dcc_hours=day.deduction_dcc_hours,
+                    spa_hours=day.deduction_spa_hours,
+                    other_hours=day.deduction_other_hours,
+                    reason=day.override_reason,
+                )
+            )
+
+    return LeaveBookingWrite(
+        start_date=record.start_date,
+        end_date=record.end_date,
+        state=LeaveState(record.state),
+        note=record.note,
+        overrides=tuple(overrides),
+    )
+
+
+def _same_snapshot(stored: LeaveBookingDayRecord, generated: LeaveDay) -> bool:
+    version = str(generated.job_plan_version).rsplit(".", 1)[-1]
+    contracted_pas = (
+        generated.contracted_pas.value if generated.contracted_pas is not None else None
+    )
+    factor = generated.deduction_factor
+    stored_factor = Decimal(stored.deduction_factor) if stored.deduction_factor else None
+    return (
+        stored.job_plan_id == int(version)
+        and stored.contracted_pas == contracted_pas
+        and stored_factor == factor
+        and stored.standard_dcc_hours == generated.standard_hours.dcc.value
+        and stored.standard_spa_hours == generated.standard_hours.spa.value
+        and stored.standard_other_hours == generated.standard_hours.other.value
+        and stored.deduction_dcc_hours == generated.deduction_hours.dcc.value
+        and stored.deduction_spa_hours == generated.deduction_hours.spa.value
+        and stored.deduction_other_hours == generated.deduction_hours.other.value
+        and stored.override_reason == generated.override_reason
+    )
+
+
+def _snapshot_changes(
+    session: Session,
+    leave_year: LeaveYear,
+    history: JobPlanHistory,
+) -> tuple[_BookingSnapshotChange, ...]:
+    holidays = _holiday_result(session, leave_year, history)
+    holiday_dates = {item.holiday.holiday_date for item in holidays.occurrences}
+    changes = []
+    for record in _records(session, leave_year.id):
+        if record.state == LeaveState.CANCELLED.value:
+            continue
+        details = _booking_write(record, holiday_dates)
+        generated = _generated_days(details, history, holidays, str(record.id))
+        stored_by_date = {day.leave_date: day for day in record.days}
+        affected_dates = frozenset(
+            day.leave_date
+            for day in generated
+            if day.leave_date not in stored_by_date
+            or not _same_snapshot(stored_by_date[day.leave_date], day)
+        )
+        affected_dates |= frozenset(set(stored_by_date) - {day.leave_date for day in generated})
+        if affected_dates:
+            changes.append(
+                _BookingSnapshotChange(
+                    record=record,
+                    generated_days=generated,
+                    affected_dates=affected_dates,
+                )
+            )
+    return tuple(changes)
+
+
+def regeneration_impact(
+    session: Session,
+    leave_year: LeaveYear,
+    history: JobPlanHistory,
+) -> BookingRegenerationImpact:
+    changes = _snapshot_changes(session, leave_year, history)
+    current = ZERO_ACTIVITY_HOURS
+    updated = ZERO_ACTIVITY_HOURS
+    for change in changes:
+        state = LeaveState(change.record.state)
+        current_by_date = {
+            day.leave_date: _domain_day(day, state) for day in change.record.days
+        }
+        updated_by_date = {day.leave_date: day for day in change.generated_days}
+        for leave_date in change.affected_dates:
+            if leave_date in current_by_date:
+                current += current_by_date[leave_date].calculated_deduction_hours
+            if leave_date in updated_by_date:
+                updated += updated_by_date[leave_date].calculated_deduction_hours
+
+    return BookingRegenerationImpact(
+        affected_bookings=len(changes),
+        affected_booking_days=sum(len(change.affected_dates) for change in changes),
+        current=current,
+        updated=updated,
+    )
+
+
+def _audit_day(day: LeaveDay) -> dict[str, object]:
+    return {
+        "leave_date": day.leave_date.isoformat(),
+        "job_plan_version": str(day.job_plan_version),
+        "contracted_pas": (
+            format(day.contracted_pas.value, "f") if day.contracted_pas is not None else None
+        ),
+        "deduction_factor": (
+            format(day.deduction_factor, "f") if day.deduction_factor is not None else None
+        ),
+        "entered_dcc_hours": format(day.deduction_hours.dcc.value, "f"),
+        "entered_spa_hours": format(day.deduction_hours.spa.value, "f"),
+        "calculated_dcc_hours": format(day.calculated_deduction_hours.dcc.value, "f"),
+        "calculated_spa_hours": format(day.calculated_deduction_hours.spa.value, "f"),
+    }
+
+
+def regenerate_booking_days(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    history: JobPlanHistory,
+) -> BookingRegenerationImpact:
+    leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    changes = _snapshot_changes(session, leave_year, history)
+    current = ZERO_ACTIVITY_HOURS
+    updated = ZERO_ACTIVITY_HOURS
+    for change in changes:
+        state = LeaveState(change.record.state)
+        current_by_date = {
+            day.leave_date: _domain_day(day, state) for day in change.record.days
+        }
+        updated_by_date = {day.leave_date: day for day in change.generated_days}
+        before = []
+        after = []
+        for leave_date in sorted(change.affected_dates):
+            if leave_date in current_by_date:
+                old_day = current_by_date[leave_date]
+                current += old_day.calculated_deduction_hours
+                before.append(_audit_day(old_day))
+            if leave_date in updated_by_date:
+                new_day = updated_by_date[leave_date]
+                updated += new_day.calculated_deduction_hours
+                after.append(_audit_day(new_day))
+
+        _store_days(session, change.record, change.generated_days)
+        session.flush()
+        record_audit_event(
+            session,
+            consultant_id=consultant_id,
+            entity_type="leave_booking",
+            entity_id=change.record.id,
+            action="deductions_regenerated",
+            details={
+                "source": "job_plan_update",
+                "before": before,
+                "after": after,
+            },
+        )
+
+    return BookingRegenerationImpact(
+        affected_bookings=len(changes),
+        affected_booking_days=sum(len(change.affected_dates) for change in changes),
+        current=current,
+        updated=updated,
     )
 
 
@@ -296,8 +513,11 @@ def _day_read(day: LeaveDay, holiday_names: dict[date, str]) -> LeaveDayRead:
     return LeaveDayRead(
         leave_date=day.leave_date,
         job_plan_id=job_plan_id,
+        contracted_pas=(day.contracted_pas.value if day.contracted_pas is not None else None),
+        deduction_factor=day.deduction_factor,
         standard=_hours_read(day.standard_hours),
         deduction=_hours_read(day.deduction_hours),
+        calculated_deduction=_hours_read(day.calculated_deduction_hours),
         override_reason=day.override_reason,
         public_holiday_name=holiday_names.get(day.leave_date),
     )
@@ -373,6 +593,10 @@ def _store_days(session: Session, record: LeaveBookingRecord, days: tuple[LeaveD
             stored = LeaveBookingDayRecord(leave_date=day.leave_date)
             record.days.append(stored)
         stored.job_plan_id = int(version)
+        stored.contracted_pas = day.contracted_pas.value if day.contracted_pas is not None else None
+        stored.deduction_factor = (
+            format(day.deduction_factor, "f") if day.deduction_factor is not None else None
+        )
         stored.standard_dcc_hours = day.standard_hours.dcc.value
         stored.standard_spa_hours = day.standard_hours.spa.value
         stored.standard_other_hours = day.standard_hours.other.value

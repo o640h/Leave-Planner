@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from domain import ActivityType
-from job_plans import JobPlanHistory
+from job_plans import JobPlanHistory, leave_deduction_factor
 
 from .models import (
     ActivityHours,
@@ -25,11 +25,13 @@ def expand_booking(
         job_plan = job_plans.version_on(leave_date)
         planned_day = job_plan.day_on(leave_date)
 
-        standard = ActivityHours(
+        scheduled = ActivityHours(
             dcc=planned_day.hours_for(ActivityType.DCC),
             spa=planned_day.hours_for(ActivityType.SPA),
             other=planned_day.hours_for(ActivityType.OTHER),
         )
+        deduction_factor = leave_deduction_factor(job_plan.cycle)
+        standard = scheduled
 
         override = overrides_by_date.get(leave_date)
         if override is None:
@@ -48,6 +50,8 @@ def expand_booking(
                 standard_hours=standard,
                 deduction_hours=deduction,
                 override_reason=override_reason,
+                contracted_pas=job_plan.cycle.contracted_pas,
+                deduction_factor=deduction_factor,
             )
         )
 

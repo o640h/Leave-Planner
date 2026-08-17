@@ -65,7 +65,7 @@ export function operatorErrorMessage(error: unknown): string {
           ? first.loc
               .filter((part) => part !== 'body' && typeof part === 'string')
               .map((part) => part.replaceAll('_', ' '))
-              .join(' · ')
+              .join(' / ')
           : ''
         const message = first.msg.replace(/^Value error,\s*/i, '')
         return location ? `${location}: ${message}` : message

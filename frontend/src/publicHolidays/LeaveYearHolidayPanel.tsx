@@ -61,7 +61,7 @@ export function LeaveYearHolidayPanel({ consultantId, leaveYearId }: Props) {
               Standard Deductions <strong>{formatDecimal(data.deduction_hours, 1)}</strong>
             </span>
             <small>
-              {data.source.replaceAll('_', ' ')} · {data.source_date}
+              {data.source.replaceAll('_', ' ')} / {data.source_date}
             </small>
           </div>
           <ul>
@@ -71,10 +71,20 @@ export function LeaveYearHolidayPanel({ consultantId, leaveYearId }: Props) {
                   <strong>{item.name}</strong>
                   <span>{item.holiday_date}</span>
                 </div>
-                <span>
-                  {formatDecimal(item.entitlement_hours, 1)} hours ·{' '}
-                  {item.basis.replaceAll('_', ' ')}
-                </span>
+                <div className="holiday-deduction-detail">
+                  <span>
+                    {formatDecimal(item.entitlement_hours, 1)} hours /{' '}
+                    {item.basis.replaceAll('_', ' ')}
+                  </span>
+                  {Number(item.deduction_factor) < 1 ? (
+                    <small>
+                      {formatDecimal(item.contracted_pas, 2)} PA - Deduction factor{' '}
+                      {formatDecimal(item.deduction_factor, 3)} -{' '}
+                      {formatDecimal(item.dcc_deduction_hours, 2)} DCC /{' '}
+                      {formatDecimal(item.spa_deduction_hours, 2)} SPA
+                    </small>
+                  ) : null}
+                </div>
                 <button className="text-button" type="button" onClick={() => edit(item)}>
                   Treatment
                 </button>
@@ -99,7 +109,7 @@ export function LeaveYearHolidayPanel({ consultantId, leaveYearId }: Props) {
                 aria-label="Close Holiday Treatment"
                 onClick={() => setEditing(null)}
               >
-                ×
+                X
               </button>
               <header>
                 <span className="section-label">{editing.holiday_date}</span>
@@ -112,8 +122,8 @@ export function LeaveYearHolidayPanel({ consultantId, leaveYearId }: Props) {
                   value={basis}
                   onChange={(event) => setBasis(event.target.value as HolidayTreatmentBasis)}
                 >
-                  <option value="standard">Not Worked — Standard Deduction</option>
-                  <option value="qualifying_on_call">On Call — Retain Leave</option>
+                  <option value="standard">Not Worked - Standard Deduction</option>
+                  <option value="qualifying_on_call">On Call - Retain Leave</option>
                 </select>
               </div>
               {basis !== 'standard' ? (

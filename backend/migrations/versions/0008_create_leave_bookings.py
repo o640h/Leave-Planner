@@ -89,4 +89,3 @@ def downgrade() -> None:
     op.drop_table("leave_booking_days")
     op.drop_index("ix_leave_bookings_leave_year_id", table_name="leave_bookings")
     op.drop_table("leave_bookings")
-

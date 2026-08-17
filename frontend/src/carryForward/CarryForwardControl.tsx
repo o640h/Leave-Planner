@@ -51,7 +51,7 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
       <div className="carry-forward-value">
         <span>Carry Forward</span>
         <strong>
-          {record ? formatDecimal(record.hours, 2) : '—'}
+          {record ? formatDecimal(record.hours, 2) : '-'}
           {record ? <small>hours</small> : null}
         </strong>
       </div>
@@ -82,7 +82,7 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
                 aria-label="Close Carry Forward Editor"
                 onClick={() => setOpen(false)}
               >
-                ×
+                x
               </button>
               <form noValidate onSubmit={(event) => void save(event)}>
                 <header>
@@ -111,7 +111,7 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
                     Cancel
                   </button>
                   <button className="button button--primary" type="submit" disabled={busy}>
-                    {busy ? 'Saving…' : 'Save'}
+                    {busy ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </form>

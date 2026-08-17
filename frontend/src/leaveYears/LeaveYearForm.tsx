@@ -102,7 +102,7 @@ export function LeaveYearForm({
             disabled={busy}
             onChange={(value) => updateDate('employment_start', value, true)}
           />
-          <small>Optional — leave blank when employment covers the full year.</small>
+          <small>Optional - leave blank when employment covers the full year.</small>
         </div>
 
         <div className="field">
@@ -114,7 +114,7 @@ export function LeaveYearForm({
             disabled={busy}
             onChange={(value) => updateDate('employment_end', value, true)}
           />
-          <small>Optional — leave blank when employment continues.</small>
+          <small>Optional - leave blank when employment continues.</small>
         </div>
       </div>
 
@@ -124,7 +124,7 @@ export function LeaveYearForm({
         </button>
 
         <button className="button button--primary" type="submit" disabled={busy}>
-          {busy ? 'Saving…' : mode === 'create' ? 'Create Leave Year' : 'Save Changes'}
+          {busy ? 'Saving...' : mode === 'create' ? 'Create Leave Year' : 'Save Changes'}
         </button>
       </div>
     </form>

@@ -35,10 +35,10 @@ function hours(value: string, precision = 2): string {
 function totalBookingHours(booking: LeaveBooking): ActivityHours {
   return booking.days.reduce<ActivityHours>(
     (total, day) => ({
-      dcc_hours: addNonNegativeDecimals(total.dcc_hours, day.deduction.dcc_hours),
-      spa_hours: addNonNegativeDecimals(total.spa_hours, day.deduction.spa_hours),
-      other_hours: addNonNegativeDecimals(total.other_hours, day.deduction.other_hours),
-      total_hours: addNonNegativeDecimals(total.total_hours, day.deduction.total_hours),
+      dcc_hours: addNonNegativeDecimals(total.dcc_hours, day.calculated_deduction.dcc_hours),
+      spa_hours: addNonNegativeDecimals(total.spa_hours, day.calculated_deduction.spa_hours),
+      other_hours: addNonNegativeDecimals(total.other_hours, day.calculated_deduction.other_hours),
+      total_hours: addNonNegativeDecimals(total.total_hours, day.calculated_deduction.total_hours),
     }),
     { dcc_hours: '0', spa_hours: '0', other_hours: '0', total_hours: '0' },
   )
@@ -52,7 +52,7 @@ function BalancePositionView({ position }: { position: BalancePosition | null })
         <span>Available</span>
         <strong>{hours(position.available.total_hours, 0)}</strong>
         <small>
-          DCC {formatDecimal(position.available.dcc_hours, 0)} · SPA{' '}
+          DCC {formatDecimal(position.available.dcc_hours, 0)} / SPA{' '}
           {formatDecimal(position.available.spa_hours, 0)}
         </small>
       </div>
@@ -60,7 +60,7 @@ function BalancePositionView({ position }: { position: BalancePosition | null })
         <span>Leave Taken</span>
         <strong>{hours(position.used.total_hours, 0)}</strong>
         <small>
-          DCC {formatDecimal(position.used.dcc_hours, 0)} · SPA{' '}
+          DCC {formatDecimal(position.used.dcc_hours, 0)} / SPA{' '}
           {formatDecimal(position.used.spa_hours, 0)}
         </small>
       </div>
@@ -68,7 +68,7 @@ function BalancePositionView({ position }: { position: BalancePosition | null })
         <span>Leave Remaining</span>
         <strong>{hours(position.remaining.total_hours, 0)}</strong>
         <small>
-          DCC {formatDecimal(position.remaining.dcc_hours, 0)} · SPA{' '}
+          DCC {formatDecimal(position.remaining.dcc_hours, 0)} / SPA{' '}
           {formatDecimal(position.remaining.spa_hours, 0)}
         </small>
       </div>
@@ -78,7 +78,7 @@ function BalancePositionView({ position }: { position: BalancePosition | null })
 
 export function LeaveBalanceSummary({ summary }: { summary: ConsultantYearSummary | null }) {
   const [view, setView] = useState<'actual' | 'confirmed' | 'projected'>('actual')
-  if (!summary) return <p className="summary-empty">Loading leave position…</p>
+  if (!summary) return <p className="summary-empty">Loading leave position...</p>
 
   return (
     <section className="leave-position" aria-labelledby="leave-position-title">
@@ -116,7 +116,7 @@ function PeriodRow({ period, index }: { period: JobPlanPeriodSummary; index: num
       <div role="cell">
         <strong>Job Plan {index + 1}</strong>
         <span>
-          {formatDate(period.effective_from)} – {formatDate(period.effective_until)}
+          {formatDate(period.effective_from)} - {formatDate(period.effective_until)}
         </span>
       </div>
       <div role="cell">
@@ -126,13 +126,13 @@ function PeriodRow({ period, index }: { period: JobPlanPeriodSummary; index: num
       <div role="cell">
         <span>PA Split</span>
         <strong>
-          {formatDecimal(period.dcc_pas)} DCC · {formatDecimal(period.spa_pas)} SPA
+          {formatDecimal(period.dcc_pas)} DCC / {formatDecimal(period.spa_pas)} SPA
         </strong>
       </div>
       <div role="cell">
         <span>Standard Week</span>
         <strong>
-          {formatDecimal(period.standard_dcc_hours, 2)} DCC ·{' '}
+          {formatDecimal(period.standard_dcc_hours, 2)} DCC /{' '}
           {formatDecimal(period.standard_spa_hours, 2)} SPA
         </strong>
       </div>
@@ -140,7 +140,7 @@ function PeriodRow({ period, index }: { period: JobPlanPeriodSummary; index: num
         <span>Leave Calculated</span>
         <strong>{hours(period.gross_entitlement_hours, 1)}</strong>
         <small>
-          DCC {formatDecimal(period.dcc_entitlement_hours, 1)} · SPA{' '}
+          DCC {formatDecimal(period.dcc_entitlement_hours, 1)} / SPA{' '}
           {formatDecimal(period.spa_entitlement_hours, 1)}
         </small>
       </div>
@@ -193,7 +193,7 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
           <span>Annual Leave by Job Plan</span>
           <small>
             {summary.job_plan_periods.length}{' '}
-            {summary.job_plan_periods.length === 1 ? 'Period' : 'Periods'} ·{' '}
+            {summary.job_plan_periods.length === 1 ? 'Period' : 'Periods'} /{' '}
             {summary.allocation_source === 'recommendation' ? 'Calculated Total' : 'Applied Total'}
           </small>
         </summary>
@@ -229,7 +229,7 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
                 <div role="cell">
                   <strong>{formatDate(entry.date)}</strong>
                   {entry.endDate !== entry.date ? (
-                    <span> – {formatDate(entry.endDate)}</span>
+                    <span> - {formatDate(entry.endDate)}</span>
                   ) : null}
                 </div>
                 <span role="cell">{entry.label}</span>
@@ -240,7 +240,7 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
                 </span>
                 <strong role="cell">{hours(entry.amounts.total_hours)}</strong>
                 <small role="cell">
-                  DCC {formatDecimal(entry.amounts.dcc_hours, 2)} · SPA{' '}
+                  DCC {formatDecimal(entry.amounts.dcc_hours, 2)} / SPA{' '}
                   {formatDecimal(entry.amounts.spa_hours, 2)}
                 </small>
               </div>

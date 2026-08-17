@@ -145,6 +145,21 @@ class JobPlanUpdate(JobPlanWrite):
     """Complete replacement accepted when editing a job plan."""
 
 
+class JobPlanUpdateImpact(BaseModel):
+    """Existing booking snapshots affected by a proposed job-plan edit."""
+
+    affected_bookings: int
+    affected_booking_days: int
+    current_dcc_hours: ExactDecimal
+    current_spa_hours: ExactDecimal
+    current_total_hours: ExactDecimal
+    updated_dcc_hours: ExactDecimal
+    updated_spa_hours: ExactDecimal
+    updated_total_hours: ExactDecimal
+    difference_hours: ExactDecimal
+    requires_confirmation: bool
+
+
 class JobPlanRead(JobPlanFields):
     """A persisted job plan returned to the frontend."""
 

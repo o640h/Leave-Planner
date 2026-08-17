@@ -111,7 +111,7 @@
 }
 
 .wallchart {
-  min-width: 1180px;
+  min-width: max(100%, var(--wallchart-min-width));
   min-height: 100%;
 }
 

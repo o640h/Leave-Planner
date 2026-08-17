@@ -102,10 +102,15 @@ export function BookingDrawer({
     return days.flatMap((day) => {
       const draft = drafts[day.leave_date]
       if (!draft) return []
+      const existingOverride =
+        formatDecimal(day.deduction.dcc_hours) !== formatDecimal(day.standard.dcc_hours) ||
+        formatDecimal(day.deduction.spa_hours) !== formatDecimal(day.standard.spa_hours) ||
+        formatDecimal(day.deduction.other_hours) !== formatDecimal(day.standard.other_hours)
       const changed =
-        formatDecimal(draft.dcc) !== formatDecimal(day.standard.dcc_hours) ||
-        formatDecimal(draft.spa) !== formatDecimal(day.standard.spa_hours) ||
-        formatDecimal(draft.other) !== formatDecimal(day.standard.other_hours)
+        existingOverride ||
+        formatDecimal(draft.dcc) !== formatDecimal(day.standard.dcc_hours, 2) ||
+        formatDecimal(draft.spa) !== formatDecimal(day.standard.spa_hours, 2) ||
+        formatDecimal(draft.other) !== formatDecimal(day.standard.other_hours, 2)
       if (!changed) return []
       return [
         {
@@ -215,7 +220,7 @@ export function BookingDrawer({
               <p className="booking-consultant">{consultantName}</p>
             </div>
             <button className="modal-close" type="button" aria-label="Close" onClick={onClose}>
-              ×
+              X
             </button>
           </header>
 

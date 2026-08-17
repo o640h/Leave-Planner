@@ -345,12 +345,6 @@
   text-overflow: ellipsis;
 }
 
-.manual-entitlement-note {
-  margin: 14px 0 0;
-  color: var(--muted);
-  font-size: 0.84615rem;
-}
-
 .entitlement-modal {
   width: min(980px, calc(100vw - 48px));
 }

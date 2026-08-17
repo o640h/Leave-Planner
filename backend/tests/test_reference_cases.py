@@ -97,6 +97,7 @@ def test_ltft_case_keeps_uneven_days_carry_and_worked_holiday() -> None:
 def test_capped_case_splits_at_service_milestone_and_job_plan_change() -> None:
     request = capped_multiweek_request()
     calculated = calculate_leave_records(request)
+    actual = calculated.value.actual
 
     # The consultant reaches seven years on 1 July. The applied opening value
     # therefore includes both service tiers plus public-holiday entitlement.
@@ -107,10 +108,18 @@ def test_capped_case_splits_at_service_milestone_and_job_plan_change() -> None:
     assert request.public_holidays.entitlement_hours == Hours.from_value("64")
 
     # Twelve PAs affect the activity split, but cannot increase the overall
-    # entitlement or holiday value above the ten-PA cap.
-    assert _three_places(calculated.value.actual.opening_entitlement.total) == (
+    # entitlement or holiday value above the ten-PA cap. Dated booking and
+    # public-holiday deductions use the workbook's reciprocal cap.
+    assert _three_places(actual.opening_entitlement.total) == (
         _three_places(expected_entitlement + Hours.from_value("64"))
     )
+    assert _three_places(actual.public_holiday_deductions.dcc) == Decimal("30.000")
+    assert _three_places(actual.public_holiday_deductions.spa) == Decimal("3.333")
+    assert _three_places(actual.public_holiday_deductions.other) == Decimal("0.000")
+
+    assert _three_places(actual.booking_deductions.dcc) == Decimal("6.667")
+    assert _three_places(actual.booking_deductions.spa) == Decimal("3.333")
+    assert _three_places(actual.booking_deductions.other) == Decimal("3.333")
     assert tuple(str(day.job_plan_version) for day in calculated.value.days) == (
         "job-plan.synthetic.capped.1",
         "job-plan.synthetic.capped.2",

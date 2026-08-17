@@ -90,7 +90,7 @@ describe('PlanningPage', () => {
 
     expect(await screen.findByRole('heading', { name: currentMonthLabel })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Next Month' }))
-    await waitFor(() => expect(screen.queryByText('Updating…')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText('Updating...')).not.toBeInTheDocument())
 
     expect(await screen.findAllByTitle('Early May Bank Holiday')).toHaveLength(2)
     expect(screen.getAllByText('---')).toHaveLength(2)
@@ -115,20 +115,45 @@ describe('PlanningPage', () => {
         {
           leave_date: '2025-10-20',
           job_plan_id: 2,
-          standard: { dcc_hours: '8', spa_hours: '0.5', other_hours: '0', total_hours: '8.5' },
-          deduction: { dcc_hours: '8', spa_hours: '0.5', other_hours: '0', total_hours: '8.5' },
+          contracted_pas: '12',
+          deduction_factor: '0.8333333333333333333333333333',
+          standard: {
+            dcc_hours: '8',
+            spa_hours: '0.5',
+            other_hours: '0',
+            total_hours: '8.5',
+          },
+          deduction: {
+            dcc_hours: '8',
+            spa_hours: '0.5',
+            other_hours: '0',
+            total_hours: '8.5',
+          },
+          calculated_deduction: {
+            dcc_hours: '6.666667',
+            spa_hours: '0.416667',
+            other_hours: '0',
+            total_hours: '7.083334',
+          },
           override_reason: null,
           public_holiday_name: null,
         },
       ],
       projected: {
         ...balance,
-        bookings: { ...zero, dcc_hours: '8', spa_hours: '0.5', total_hours: '8.5' },
+        bookings: {
+          ...zero,
+          dcc_hours: '6.666667',
+          spa_hours: '0.416667',
+          total_hours: '7.083334',
+        },
       },
       confirmed: balance,
       actual: balance,
       warnings: [],
     })
+
+    const onSave = vi.fn().mockResolvedValue(undefined)
 
     render(
       <BookingDrawer
@@ -137,7 +162,7 @@ describe('PlanningPage', () => {
         initialDate={null}
         busy={false}
         onPreview={mocks.previewBooking}
-        onSave={vi.fn()}
+        onSave={onSave}
         onRemoveBooking={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -151,15 +176,30 @@ describe('PlanningPage', () => {
     })
     expect(await screen.findByRole('heading', { name: 'Daily Deductions' })).toBeInTheDocument()
     expect(screen.getByDisplayValue('8')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('0.5')).toBeInTheDocument()
+    expect(screen.getByText('8.5 hours')).toBeInTheDocument()
+    expect(screen.queryByText(/factor/i)).not.toBeInTheDocument()
     await waitFor(() => expect(mocks.previewBooking).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByRole('button', { name: 'Save Booking' }))
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ overrides: [] }), undefined),
+    )
   })
 
   it('loads a saved daily replacement immediately and allows an optional reason', async () => {
     const day = {
       leave_date: '2025-12-31',
       job_plan_id: 2,
+      contracted_pas: '8.47',
+      deduction_factor: '1',
       standard: { dcc_hours: '4.500', spa_hours: '1.500', other_hours: '0', total_hours: '6' },
       deduction: { dcc_hours: '4.000', spa_hours: '0.000', other_hours: '0', total_hours: '4' },
+      calculated_deduction: {
+        dcc_hours: '4.000',
+        spa_hours: '0.000',
+        other_hours: '0',
+        total_hours: '4',
+      },
       override_reason: null,
       public_holiday_name: null,
     }

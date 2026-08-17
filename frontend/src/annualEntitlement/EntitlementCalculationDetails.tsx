@@ -39,7 +39,7 @@ export function EntitlementCalculationDetails({ recommendation }: Props) {
           <div>
             <span>Holiday Source</span>
             <strong>
-              {recommendation.inputs.public_holiday_source.replaceAll('_', ' ')} ·{' '}
+              {recommendation.inputs.public_holiday_source.replaceAll('_', ' ')} /{' '}
               {recommendation.inputs.public_holiday_source_date}
             </strong>
           </div>
@@ -55,7 +55,7 @@ export function EntitlementCalculationDetails({ recommendation }: Props) {
             <li key={`${step.rule_id}-${step.effective_date}`}>
               <strong>PA Pro-Rata</strong>
               <span>
-                {value(step.context.full_time_hours)} × {value(step.context.capped_pas)} PA ÷{' '}
+                {value(step.context.full_time_hours)} x {value(step.context.capped_pas)} PA /{' '}
                 {value(step.context.pa_cap)} PA = {value(step.amount)} hours
               </span>
             </li>
@@ -68,14 +68,14 @@ export function EntitlementCalculationDetails({ recommendation }: Props) {
           {periods.map((step) => (
             <li key={`${step.rule_id}-${step.effective_date}`}>
               <strong>
-                {step.context.period_start} — {step.context.period_end}
+                {step.context.period_start} - {step.context.period_end}
               </strong>
               <span>
-                {value(step.context.full_year_hours)} × {step.context.calendar_days} days ÷{' '}
+                {value(step.context.full_year_hours)} x {step.context.calendar_days} days /{' '}
                 {step.context.leave_year_days} days = {value(step.amount)} hours
               </span>
               <small>
-                DCC {value(step.context.dcc_hours)} · SPA {value(step.context.spa_hours)}
+                DCC {value(step.context.dcc_hours)} / SPA {value(step.context.spa_hours)}
               </small>
             </li>
           ))}

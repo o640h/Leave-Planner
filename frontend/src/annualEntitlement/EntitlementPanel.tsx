@@ -261,12 +261,7 @@ export function EntitlementPanel({
                 <LeaveYearHolidayPanel consultantId={consultantId} leaveYearId={leaveYearId} />
               </div>
             </details>
-          ) : (
-            <p className="manual-entitlement-note">
-              These values were entered manually.
-              {application.reason ? ` ${application.reason}` : ''}
-            </p>
-          )}
+          ) : null}
         </div>
       ) : (
         <div className="entitlement-message entitlement-message--empty">
@@ -292,7 +287,7 @@ export function EntitlementPanel({
                 disabled={saving}
                 onClick={() => setEditorOpen(false)}
               >
-                ×
+                x
               </button>
 
               {error ? (

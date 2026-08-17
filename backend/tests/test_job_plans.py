@@ -15,6 +15,7 @@ from job_plans import (
     JobPlanHistory,
     JobPlanVersion,
     Weekday,
+    leave_deduction_factor,
 )
 
 
@@ -48,6 +49,28 @@ def test_activity_proportions_use_contracted_pas() -> None:
     assert plan.activity_proportion(ActivityType.DCC) == Decimal("5.910") / Decimal("8.470")
     assert plan.activity_proportion(ActivityType.SPA) == Decimal("2.560") / Decimal("8.470")
     assert plan.activity_proportion(ActivityType.OTHER) == 0
+
+
+@pytest.mark.parametrize(
+    ("contracted_pas", "expected_factor"),
+    [
+        ("6", "1"),
+        ("10", "1"),
+        ("12", "0.8333333333333333333333333333"),
+    ],
+)
+def test_leave_deduction_factor_only_caps_plans_above_ten_pa(
+    contracted_pas: str,
+    expected_factor: str,
+) -> None:
+    plan = cycle(
+        week_count=1,
+        contracted_pas=contracted_pas,
+        dcc_pas=contracted_pas,
+        spa_pas="0",
+    )
+
+    assert leave_deduction_factor(plan) == Decimal(expected_factor)
 
 
 def test_standard_day_returns_exact_activity_hours() -> None:

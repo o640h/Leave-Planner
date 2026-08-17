@@ -77,7 +77,9 @@ def _booking_deductions(
     days: tuple[LeaveDay, ...],
     included_states: set[LeaveState],
 ) -> ActivityHours:
-    return _sum_hours(day.deduction_hours for day in days if day.state in included_states)
+    return _sum_hours(
+        day.calculated_deduction_hours for day in days if day.state in included_states
+    )
 
 
 def _balance_view(
@@ -152,15 +154,26 @@ def calculate_leave_records_from_days(
         CalculationStep(
             rule_id=RuleId("leave-records.daily-deduction"),
             description=("Expanded a booking date using the effective job plan"),
-            amount=day.deduction_hours.total,
+            amount=day.calculated_deduction_hours.total,
             effective_date=day.leave_date,
             context={
                 "booking_id": day.booking_id,
                 "state": day.state.value,
                 "job_plan_version": str(day.job_plan_version),
-                "dcc_hours": str(day.deduction_hours.dcc),
-                "spa_hours": str(day.deduction_hours.spa),
-                "other_hours": str(day.deduction_hours.other),
+                "contracted_pas": (
+                    str(day.contracted_pas) if day.contracted_pas is not None else "unknown"
+                ),
+                "deduction_factor": (
+                    format(day.deduction_factor, "f")
+                    if day.deduction_factor is not None
+                    else "unknown"
+                ),
+                "entered_dcc_hours": str(day.deduction_hours.dcc),
+                "entered_spa_hours": str(day.deduction_hours.spa),
+                "entered_other_hours": str(day.deduction_hours.other),
+                "calculated_dcc_hours": str(day.calculated_deduction_hours.dcc),
+                "calculated_spa_hours": str(day.calculated_deduction_hours.spa),
+                "calculated_other_hours": str(day.calculated_deduction_hours.other),
                 "overridden": str(day.is_overridden).lower(),
             },
         )

@@ -214,7 +214,7 @@ export function ConsultantDirectory() {
           <div className="directory-list-body">
             {loading ? (
               <p className="panel-message" aria-live="polite">
-                Loading consultant records…
+                Loading consultant records...
               </p>
             ) : loadError ? (
               <div className="panel-message panel-message--error" role="alert">
@@ -350,7 +350,7 @@ export function ConsultantDirectory() {
                 disabled={saving}
                 onClick={cancelEditing}
               >
-                ×
+                x
               </button>
 
               {saveError ? (

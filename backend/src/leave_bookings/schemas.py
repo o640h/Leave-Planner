@@ -55,8 +55,11 @@ class ActivityHoursRead(BaseModel):
 class LeaveDayRead(BaseModel):
     leave_date: date
     job_plan_id: int | None
+    contracted_pas: ExactDecimal | None
+    deduction_factor: ExactDecimal | None
     standard: ActivityHoursRead
     deduction: ActivityHoursRead
+    calculated_deduction: ActivityHoursRead
     override_reason: str | None
     public_holiday_name: str | None = None
 

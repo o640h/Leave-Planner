@@ -13,9 +13,14 @@ For a booking, the operator selects:
 - Planned, Approved, Taken, or Cancelled;
 - an optional note.
 
-The preview finds the job plan effective on every date and shows the normal DCC and SPA deduction for that weekday. Values that are not assigned to a weekday cannot create a dated leave deduction and are not stored separately.
+The preview finds the job plan effective on every date and shows the normal DCC and SPA hours for
+that weekday. These are the source hours the operator recognises from the job plan; the preview does
+not replace them with capped calculation results. Values that are not assigned to a weekday cannot
+create a dated leave deduction and are not stored separately.
 
-The operator may replace a generated daily value, for example when only DCC activity was cancelled. A replacement reason is required so the saved record still explains why it differs from the normal job plan.
+The operator may replace a generated daily value, for example when only DCC activity was cancelled.
+The entered replacement remains the auditable source. An optional note can explain why it differs
+from the normal job plan.
 
 ## Public holidays
 
@@ -23,13 +28,19 @@ Public-holiday entitlement and public-holiday deductions are calculated by the h
 
 ## What is saved
 
-SQLite stores one booking record for its date range, lifecycle state, and note. It also stores a daily snapshot containing the effective job plan, normal hours, applied deduction, and any replacement reason.
+SQLite stores one booking record for its date range, lifecycle state, and note. It also stores a
+daily snapshot containing the effective job plan, contracted PAs, deduction factor, normal hours,
+entered deduction hours, and any replacement note.
 
 Saving the daily snapshot is deliberate. If a job plan is edited later, the application can still explain what the booking deducted when it was entered. Editing and saving the booking creates a fresh preview from the current configuration before replacing those daily snapshots.
 
 ## Balance views
 
-Balances are calculated from the applied entitlement, carry-forward, holiday deductions, and saved booking days. No mutable balance total is stored.
+Balances are calculated from the applied entitlement, carry-forward, holiday deductions, and saved
+booking days. When the effective plan exceeds 10 PAs, the calculation multiplies each saved DCC,
+SPA, and Other value by `10 / max(contracted PAs, 10)`. Plans at or below 10 PAs remain unchanged.
+The calculated result is exposed separately from the entered hours and is never written back over
+them. No mutable balance total is stored.
 
 - **Projected** includes Planned, Approved, and Taken bookings.
 - **Confirmed** includes Approved and Taken bookings.

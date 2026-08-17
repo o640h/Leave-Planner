@@ -37,7 +37,7 @@ The operator can create and edit a leave year inside the selected consultant wor
 
 This slice does **not** calculate entitlement yet. A later slice will pass the leave-year bounds and
 the clipped employment period into `backend/src/leave_calculation`. In that flow, blank employment
-dates mean “use the leave-year boundary”.
+dates mean "use the leave-year boundary".
 
 ## Files to follow
 

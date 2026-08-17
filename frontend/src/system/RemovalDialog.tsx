@@ -33,7 +33,7 @@ export function RemovalDialog({ title, impact, busy, error, onConfirm, onCancel 
             disabled={busy}
             onClick={onCancel}
           >
-            ×
+            x
           </button>
 
           <header>
@@ -83,7 +83,7 @@ export function RemovalDialog({ title, impact, busy, error, onConfirm, onCancel 
               disabled={busy || !matches || !impact.can_proceed}
               onClick={() => onConfirm(confirmation)}
             >
-              {busy ? 'Working…' : impact.action === 'archive' ? 'Archive' : 'Delete'}
+              {busy ? 'Working...' : impact.action === 'archive' ? 'Archive' : 'Delete'}
             </button>
           </footer>
         </section>

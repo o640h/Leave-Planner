@@ -69,6 +69,8 @@ class HolidayOccurrenceRead(BaseModel):
     basis: HolidayTreatmentBasis
     treatment_note: str | None
     worked_date: date | None
+    contracted_pas: ExactDecimal
+    deduction_factor: ExactDecimal
     entitlement_hours: ExactDecimal
     dcc_entitlement_hours: ExactDecimal
     spa_entitlement_hours: ExactDecimal

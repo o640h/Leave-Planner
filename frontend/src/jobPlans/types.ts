@@ -40,6 +40,19 @@ export type JobPlanPreview = JobPlanInput & {
   warning: string | null
 }
 
+export type JobPlanUpdateImpact = {
+  affected_bookings: number
+  affected_booking_days: number
+  current_dcc_hours: string
+  current_spa_hours: string
+  current_total_hours: string
+  updated_dcc_hours: string
+  updated_spa_hours: string
+  updated_total_hours: string
+  difference_hours: string
+  requires_confirmation: boolean
+}
+
 function addOneDay(value: string): string {
   const [year, month, day] = value.split('-').map(Number)
   const result = new Date(Date.UTC(year, month - 1, day))

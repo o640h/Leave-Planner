@@ -159,6 +159,26 @@
   display: grid;
   gap: 3px;
 }
+.holiday-deduction-detail {
+  margin-left: auto;
+  text-align: right;
+}
+
+.holiday-deduction-detail span,
+.holiday-deduction-detail small {
+  display: block;
+}
+
+.holiday-deduction-detail span {
+  color: var(--muted);
+  font-size: 0.69231rem;
+}
+
+.holiday-deduction-detail small {
+  margin-top: 3px;
+  color: var(--quiet);
+  font-size: 0.65385rem;
+}
 .settings-empty {
   padding: 20px;
 }

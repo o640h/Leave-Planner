@@ -195,7 +195,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
       ) : null}
 
       {loading ? (
-        <p className="leave-year-message">Loading leave years…</p>
+        <p className="leave-year-message">Loading leave years...</p>
       ) : error && editorTarget === null ? (
         <div className="leave-year-message form-notice--error" role="alert">
           <p>{error}</p>
@@ -241,7 +241,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                         >
                           {leaveYears.map((leaveYear) => (
                             <option key={leaveYear.id} value={leaveYear.id}>
-                              {formatDate(leaveYear.start_date)} – {formatDate(leaveYear.end_date)}
+                              {formatDate(leaveYear.start_date)} - {formatDate(leaveYear.end_date)}
                             </option>
                           ))}
                         </select>
@@ -370,7 +370,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 disabled={saving}
                 onClick={closeEditor}
               >
-                ×
+                x
               </button>
 
               {error ? (

@@ -69,8 +69,11 @@ const summary = {
           {
             leave_date: '2025-10-20',
             job_plan_id: 4,
+            contracted_pas: null,
+            deduction_factor: null,
             standard: hours('8', '0.5', '8.5'),
             deduction: hours('8', '0.5', '8.5'),
+            calculated_deduction: hours('8', '0.5', '8.5'),
             override_reason: null,
             public_holiday_name: null,
           },
@@ -103,9 +106,9 @@ describe('consultant year summary', () => {
     render(<ConsultantYearSummarySections summary={summary} />)
 
     expect(screen.getByText('337')).toBeInTheDocument()
-    expect(screen.getByText('20.5 DCC · 4 SPA')).toBeInTheDocument()
+    expect(screen.getByText('20.5 DCC / 4 SPA')).toBeInTheDocument()
     expect(screen.getByText('269h')).toBeInTheDocument()
-    expect(screen.getByText('DCC 187.7 · SPA 81.3')).toBeInTheDocument()
+    expect(screen.getByText('DCC 187.7 / SPA 81.3')).toBeInTheDocument()
     expect(screen.getByText('Workbook reference')).toBeInTheDocument()
     expect(screen.getByText('8.5h')).toBeInTheDocument()
     expect(screen.getByText('1 Events')).toBeInTheDocument()

@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, selectinload
@@ -26,8 +27,12 @@ from .schemas import (
     JobPlanFields,
     JobPlanPreview,
     JobPlanUpdate,
+    JobPlanUpdateImpact,
 )
 from .versioning import JobPlanHistory, JobPlanVersion
+
+if TYPE_CHECKING:
+    from leave_bookings.service import BookingRegenerationImpact
 
 
 def monday_on_or_before(value: date) -> date:
@@ -241,6 +246,83 @@ def calculation_history(
     return JobPlanHistory(tuple(versions))
 
 
+def _candidate_history(
+    records: tuple[JobPlanRecord, ...],
+    job_plan_id: int,
+    details: JobPlanUpdate,
+) -> JobPlanHistory:
+    """Build a calculation history containing an unsaved replacement plan."""
+
+    current = calculation_history(records)
+    candidate = JobPlanVersion(
+        version_id=RuleId(f"job-plan.{job_plan_id}"),
+        effective_from=details.effective_from,
+        effective_to=details.effective_until - timedelta(days=1),
+        cycle_anchor_date=details.cycle_anchor_date or monday_on_or_before(details.effective_from),
+        cycle=calculation_cycle(details),
+    )
+    versions = [
+        version
+        for version in current.versions
+        if str(version.version_id) != f"job-plan.{job_plan_id}"
+    ]
+    versions.append(candidate)
+    versions.sort(key=lambda version: version.effective_from)
+    return JobPlanHistory(tuple(versions))
+
+
+def _update_impact(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    job_plan_id: int,
+    details: JobPlanUpdate,
+) -> "BookingRegenerationImpact":
+    from leave_bookings import service as booking_service
+
+    leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    job_plan = get_job_plan(session, consultant_id, leave_year_id, job_plan_id)
+    validate_effective_dates(leave_year, details)
+    prevent_overlap(
+        session,
+        leave_year_id=leave_year_id,
+        effective_from=details.effective_from,
+        effective_until=details.effective_until,
+        excluding_id=job_plan.id,
+    )
+    records = list_job_plans(session, consultant_id, leave_year_id)
+    history = _candidate_history(records, job_plan_id, details)
+    return booking_service.regeneration_impact(session, leave_year, history)
+
+
+def update_impact(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    job_plan_id: int,
+    details: JobPlanUpdate,
+) -> JobPlanUpdateImpact:
+    impact = _update_impact(
+        session,
+        consultant_id,
+        leave_year_id,
+        job_plan_id,
+        details,
+    )
+    return JobPlanUpdateImpact(
+        affected_bookings=impact.affected_bookings,
+        affected_booking_days=impact.affected_booking_days,
+        current_dcc_hours=impact.current.dcc.value,
+        current_spa_hours=impact.current.spa.value,
+        current_total_hours=impact.current.total.value,
+        updated_dcc_hours=impact.updated.dcc.value,
+        updated_spa_hours=impact.updated.spa.value,
+        updated_total_hours=impact.updated.total.value,
+        difference_hours=impact.updated.total.value - impact.current.total.value,
+        requires_confirmation=impact.affected_booking_days > 0,
+    )
+
+
 def preview_job_plan(
     session: Session,
     consultant_id: int,
@@ -383,27 +465,25 @@ def update_job_plan(
     leave_year_id: int,
     job_plan_id: int,
     details: JobPlanUpdate,
+    *,
+    regenerate_booking_days: bool = False,
 ) -> JobPlanRecord:
-    leave_year = leave_year_service.get_leave_year(
-        session,
-        consultant_id,
-        leave_year_id,
-    )
-    job_plan = get_job_plan(
+    impact = _update_impact(
         session,
         consultant_id,
         leave_year_id,
         job_plan_id,
+        details,
     )
+    if impact.affected_booking_days and not regenerate_booking_days:
+        raise ApiError(
+            status_code=409,
+            code="job_plan_booking_impact_confirmation_required",
+            message="Confirm the recalculation of affected leave-booking deductions.",
+            details={"affected_booking_days": impact.affected_booking_days},
+        )
 
-    validate_effective_dates(leave_year, details)
-    prevent_overlap(
-        session,
-        leave_year_id=leave_year_id,
-        effective_from=details.effective_from,
-        effective_until=details.effective_until,
-        excluding_id=job_plan.id,
-    )
+    job_plan = get_job_plan(session, consultant_id, leave_year_id, job_plan_id)
 
     before = snapshot(job_plan)
 
@@ -411,6 +491,19 @@ def update_job_plan(
     session.flush()
     assign_fields(job_plan, details)
     session.flush()
+
+    regenerated_days = 0
+    if impact.affected_booking_days:
+        from leave_bookings import service as booking_service
+
+        plans = list_job_plans(session, consultant_id, leave_year_id)
+        regenerated = booking_service.regenerate_booking_days(
+            session,
+            consultant_id,
+            leave_year_id,
+            calculation_history(plans),
+        )
+        regenerated_days = regenerated.affected_booking_days
 
     record_audit_event(
         session,
@@ -421,6 +514,7 @@ def update_job_plan(
         details={
             "before": before,
             "after": snapshot(job_plan),
+            "regenerated_booking_days": regenerated_days,
         },
     )
 
