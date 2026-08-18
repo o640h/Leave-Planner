@@ -251,12 +251,17 @@
 
 .leave-log-modal-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   flex: 0 0 auto;
-  gap: 32px;
-  padding: 24px 56px 20px 24px;
+  gap: 40px;
+  min-height: 108px;
+  padding: 22px 56px 22px 24px;
   border-bottom: 1px solid var(--line);
+}
+
+.leave-log-modal-header > div:first-child {
+  min-width: 0;
 }
 
 .leave-log-modal-header h2 {
@@ -274,19 +279,63 @@
 .leave-log-context {
   display: grid;
   flex: 0 0 auto;
-  gap: 5px;
+  gap: 9px;
   text-align: right;
 }
 
 .leave-log-context span {
   color: var(--muted);
   font-size: 0.76923rem;
+  line-height: 1.35;
 }
 
 .leave-log-context strong {
   color: var(--text);
   font-size: 0.76923rem;
   font-weight: 470;
+  line-height: 1.35;
+}
+
+.leave-log-export-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.leave-log-export-button {
+  min-width: 88px;
+  min-height: 34px;
+  padding: 7px 14px;
+  border-color: transparent;
+  box-shadow: none;
+  font-size: 0.69231rem;
+  line-height: 1;
+  transform: none;
+}
+
+:root[data-theme]
+  .leave-log-modal
+  .leave-log-export-actions
+  .leave-log-export-button:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--on-accent);
+  background: var(--accent-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+.leave-log-export-status {
+  margin: 0;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--line);
+  color: var(--nominal);
+  background: rgb(var(--border-rgb) / 0.025);
+  font-size: 0.69231rem;
+}
+
+.leave-log-export-status--error {
+  color: var(--danger);
 }
 
 .leave-ledger--expanded {
@@ -434,5 +483,9 @@
 
   .leave-log-context {
     text-align: left;
+  }
+
+  .leave-log-export-actions {
+    justify-content: flex-start;
   }
 }

@@ -1,12 +1,14 @@
 """Workbook-facing integration tests for the consultant-year summary."""
 
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 from reference_cases.workbook import WORKBOOK_LEAVE_ROWS
 
 from main import create_app
@@ -95,25 +97,33 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
         year_id = int(year["id"])
         root = f"/api/consultants/{consultant_id}/leave-years/{year_id}"
 
-        assert client.post(
-            f"{root}/job-plans", json=job_plan("2025-08-29", "2026-08-01")
-        ).status_code == 201
-        assert client.post(
-            f"{root}/job-plans", json=job_plan("2026-08-01", "2026-08-29")
-        ).status_code == 201
-        assert client.put(
-            f"{root}/entitlement",
-            json={
-                "mode": "calculated",
-                "seven_years_or_more": True,
-                "other_hours": "0",
-            },
-        ).status_code == 200
+        assert (
+            client.post(f"{root}/job-plans", json=job_plan("2025-08-29", "2026-08-01")).status_code
+            == 201
+        )
+        assert (
+            client.post(f"{root}/job-plans", json=job_plan("2026-08-01", "2026-08-29")).status_code
+            == 201
+        )
+        assert (
+            client.put(
+                f"{root}/entitlement",
+                json={
+                    "mode": "calculated",
+                    "seven_years_or_more": True,
+                    "other_hours": "0",
+                },
+            ).status_code
+            == 200
+        )
         assert client.put(f"{root}/carry-forward", json={"hours": "41.25"}).status_code == 200
-        assert client.put(
-            f"{root}/public-holidays/2026-05-04/treatment",
-            json={"basis": "qualifying_on_call", "note": "Workbook on-call entry"},
-        ).status_code == 200
+        assert (
+            client.put(
+                f"{root}/public-holidays/2026-05-04/treatment",
+                json={"basis": "qualifying_on_call", "note": "Workbook on-call entry"},
+            ).status_code
+            == 200
+        )
 
         # Each entered row is saved as a historical daily replacement, exactly
         # as the workbook records DCC and SPA leave independently.
@@ -140,6 +150,7 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
         response = client.get(f"{root}/summary")
         assert response.status_code == 200
         summary = response.json()
+        pdf_response = client.get(f"{root}/leave-log.pdf")
 
     assert summary["consultant"]["name"] == "Anonymous"
     assert summary["allocation_source"] == "recommendation"
@@ -153,18 +164,13 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
         Decimal("4"),
     ]
     assert sum(
-        Decimal(period["gross_entitlement_hours"])
-        for period in summary["job_plan_periods"]
+        Decimal(period["gross_entitlement_hours"]) for period in summary["job_plan_periods"]
     ) == Decimal("291.368")
     actual = summary["balances"]["actual"]
     assert Decimal(actual["used"]["dcc_hours"]) == Decimal("229.5")
     assert Decimal(actual["used"]["spa_hours"]) == Decimal("18")
-    assert Decimal(actual["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal(
-        "15.054"
-    )
-    assert Decimal(actual["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal(
-        "70.064"
-    )
+    assert Decimal(actual["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal("15.054")
+    assert Decimal(actual["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal("70.064")
     assert summary["weekday_counts"] == {
         "monday": 14,
         "tuesday": 12,
@@ -173,7 +179,31 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
         "friday": 2,
     }
     assert len(summary["planning"]["bookings"]) == len(WORKBOOK_LEAVE_ROWS)
+    assert len(summary["leave_log"]) == len(WORKBOOK_LEAVE_ROWS) + len(
+        summary["planning"]["holidays"]
+    )
+    assert summary["leave_log"][0]["description"] == "Workbook reference"
+    logged_dcc = sum(Decimal(entry["amounts"]["dcc_hours"]) for entry in summary["leave_log"])
+    logged_spa = sum(Decimal(entry["amounts"]["spa_hours"]) for entry in summary["leave_log"])
+    assert logged_dcc == Decimal("229.5")
+    assert logged_spa == Decimal("18")
     assert summary["audit_events"][0]["entity_type"] == "leave_booking"
+    assert pdf_response.status_code == 200
+    assert pdf_response.headers["content-type"] == "application/pdf"
+    assert (
+        "Anonymous_Leave_Log_2025-08-29_to_2026-08-28.pdf"
+        in pdf_response.headers["content-disposition"]
+    )
+    pdf = PdfReader(BytesIO(pdf_response.content))
+    exported_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+    assert len(pdf.pages) >= 2
+    assert "Consultant Leave Log" in exported_text
+    assert "Anonymous" in exported_text
+    assert "Workbook reference" in exported_text
+    assert "Leave Log Totals" in exported_text
+    assert "229.5h" in exported_text
+    assert "18h" in exported_text
+    assert "247.5h" in exported_text
 
 
 def test_summary_remains_available_before_a_job_plan_is_added(tmp_path: Path) -> None:
@@ -185,9 +215,7 @@ def test_summary_remains_available_before_a_job_plan_is_added(tmp_path: Path) ->
             f"/api/consultants/{consultant_id}/leave-years",
             json={"start_date": "2026-01-01", "end_date": "2026-12-31"},
         ).json()["id"]
-        response = client.get(
-            f"/api/consultants/{consultant_id}/leave-years/{year_id}/summary"
-        )
+        response = client.get(f"/api/consultants/{consultant_id}/leave-years/{year_id}/summary")
 
     assert response.status_code == 200
     assert response.json()["job_plan_periods"] == []
@@ -278,14 +306,17 @@ def test_summary_api_supports_reference_shapes(
         for plan in plans:
             response = client.post(f"{root}/job-plans", json=plan)
             assert response.status_code == 201, response.text
-        assert client.put(
-            f"{root}/entitlement",
-            json={
-                "mode": "calculated",
-                "seven_years_or_more": False,
-                "other_hours": "0",
-            },
-        ).status_code == 200
+        assert (
+            client.put(
+                f"{root}/entitlement",
+                json={
+                    "mode": "calculated",
+                    "seven_years_or_more": False,
+                    "other_hours": "0",
+                },
+            ).status_code
+            == 200
+        )
         summary = client.get(f"{root}/summary")
 
     assert summary.status_code == 200

@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
+import os
+import tempfile
 from ctypes import WinDLL
 from pathlib import Path
 from typing import Literal, cast
@@ -30,6 +34,10 @@ class DesktopApi:
     def __init__(self, window_title: str, preference_path: Path) -> None:
         self.window_title = window_title
         self.preference_path = preference_path
+        self._window: webview.Window | None = None
+
+    def _attach_window(self, window: webview.Window) -> None:
+        self._window = window
 
     def get_theme_preference(self) -> ThemePreference | None:
         try:
@@ -43,6 +51,57 @@ class DesktopApi:
             return
         self.preference_path.write_text(preference, encoding="utf-8")
         apply_window_theme(self.window_title, resolved_theme)
+
+    def save_pdf(self, default_filename: str, encoded_pdf: str) -> str:
+        """Open a native Save As dialog and atomically write one PDF."""
+
+        if self._window is None:
+            raise RuntimeError("The desktop window is not ready")
+        if Path(default_filename).name != default_filename or not default_filename.lower().endswith(
+            ".pdf"
+        ):
+            raise ValueError("A plain PDF filename is required")
+        if len(encoded_pdf) > 14_000_000:
+            raise ValueError("The PDF is too large to save")
+        try:
+            content = base64.b64decode(encoded_pdf, validate=True)
+        except (binascii.Error, ValueError) as error:
+            raise ValueError("The PDF content is invalid") from error
+        if not content.startswith(b"%PDF-") or len(content) > 10_000_000:
+            raise ValueError("The PDF content is invalid")
+
+        selected = self._window.create_file_dialog(
+            webview.FileDialog.SAVE,
+            save_filename=default_filename,
+            file_types=("PDF Files (*.pdf)",),
+        )
+        if not selected:
+            return "cancelled"
+
+        destination = Path(selected[0]).expanduser().resolve()
+        if destination.suffix.lower() != ".pdf":
+            destination = destination.with_suffix(".pdf")
+        if not destination.parent.is_dir():
+            raise ValueError("The selected folder is not available")
+
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=destination.parent,
+                prefix=f".{destination.stem}-",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary:
+                temporary.write(content)
+                temporary.flush()
+                os.fsync(temporary.fileno())
+                temporary_path = Path(temporary.name)
+            os.replace(temporary_path, destination)
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+        return "saved"
 
 
 def show_error(message: str) -> None:
@@ -88,10 +147,11 @@ def run_desktop(*, development: bool) -> None:
                 wait_until_ready(DEVELOPMENT_FRONTEND)
 
             configure_process_identity()
+            desktop_api = DesktopApi(settings.app_name, data_dir / "theme-preference")
             window = webview.create_window(
                 settings.app_name,
                 window_url,
-                js_api=DesktopApi(settings.app_name, data_dir / "theme-preference"),
+                js_api=desktop_api,
                 width=1440,
                 height=900,
                 min_size=(900, 650),
@@ -102,6 +162,7 @@ def run_desktop(*, development: bool) -> None:
             )
             if window is None:
                 raise RuntimeError("The desktop window could not be created.")
+            desktop_api._attach_window(window)
 
             window.events.shown += lambda: apply_window_identity(
                 settings.app_name,

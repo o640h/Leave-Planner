@@ -20,6 +20,16 @@ export class ApiClientError extends Error {
   }
 }
 
+async function requestError(response: Response): Promise<ApiClientError> {
+  const body = (await response.json().catch(() => null)) as ErrorEnvelope | null
+  const code = typeof body?.error?.code === 'string' ? body.error.code : 'request_failed'
+  const message =
+    typeof body?.error?.message === 'string'
+      ? body.error.message
+      : 'The request could not be completed.'
+  return new ApiClientError(response.status, code, message, body?.error?.details)
+}
+
 export async function apiRequest<ResponseBody>(
   path: string,
   options: RequestInit = {},
@@ -36,18 +46,21 @@ export async function apiRequest<ResponseBody>(
   })
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as ErrorEnvelope | null
-
-    const code = typeof body?.error?.code === 'string' ? body.error.code : 'request_failed'
-    const message =
-      typeof body?.error?.message === 'string'
-        ? body.error.message
-        : 'The request could not be completed.'
-
-    throw new ApiClientError(response.status, code, message, body?.error?.details)
+    throw await requestError(response)
   }
 
   return response.json() as Promise<ResponseBody>
+}
+
+export async function apiFileRequest(
+  path: string,
+): Promise<{ blob: Blob; filename: string | null }> {
+  const response = await fetch(path)
+  if (!response.ok) throw await requestError(response)
+
+  const disposition = response.headers.get('Content-Disposition')
+  const filename = disposition?.match(/filename="([^"]+)"/i)?.[1] ?? null
+  return { blob: await response.blob(), filename }
 }
 
 export function operatorErrorMessage(error: unknown): string {

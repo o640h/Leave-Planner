@@ -1,10 +1,11 @@
 import { useState } from 'react'
 
+import { ApiClientError, operatorErrorMessage } from '../api/client'
+import { savePdf } from '../desktop/api'
 import { formatDecimal } from '../system/decimal'
 import { ModalLayer } from '../system/ModalLayer'
-import { leaveLogEntries } from './leaveLogEntries'
-import type { LeaveLogEntry } from './leaveLogEntries'
-import type { ConsultantYearSummary } from './types'
+import { getLeaveLogPdf } from './api'
+import type { ConsultantYearSummary, LeaveLogEntry } from './types'
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
@@ -51,10 +52,12 @@ function LeaveLedger({
       {entries.map((entry) => (
         <div className="leave-ledger-row" role="row" key={entry.key}>
           <div role="cell">
-            <strong>{formatDate(entry.date)}</strong>
-            {entry.endDate !== entry.date ? <span> - {formatDate(entry.endDate)}</span> : null}
+            <strong>{formatDate(entry.start_date)}</strong>
+            {entry.end_date !== entry.start_date ? (
+              <span> - {formatDate(entry.end_date)}</span>
+            ) : null}
           </div>
-          <span role="cell">{entry.label}</span>
+          <span role="cell">{entry.description}</span>
           <span className={`ledger-state ledger-state--${entry.state}`} role="cell">
             {stateLabel(entry.state)}
           </span>
@@ -71,7 +74,33 @@ function LeaveLedger({
 
 export function LeaveLog({ summary }: { summary: ConsultantYearSummary }) {
   const [expanded, setExpanded] = useState(false)
-  const entries = leaveLogEntries(summary)
+  const [exporting, setExporting] = useState(false)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
+  const [exportFailed, setExportFailed] = useState(false)
+  const entries = summary.leave_log
+
+  async function exportPdf() {
+    setExporting(true)
+    setExportMessage(null)
+    setExportFailed(false)
+    try {
+      const file = await getLeaveLogPdf(summary.consultant.id, summary.leave_year.id)
+      const fallbackName = `Leave_Log_${summary.leave_year.start_date}_to_${summary.leave_year.end_date}.pdf`
+      const result = await savePdf(file.filename ?? fallbackName, file.blob)
+      setExportMessage(result === 'saved' ? 'PDF saved.' : 'Export cancelled.')
+    } catch (error) {
+      setExportFailed(true)
+      setExportMessage(
+        error instanceof ApiClientError
+          ? operatorErrorMessage(error)
+          : error instanceof Error
+            ? error.message
+            : 'The PDF could not be exported.',
+      )
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <>
@@ -114,6 +143,7 @@ export function LeaveLog({ summary }: { summary: ConsultantYearSummary }) {
                 className="modal-close"
                 type="button"
                 aria-label="Close Expanded Leave Log"
+                disabled={exporting}
                 onClick={() => setExpanded(false)}
               >
                 x
@@ -130,9 +160,28 @@ export function LeaveLog({ summary }: { summary: ConsultantYearSummary }) {
                     {formatDate(summary.leave_year.start_date)} -{' '}
                     {formatDate(summary.leave_year.end_date)}
                   </span>
-                  <strong>{entries.length} Entries</strong>
+                  <div className="leave-log-export-actions">
+                    <strong>{entries.length} Entries</strong>
+                    <button
+                      className="button button--primary leave-log-export-button"
+                      type="button"
+                      disabled={exporting}
+                      onClick={() => void exportPdf()}
+                    >
+                      {exporting ? 'Preparing PDF...' : 'Export PDF'}
+                    </button>
+                  </div>
                 </div>
               </header>
+
+              {exportMessage ? (
+                <p
+                  className={`leave-log-export-status${exportFailed ? ' leave-log-export-status--error' : ''}`}
+                  role={exportFailed ? 'alert' : 'status'}
+                >
+                  {exportMessage}
+                </p>
+              ) : null}
 
               <LeaveLedger entries={entries} expanded />
             </section>

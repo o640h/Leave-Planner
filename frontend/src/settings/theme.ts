@@ -2,17 +2,6 @@ export type ThemePreference = 'dark' | 'light' | 'system'
 
 const storageKey = 'leave-planner-theme'
 
-type DesktopThemeApi = {
-  get_theme_preference?: () => Promise<ThemePreference | null>
-  set_theme?: (preference: ThemePreference, resolvedTheme: 'dark' | 'light') => Promise<void>
-}
-
-declare global {
-  interface Window {
-    pywebview?: { api?: DesktopThemeApi }
-  }
-}
-
 function systemTheme(): 'dark' | 'light' {
   return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }

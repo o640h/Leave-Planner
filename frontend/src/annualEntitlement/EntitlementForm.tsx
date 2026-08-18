@@ -134,7 +134,6 @@ export function EntitlementForm({
       <div className="form-introduction">
         <span className="section-label">Annual Entitlement</span>
         <h3 id="entitlement-form-title">Configure Entitlement</h3>
-        <p>Compare the calculated recommendation with the values applied to this leave year.</p>
       </div>
 
       {error ? (
@@ -191,7 +190,6 @@ export function EntitlementForm({
             />
             <span>
               <strong>Seven Years or More</strong>
-              <small>Apply the seven-year service entitlement for this leave year.</small>
             </span>
           </label>
 

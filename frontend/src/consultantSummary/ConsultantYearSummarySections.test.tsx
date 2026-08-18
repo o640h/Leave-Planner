@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ConsultantYearSummary } from './types'
 import { ConsultantYearSummarySections, LeaveBalanceSummary } from './ConsultantYearSummarySections'
@@ -87,6 +87,16 @@ const summary = {
     actual: null,
     warnings: [],
   },
+  leave_log: [
+    {
+      key: 'booking-5',
+      start_date: '2025-10-20',
+      end_date: '2025-10-20',
+      description: 'Workbook reference',
+      state: 'taken',
+      amounts: hours('8', '0.5', '8.5'),
+    },
+  ],
   balances: { projected: actual, confirmed: actual, actual },
   weekday_counts: { monday: 14, tuesday: 12, wednesday: 12, thursday: 2, friday: 2 },
   warnings: [],
@@ -100,6 +110,11 @@ const summary = {
     },
   ],
 } satisfies ConsultantYearSummary
+
+afterEach(() => {
+  delete window.pywebview
+  vi.unstubAllGlobals()
+})
 
 describe('consultant year summary', () => {
   it('shows the workbook period calculation and compact leave log', () => {
@@ -137,5 +152,33 @@ describe('consultant year summary', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close Expanded Leave Log' }))
     expect(screen.queryByRole('dialog', { name: 'Anonymous' })).not.toBeInTheDocument()
+  })
+
+  it('saves the generated PDF through the native desktop dialog', async () => {
+    const savePdf = vi.fn().mockResolvedValue('saved')
+    window.pywebview = { api: { save_pdf: savePdf } }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(new Blob(['%PDF-1.4\ntest']), {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition':
+              'attachment; filename="Anonymous_Leave_Log_2025-08-29_to_2026-08-28.pdf"',
+          },
+        }),
+      ),
+    )
+    render(<ConsultantYearSummarySections summary={summary} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Leave Log' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Export PDF' }))
+
+    await waitFor(() => expect(savePdf).toHaveBeenCalledOnce())
+    expect(savePdf).toHaveBeenCalledWith(
+      'Anonymous_Leave_Log_2025-08-29_to_2026-08-28.pdf',
+      expect.any(String),
+    )
+    expect(await screen.findByRole('status')).toHaveTextContent('PDF saved.')
   })
 })

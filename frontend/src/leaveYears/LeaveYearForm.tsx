@@ -56,10 +56,7 @@ export function LeaveYearForm({
         <h3 id="leave-year-form-title">
           {mode === 'create' ? 'Add Leave Year' : 'Edit Leave Year'}
         </h3>
-        <p>
-          Leave-year dates are inclusive. Only enter employment dates when employment starts or ends
-          during this leave year.
-        </p>
+        <p>Dates are inclusive. Use employment dates only for an in-year starter or leaver.</p>
       </div>
 
       {error ? (
@@ -102,7 +99,6 @@ export function LeaveYearForm({
             disabled={busy}
             onChange={(value) => updateDate('employment_start', value, true)}
           />
-          <small>Leave blank when employment covers the full year.</small>
         </div>
 
         <div className="field">
@@ -114,7 +110,6 @@ export function LeaveYearForm({
             disabled={busy}
             onChange={(value) => updateDate('employment_end', value, true)}
           />
-          <small>Leave blank when employment continues.</small>
         </div>
       </div>
 

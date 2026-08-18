@@ -56,6 +56,15 @@ class AuditEventRead(BaseModel):
     details: dict[str, Any]
 
 
+class LeaveLogEntryRead(BaseModel):
+    key: str
+    start_date: date
+    end_date: date
+    description: str
+    state: str
+    amounts: ActivityHoursRead
+
+
 class ConsultantYearSummaryRead(BaseModel):
     consultant: ConsultantRead
     leave_year: LeaveYearRead
@@ -65,6 +74,7 @@ class ConsultantYearSummaryRead(BaseModel):
     allocation_source: Literal["recommendation", "applied"] | None
     job_plan_periods: tuple[JobPlanPeriodSummary, ...]
     planning: PlanningRead
+    leave_log: tuple[LeaveLogEntryRead, ...]
     balances: BalanceViewsRead
     weekday_counts: WeekdayCountsRead
     warnings: tuple[LeaveWarningRead, ...]

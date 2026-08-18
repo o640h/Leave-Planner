@@ -405,7 +405,6 @@ export function JobPlanPanel({
               </button>
               <header>
                 <h2 id="job-plan-impact-title">Recalculate Leave Deductions</h2>
-                <p>This job-plan edit changes saved leave calculations.</p>
               </header>
               <dl className="job-plan-impact-summary">
                 <div>
@@ -434,8 +433,8 @@ export function JobPlanPanel({
                 </div>
               </dl>
               <p className="job-plan-impact-note">
-                Confirming updates the Leave Log and all balance views. The previous calculations
-                remain in audit history.
+                This updates the Leave Log and balances. Previous calculations remain in audit
+                history.
               </p>
               <footer className="form-actions">
                 <button

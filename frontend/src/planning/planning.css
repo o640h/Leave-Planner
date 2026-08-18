@@ -377,6 +377,15 @@
   padding: 0 10px;
 }
 
+.deduction-row > input {
+  padding: 0 12px;
+}
+
+.deduction-row > input::placeholder {
+  color: var(--muted);
+  opacity: 0.55;
+}
+
 .booking-fields :is(select, input):hover:not(:disabled),
 .deduction-row > input:hover:not(:disabled) {
   border-color: var(--control-hover-line);
@@ -473,6 +482,10 @@
   min-height: 28px;
   color: var(--quiet);
   font-size: 0.69231rem;
+}
+
+.deduction-row--heading > span + span {
+  padding-left: 8px;
 }
 
 .deduction-row .number-input,

@@ -50,10 +50,6 @@ export function ConsultantForm({
         <h3 id="consultant-form-title">
           {mode === 'create' ? 'Add Consultant' : 'Edit Consultant'}
         </h3>
-        <p>
-          These are the identifying fields currently entered at the top of each annual leave
-          workbook.
-        </p>
       </div>
 
       <div className="form-fields">

@@ -228,10 +228,7 @@ export function DataRecoverySettings() {
                 <p>{formatDate(selectedBackup.created_at)}</p>
               </header>
 
-              <p>
-                Restoring replaces the current database. Leave Planner will first create a safety
-                backup of the current data.
-              </p>
+              <p>The current database will be backed up, then replaced.</p>
 
               {error ? (
                 <p className="form-notice form-notice--error" role="alert">

@@ -25,6 +25,7 @@ from leave_bookings.schemas import (
 from leave_years import service as leave_year_service
 from leave_years.schemas import LeaveYearRead
 
+from .leave_log import leave_log_entries
 from .schemas import (
     AuditEventRead,
     BalancePositionRead,
@@ -122,12 +123,10 @@ def _periods(
                 dcc_pas=plan.dcc_pas,
                 spa_pas=plan.spa_pas,
                 standard_dcc_hours=(
-                    sum((day.dcc_hours for day in plan.days), ZERO)
-                    / Decimal(plan.week_count)
+                    sum((day.dcc_hours for day in plan.days), ZERO) / Decimal(plan.week_count)
                 ),
                 standard_spa_hours=(
-                    sum((day.spa_hours for day in plan.days), ZERO)
-                    / Decimal(plan.week_count)
+                    sum((day.spa_hours for day in plan.days), ZERO) / Decimal(plan.week_count)
                 ),
                 gross_entitlement_hours=gross,
                 dcc_entitlement_hours=dcc,
@@ -162,9 +161,7 @@ def get_summary(
     leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     plans = job_plan_service.list_job_plans(session, consultant_id, leave_year_id)
     entitlement = entitlement_service.get_workspace(session, consultant_id, leave_year_id)
-    carry_forward = carry_forward_service.get_carry_forward(
-        session, consultant_id, leave_year_id
-    )
+    carry_forward = carry_forward_service.get_carry_forward(session, consultant_id, leave_year_id)
     planning = (
         booking_service.planning(session, consultant_id, leave_year_id)
         if plans
@@ -205,6 +202,7 @@ def get_summary(
         allocation_source=allocation_source,
         job_plan_periods=_periods(plans, total_entitlement, active_start, active_end),
         planning=planning,
+        leave_log=leave_log_entries(planning),
         balances=BalanceViewsRead(
             projected=_position(planning.projected),
             confirmed=_position(planning.confirmed),

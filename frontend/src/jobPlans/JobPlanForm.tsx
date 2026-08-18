@@ -151,10 +151,7 @@ export function JobPlanForm({
 
         <h3 id="job-plan-form-title">{mode === 'create' ? 'Add Job Plan' : 'Edit Job Plan'}</h3>
 
-        <p>
-          Overall PAs allocate entitlement. The weekday grid controls the hours deducted when leave
-          falls on that day.
-        </p>
+        <p>PAs allocate entitlement; weekday hours set daily leave deductions.</p>
       </div>
 
       {error ? (
@@ -166,7 +163,7 @@ export function JobPlanForm({
       <section className="job-plan-form-section">
         <header>
           <h4>Effective Period</h4>
-          <p>Both dates are included in this job plan.</p>
+          <p>Dates are inclusive.</p>
         </header>
 
         <div className="job-plan-date-fields">
@@ -197,7 +194,6 @@ export function JobPlanForm({
       <section className="job-plan-form-section">
         <header>
           <h4>Contracted PAs</h4>
-          <p>Total PA is calculated from DCC and SPA.</p>
         </header>
 
         <div className="job-plan-pa-fields">
@@ -234,9 +230,7 @@ export function JobPlanForm({
       <section className="job-plan-form-section">
         <header>
           <h4>Working Pattern</h4>
-          <p>
-            Most consultants use one week. Increase this only for a repeating multi-week pattern.
-          </p>
+          <p>Use additional weeks only for a repeating pattern.</p>
         </header>
 
         <div className="job-plan-cycle-fields">

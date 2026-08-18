@@ -48,6 +48,15 @@ export type AuditEvent = {
   details: Record<string, unknown>
 }
 
+export type LeaveLogEntry = {
+  key: string
+  start_date: string
+  end_date: string
+  description: string
+  state: string
+  amounts: ActivityHours
+}
+
 export type ConsultantYearSummary = {
   consultant: Consultant
   leave_year: LeaveYear
@@ -57,6 +66,7 @@ export type ConsultantYearSummary = {
   allocation_source: 'recommendation' | 'applied' | null
   job_plan_periods: JobPlanPeriodSummary[]
   planning: PlanningWorkspace
+  leave_log: LeaveLogEntry[]
   balances: BalanceViews
   weekday_counts: WeekdayCounts
   warnings: LeaveWarning[]
