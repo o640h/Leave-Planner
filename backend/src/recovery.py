@@ -1,6 +1,6 @@
 """Operator-facing data backup and recovery API."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal, cast
 
 from fastapi import APIRouter, Request
@@ -32,6 +32,7 @@ class BackupRead(BaseModel):
 class RecoveryStatus(BaseModel):
     data_directory: str
     backup_directory: str
+    latest_automatic_backup_at: datetime | None
     backups: tuple[BackupRead, ...]
 
 
@@ -62,11 +63,16 @@ def recovery_status(request: Request) -> RecoveryStatus:
     """Return local storage information and available backups."""
 
     settings = runtime_settings(request)
+    backups = list_backups(settings.backup_directory)
+    latest_automatic = next((backup for backup in backups if backup.kind == "automatic"), None)
 
     return RecoveryStatus(
         data_directory=str(settings.resolved_data_dir),
         backup_directory=str(settings.backup_directory),
-        backups=tuple(backup_read(backup) for backup in list_backups(settings.backup_directory)),
+        latest_automatic_backup_at=(
+            latest_automatic.created_at if latest_automatic is not None else None
+        ),
+        backups=tuple(backup_read(backup) for backup in backups),
     )
 
 
@@ -149,8 +155,8 @@ def restore_backup(
     return RecoveryResult(message="The backup was restored. Leave Planner will now reload.")
 
 
-def create_startup_backups(settings: Settings) -> None:
-    """Create migration and daily safety backups before opening the database."""
+def create_startup_backups(settings: Settings, *, now: datetime | None = None) -> None:
+    """Create migration and monthly safety backups before opening the database."""
 
     database = settings.database_path
     if not database.is_file():
@@ -170,21 +176,31 @@ def create_startup_backups(settings: Settings) -> None:
             keep=3,
         )
 
-    today = datetime.now().astimezone().date()
-    has_today = any(
-        backup.kind == "automatic" and backup.created_at.astimezone().date() == today
+    moment = (now or datetime.now(UTC)).astimezone()
+
+    automatic_backups = tuple(
+        backup
         for backup in list_backups(settings.backup_directory)
+        if backup.kind == "automatic"
+    )
+    has_current_month = any(
+        (local_created := backup.created_at.astimezone()).year == moment.year
+        and local_created.month == moment.month
+        for backup in automatic_backups
     )
 
-    if not has_today:
+    if not has_current_month:
+        # Creation includes an integrity and schema check. Retention runs only after
+        # that verified copy has been moved into place.
         create_online_backup(
             database,
             settings.backup_directory,
             kind="automatic",
+            timestamp=moment.astimezone(UTC),
         )
 
     prune_backups(
         settings.backup_directory,
         kind="automatic",
-        keep=7,
+        keep=10,
     )

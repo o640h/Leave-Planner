@@ -7,6 +7,7 @@ import { DataRecoverySettings } from './DataRecoverySettings'
 const emptyStatus = {
   data_directory: 'C:\\Users\\Operator\\AppData\\Local\\LeavePlanner',
   backup_directory: 'C:\\Users\\Operator\\AppData\\Local\\LeavePlanner\\backups',
+  latest_automatic_backup_at: null,
   backups: [],
 }
 
@@ -35,6 +36,8 @@ describe('DataRecoverySettings', () => {
     render(<DataRecoverySettings />)
 
     await screen.findByText('No backups have been created yet.')
+    expect(screen.getByText('Latest Automatic Backup')).toBeVisible()
+    expect(screen.getByText('Not Created Yet')).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Create Backup' }))
 
     expect(await screen.findByText('Manual Backup')).toBeVisible()

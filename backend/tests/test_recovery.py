@@ -1,5 +1,6 @@
 """Verified backup and restore tests using the real API and database."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -8,7 +9,7 @@ from alembic import command
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from backup import list_backups, prune_backups, resolve_backup
+from backup import list_backups, prune_backups, resolve_backup, verify_database
 from main import create_app
 from migrations import alembic_config, upgrade_database
 from recovery import create_startup_backups
@@ -129,21 +130,54 @@ def test_automatic_retention_does_not_remove_manual_backups(tmp_path: Path) -> N
     backup_directory = tmp_path / "backups"
     backup_directory.mkdir()
 
-    for index in range(9):
+    for month in range(1, 13):
         (
-            backup_directory / f"leave-planner-automatic-202608{index + 1:02d}T120000Z.sqlite3"
+            backup_directory / f"leave-planner-automatic-2025{month:02d}01T120000Z.sqlite3"
         ).write_bytes(b"automatic")
-    manual = backup_directory / "leave-planner-manual-20260815T120000Z.sqlite3"
+    manual = backup_directory / "leave-planner-manual-20260115T120000Z.sqlite3"
     manual.write_bytes(b"manual")
 
-    prune_backups(backup_directory, kind="automatic", keep=7)
+    prune_backups(backup_directory, kind="automatic", keep=10)
 
-    assert len(tuple(backup_directory.glob("leave-planner-automatic-*.sqlite3"))) == 7
+    automatic = tuple(backup_directory.glob("leave-planner-automatic-*.sqlite3"))
+    assert len(automatic) == 10
+    assert not (backup_directory / "leave-planner-automatic-20250101T120000Z.sqlite3").exists()
+    assert not (backup_directory / "leave-planner-automatic-20250201T120000Z.sqlite3").exists()
     assert manual.is_file()
 
 
+def test_startup_creates_one_verified_automatic_backup_per_calendar_month(
+    tmp_path: Path,
+) -> None:
+    settings = Settings(environment="test", data_dir=tmp_path)
+    upgrade_database(settings.database_path)
+
+    create_startup_backups(settings, now=datetime(2026, 8, 1, 8, 0, tzinfo=UTC))
+    create_startup_backups(settings, now=datetime(2026, 8, 31, 18, 0, tzinfo=UTC))
+
+    august_backups = [
+        backup for backup in list_backups(settings.backup_directory) if backup.kind == "automatic"
+    ]
+    assert len(august_backups) == 1
+
+    create_startup_backups(settings, now=datetime(2026, 9, 1, 8, 0, tzinfo=UTC))
+
+    automatic_backups = [
+        backup for backup in list_backups(settings.backup_directory) if backup.kind == "automatic"
+    ]
+    assert len(automatic_backups) == 2
+    assert automatic_backups[0].created_at == datetime(2026, 9, 1, 8, 0, tzinfo=UTC)
+    for backup in automatic_backups:
+        verify_database(settings.backup_directory / backup.name)
+
+    with TestClient(app_for(tmp_path)) as client:
+        status = client.get("/api/settings/recovery").json()
+
+    assert status["latest_automatic_backup_at"] == "2026-09-01T08:00:00Z"
+
+
 def test_startup_protects_a_database_before_migration(tmp_path: Path) -> None:
-    """An older schema receives both migration and daily safety copies before startup."""
+    """An older schema receives both migration and monthly safety copies before startup."""
 
     settings = Settings(environment="test", data_dir=tmp_path)
     upgrade_database(settings.database_path)

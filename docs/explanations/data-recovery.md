@@ -7,7 +7,9 @@ so upgrading or replacing the program files does not replace the live data.
 ## Backup Types
 
 - **Manual** backups are created from Settings and retained until the operator removes them.
-- **Automatic** backups are created at most once per day. The newest seven are retained.
+- **Automatic** backups are created at most once per local calendar month. The newest ten are
+  retained. New copies are verified before retention cleanup; when more than ten automatic copies
+  exist, the oldest is removed.
 - **Pre-migration** backups protect the database before its schema is upgraded. The newest three
   are retained.
 - **Pre-restore** backups preserve the current database immediately before another backup replaces
@@ -31,4 +33,3 @@ Restoring requires the exact confirmation word shown in Settings. The applicatio
 The interface reloads after a successful restore. Consultants, leave years, job plans, applied
 entitlement, booking-day snapshots, balances, and audit history therefore come from the restored
 point in time rather than being reconstructed from current settings.
-

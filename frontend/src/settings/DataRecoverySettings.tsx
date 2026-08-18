@@ -15,6 +15,7 @@ type Backup = {
 type RecoveryStatus = {
   data_directory: string
   backup_directory: string
+  latest_automatic_backup_at: string | null
   backups: Backup[]
 }
 
@@ -166,6 +167,14 @@ export function DataRecoverySettings() {
             <div>
               <dt>Backup Folder</dt>
               <dd title={status.backup_directory}>{status.backup_directory}</dd>
+            </div>
+            <div>
+              <dt>Latest Automatic Backup</dt>
+              <dd>
+                {status.latest_automatic_backup_at
+                  ? formatDate(status.latest_automatic_backup_at)
+                  : 'Not Created Yet'}
+              </dd>
             </div>
           </dl>
         ) : null}

@@ -98,6 +98,17 @@ def backup_kind(path: Path) -> BackupKind | None:
     return None
 
 
+def backup_created_at(path: Path, kind: BackupKind) -> datetime:
+    """Read the immutable UTC creation time encoded in a managed filename."""
+
+    prefix = f"leave-planner-{kind}-"
+    timestamp = path.name.removeprefix(prefix).removesuffix(".sqlite3")
+    try:
+        return datetime.strptime(timestamp, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
+    except ValueError:
+        return datetime.fromtimestamp(path.stat().st_mtime, UTC)
+
+
 def list_backups(backup_directory: Path) -> tuple[BackupFile, ...]:
     """List managed backups from newest to oldest."""
 
@@ -117,7 +128,7 @@ def list_backups(backup_directory: Path) -> tuple[BackupFile, ...]:
             BackupFile(
                 name=path.name,
                 kind=kind,
-                created_at=datetime.fromtimestamp(details.st_mtime, UTC),
+                created_at=backup_created_at(path, kind),
                 size_bytes=details.st_size,
             )
         )
@@ -178,7 +189,7 @@ def prune_backups(
     kind: BackupKind,
     keep: int,
 ) -> None:
-    """Retain only the newest automatic safety backups of one type."""
+    """Retain only the newest managed backups of one type."""
 
     matching = [backup for backup in list_backups(backup_directory) if backup.kind == kind]
 
