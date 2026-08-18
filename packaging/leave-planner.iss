@@ -1,6 +1,10 @@
 #define AppName "Leave Planner"
-#define AppVersion "0.1.0"
-#define AppFileVersion "0.1.0.0"
+#ifndef AppVersion
+  #define AppVersion "0.2.0"
+#endif
+#ifndef AppFileVersion
+  #define AppFileVersion "0.2.0.0"
+#endif
 #define AppExecutable "Leave Planner.exe"
 
 [Setup]

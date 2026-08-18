@@ -1,3 +1,8 @@
+param(
+    [ValidatePattern("^\d+\.\d+\.\d+$")]
+    [string]$Version = "0.2.0"
+)
+
 $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -75,7 +80,12 @@ if (-not $compilerPath) {
 
 Write-Host "Building the Leave Planner installer..."
 
-& $compilerPath $installerScript
+$fileVersion = "$Version.0"
+
+& $compilerPath `
+    "/DAppVersion=$Version" `
+    "/DAppFileVersion=$fileVersion" `
+    $installerScript
 
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup could not build the installer."
@@ -83,7 +93,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $installer = Join-Path `
     $projectRoot `
-    "dist\installer\Leave-Planner-Setup-0.1.0.exe"
+    "dist\installer\Leave-Planner-Setup-$Version.exe"
 
 if (-not (Test-Path -LiteralPath $installer)) {
     throw "The expected installer was not produced."
