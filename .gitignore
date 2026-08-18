@@ -51,6 +51,7 @@ temp/
 # Editors and operating systems
 .idea/
 .vscode/*
+.codex/
 !.vscode/settings.json
 !.vscode/extensions.json
 *.swp
