@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
-import { addNonNegativeDecimals, formatDecimal } from '../system/decimal'
-import type { ActivityHours, LeaveBooking } from '../planning/types'
+import { formatDecimal } from '../system/decimal'
 import type {
   AuditEvent,
   BalancePosition,
   ConsultantYearSummary,
   JobPlanPeriodSummary,
 } from './types'
+import { LeaveLog } from './LeaveLog'
 import './consultantSummary.css'
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
@@ -30,18 +30,6 @@ function formatDate(value: string): string {
 
 function hours(value: string, precision = 2): string {
   return `${formatDecimal(value, precision)}h`
-}
-
-function totalBookingHours(booking: LeaveBooking): ActivityHours {
-  return booking.days.reduce<ActivityHours>(
-    (total, day) => ({
-      dcc_hours: addNonNegativeDecimals(total.dcc_hours, day.calculated_deduction.dcc_hours),
-      spa_hours: addNonNegativeDecimals(total.spa_hours, day.calculated_deduction.spa_hours),
-      other_hours: addNonNegativeDecimals(total.other_hours, day.calculated_deduction.other_hours),
-      total_hours: addNonNegativeDecimals(total.total_hours, day.calculated_deduction.total_hours),
-    }),
-    { dcc_hours: '0', spa_hours: '0', other_hours: '0', total_hours: '0' },
-  )
 }
 
 function BalancePositionView({ position }: { position: BalancePosition | null }) {
@@ -159,33 +147,6 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
   const warnings = summary.warnings.filter(
     (warning) => warning.code !== 'leave-balance.carry-forward',
   )
-  const ledger = [
-    ...summary.planning.bookings.map((booking) => ({
-      key: `booking-${booking.id}`,
-      date: booking.start_date,
-      endDate: booking.end_date,
-      label: booking.note || 'Annual Leave',
-      state: booking.state,
-      amounts: totalBookingHours(booking),
-    })),
-    ...summary.planning.holidays.map((holiday) => ({
-      key: `holiday-${holiday.holiday_date}`,
-      date: holiday.holiday_date,
-      endDate: holiday.holiday_date,
-      label: holiday.name,
-      state: 'public_holiday',
-      amounts: {
-        dcc_hours: holiday.dcc_deduction_hours,
-        spa_hours: holiday.spa_deduction_hours,
-        other_hours: '0',
-        total_hours: addNonNegativeDecimals(
-          holiday.dcc_deduction_hours,
-          holiday.spa_deduction_hours,
-        ),
-      },
-    })),
-  ].sort((left, right) => left.date.localeCompare(right.date))
-
   return (
     <>
       <details className="dashboard-panel summary-panel summary-panel--periods">
@@ -217,39 +178,7 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
         </section>
       ) : null}
 
-      <section className="dashboard-panel summary-panel summary-panel--ledger">
-        <header className="dashboard-panel-header">
-          <h4>Leave Log</h4>
-          <span>{ledger.length} Entries</span>
-        </header>
-        {ledger.length ? (
-          <div className="leave-ledger" role="table" aria-label="Leave Log">
-            {ledger.map((entry) => (
-              <div className="leave-ledger-row" role="row" key={entry.key}>
-                <div role="cell">
-                  <strong>{formatDate(entry.date)}</strong>
-                  {entry.endDate !== entry.date ? (
-                    <span> - {formatDate(entry.endDate)}</span>
-                  ) : null}
-                </div>
-                <span role="cell">{entry.label}</span>
-                <span className={`ledger-state ledger-state--${entry.state}`} role="cell">
-                  {entry.state
-                    .replaceAll('_', ' ')
-                    .replace(/\b\w/g, (letter) => letter.toUpperCase())}
-                </span>
-                <strong role="cell">{hours(entry.amounts.total_hours)}</strong>
-                <small role="cell">
-                  DCC {formatDecimal(entry.amounts.dcc_hours, 2)} / SPA{' '}
-                  {formatDecimal(entry.amounts.spa_hours, 2)}
-                </small>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="summary-empty">No leave has been logged.</p>
-        )}
-      </section>
+      <LeaveLog summary={summary} />
 
       <details className="dashboard-panel summary-audit">
         <summary>

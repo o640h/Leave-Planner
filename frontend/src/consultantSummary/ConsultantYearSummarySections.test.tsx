@@ -124,4 +124,18 @@ describe('consultant year summary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Projected' }))
     expect(screen.getByRole('button', { name: 'Projected' })).toHaveClass('balance-tab--active')
   })
+
+  it('opens the complete leave log in an identified workspace view', () => {
+    render(<ConsultantYearSummarySections summary={summary} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Leave Log' }))
+
+    expect(screen.getByRole('dialog', { name: 'Anonymous' })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Expanded Leave Log' })).toBeInTheDocument()
+    expect(screen.getByText('29 Aug 2025 - 28 Aug 2026')).toBeInTheDocument()
+    expect(screen.getAllByText('Workbook reference')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close Expanded Leave Log' }))
+    expect(screen.queryByRole('dialog', { name: 'Anonymous' })).not.toBeInTheDocument()
+  })
 })
