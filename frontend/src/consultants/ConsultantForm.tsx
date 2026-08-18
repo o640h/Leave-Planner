@@ -85,7 +85,7 @@ export function ConsultantForm({
         </div>
 
         <div className="field">
-          <label htmlFor="post-title">Post Title</label>
+          <label htmlFor="post-title">Post Title (Optional)</label>
           <input
             id="post-title"
             name="post_title"
@@ -100,7 +100,6 @@ export function ConsultantForm({
               }))
             }
           />
-          <small>Optional</small>
         </div>
       </div>
 

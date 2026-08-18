@@ -517,7 +517,7 @@
 }
 
 :root[data-theme='dark'] .removal-modal ul,
-:root[data-theme='dark'] :is(.entitlement-mode-selector label, .entitlement-preview),
+:root[data-theme='dark'] .entitlement-preview,
 :root[data-theme='dark'] :is(.job-plan-grid-scroll, .deduction-table) {
   border-color: var(--glass-divider);
   border-radius: 11px;
@@ -525,7 +525,8 @@
 }
 
 :root[data-theme='dark'] .entitlement-mode-selector label {
-  border-color: transparent;
+  border-color: var(--glass-divider);
+  background: #1d1d1d;
 }
 
 :root[data-theme='dark'] .entitlement-mode-selector label:has(input:checked) {

@@ -42,46 +42,33 @@ For the supplied workbook example, the calculation is:
 Carry-forward is deliberately absent from this table because it is an adjustment, not part of the
 policy recommendation.
 
-## The operator's three choices
+## The operator's two choices
 
 ### Use Calculated Value
 
 The application calculates the recommendation and applies the same DCC and SPA values. The
-consultant appointment date and reckonable service start date are needed because the policy uses
-them to select appointment-era and service-length rules.
-
-### Adjust Calculated Value
-
-The calculation is retained as a reference, but the operator enters different DCC and SPA values.
-A reason is required so a future reviewer can see why the recommendation was not used unchanged.
+operator confirms only whether the consultant has seven years or more of service for the complete
+selected leave year. Changing the checkbox clears the previous preview so the revised component and
+total values must be reviewed before they can be applied.
 
 ### Enter Manually
 
-The operator enters DCC and SPA hours without running the policy calculation. A reason is required.
+The operator enters DCC and SPA hours without running the policy calculation. A reason is optional.
 This supports a Trust-confirmed entitlement where the source facts needed for automatic calculation
 are unavailable or the local decision is intentionally different.
 
 `Other` activity remains supported internally for compatibility, but the interface currently applies
 zero because the workbook workflow has not shown a need for an operator-editable Other value.
 
-## Why the two dates are not in the workbook
+## Why the service choice is a checkbox
 
-The workbook contains the final entitlement value but does not record the facts used to decide the
-consultant's policy tier. Someone currently has to know that information outside the spreadsheet.
-The application asks for it only when an automatic recommendation is requested:
+The workbook exposes one `Seniority (>7 yrs)` component rather than appointment and service dates.
+The active recommendation follows that workflow directly: the operator confirms the service tier,
+and that selection applies to the complete leave year. Employment dates remain separate and only
+clip the period for an in-year joiner or leaver.
 
-- **Appointment Date** is the date the person was first appointed on the relevant consultant
-  contract. HR78 uses it to select the contract-era rule.
-- **Reckonable Service Start** is the date from which qualifying consultant service is counted. Its
-  seven-year anniversary selects the higher service tier where the policy permits it. This is not
-  necessarily the person's NHS employment start date.
-
-These values do not change the job-plan period. They only select the full-time policy allowance.
-The leave year and job plans then determine how that allowance is prorated.
-
-To reproduce the supplied workbook's `291.368` hours, use an appointment governed by the
-post-1-April-2005 rules and a reckonable service start at least seven completed years before the
-leave year. The resulting calculation is:
+To reproduce the supplied workbook's `291.368` hours, select `Seven Years or More`. The resulting
+calculation is:
 
 ```text
 30 basic days + 2 statutory days + 2 seniority days + 2 local/R&R days = 36 days
@@ -93,8 +80,8 @@ leave year. The resulting calculation is:
 
 The workbook labels the four groups separately, whereas HR78's encoded structure represents some
 of those days through its core tier plus common statutory/local components. The total is the same.
-The Trust policy owner still needs to confirm the exact real-world definitions of appointment and
-reckonable service for production use.
+Appointment-era distinctions remain documented in the versioned policy source, but they are not an
+operator input or an active recommendation branch.
 
 ## Why the period rows differ from the workbook's accrued boxes
 
@@ -128,8 +115,8 @@ can compare the familiar accrued boxes without confusing them with the underlyin
 4. The API returns the named Basic Leave, Statutory Days, Hospital R&R and Seniority components,
    the public-holiday component, total recommendation, rule versions, source details, and grouped
    calculation explanations.
-5. The operator reviews the result and applies it unchanged, overrides it with a reason, or enters a
-   manual value with a reason.
+5. The operator reviews the result and either applies it unchanged or enters a manual value. An
+   optional reason can be stored with a manual value.
 6. The backend stores an immutable recommendation snapshot where one exists and stores the current
    applied entitlement separately.
 7. The leave-record calculator receives only the applied DCC/SPA/Other opening values. It does not
@@ -146,6 +133,10 @@ and trace that produced a recommendation. Old snapshots remain available for aud
 `AppliedEntitlementRecord` keeps one current application for each leave year: its mode, applied DCC,
 SPA and Other hours, optional recommendation link, reason, and update time.
 
+Migration `0012` converts stored date inputs to the equivalent seven-year selection at the active
+leave-year start. Existing calculated overrides become manual applications so their applied hours,
+reason, and linked historical recommendation are preserved without retaining a removed mode.
+
 Decimal quantities are stored and transferred without binary floating point. The interface removes
 unnecessary trailing zeroes for readability, but the stored precision is retained.
 
@@ -158,12 +149,11 @@ All endpoints sit below:
 - `GET` returns the latest recommendation and current applied value together.
 - `POST /preview` calculates a recommendation without applying it.
 - `POST /refresh` recalculates an existing recommendation after a source configuration changes.
-- `PUT` applies the selected calculated, overridden, or manual value.
+- `PUT` applies the selected calculated or manual value.
 
 Saving a changed leave year or job plan calls the refresh endpoint. Calculated mode updates both
-the recommendation and applied opening entitlement. Calculated-with-override mode refreshes the
-recommendation but keeps the operator's applied values. Manual mode is never overwritten. If the
-new configuration is incomplete, the previous applied value remains visible while the interface
+the recommendation and applied opening entitlement. Manual mode is never overwritten. If the new
+configuration is incomplete, the previous applied value remains visible while the interface
 explains what must be corrected.
 
 ## Where to change the behaviour

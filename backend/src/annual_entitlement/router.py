@@ -1,6 +1,5 @@
 """FastAPI routes for annual-entitlement setup."""
 
-from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Query
@@ -38,15 +37,13 @@ def preview_entitlement(
     consultant_id: int,
     leave_year_id: int,
     session: DatabaseSession,
-    consultant_appointment_date: Annotated[date, Query()],
-    consultant_service_start_date: Annotated[date, Query()],
+    seven_years_or_more: Annotated[bool, Query()],
 ) -> EntitlementRecommendation:
     return service.calculate_recommendation(
         session,
         consultant_id,
         leave_year_id,
-        consultant_appointment_date=consultant_appointment_date,
-        consultant_service_start_date=(consultant_service_start_date),
+        seven_years_or_more=seven_years_or_more,
     )
 
 

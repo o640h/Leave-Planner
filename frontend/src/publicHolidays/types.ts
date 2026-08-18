@@ -1,5 +1,9 @@
 export type HolidayCorrectionAction = 'add_or_replace' | 'remove'
 export type HolidayTreatmentBasis = 'standard' | 'qualifying_on_call'
+export type HolidayTreatmentInput = {
+  basis: HolidayTreatmentBasis
+  note: string | null
+}
 
 export type Holiday = { holiday_date: string; name: string; notes: string }
 export type HolidayCorrection = {
@@ -19,7 +23,6 @@ export type HolidaySettings = {
 export type HolidayOccurrence = Holiday & {
   basis: HolidayTreatmentBasis
   treatment_note: string | null
-  worked_date: string | null
   contracted_pas: string
   deduction_factor: string
   entitlement_hours: string

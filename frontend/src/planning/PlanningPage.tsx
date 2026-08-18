@@ -5,8 +5,9 @@ import { listConsultants } from '../consultants/api'
 import type { Consultant } from '../consultants/types'
 import { listLeaveYears } from '../leaveYears/api'
 import type { LeaveYear } from '../leaveYears/types'
-import { getHolidaySettings } from '../publicHolidays/api'
-import type { Holiday } from '../publicHolidays/types'
+import { getHolidaySettings, saveHolidayTreatment } from '../publicHolidays/api'
+import { HolidayTreatmentDialog } from '../publicHolidays/HolidayTreatmentDialog'
+import type { Holiday, HolidayOccurrence, HolidayTreatmentInput } from '../publicHolidays/types'
 import { BookingDrawer } from './BookingDrawer'
 import { getPlanning, previewBooking, removeBooking, saveBooking } from './api'
 import { PlanningCalendar } from './PlanningCalendar'
@@ -20,6 +21,7 @@ type BookingContext = {
   booking: LeaveBooking | null
   initialDate: string | null
 }
+type HolidayContext = { row: PlanningRow; holiday: HolidayOccurrence }
 
 function monthLabel(value: string): string {
   return new Date(`${value}-01T00:00:00`).toLocaleDateString('en-GB', {
@@ -51,6 +53,7 @@ export function PlanningPage() {
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [month, setMonth] = useState(currentMonth)
   const [context, setContext] = useState<BookingContext | null>(null)
+  const [holidayContext, setHolidayContext] = useState<HolidayContext | null>(null)
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -125,11 +128,18 @@ export function PlanningPage() {
   }, [catalogue, month])
 
   function openNew(row: PlanningRow, date: string) {
+    setHolidayContext(null)
     setContext({ row, booking: null, initialDate: date })
   }
 
   function openBooking(row: PlanningRow, booking: LeaveBooking) {
+    setHolidayContext(null)
     setContext({ row, booking, initialDate: null })
+  }
+
+  function openHoliday(row: PlanningRow, holiday: HolidayOccurrence) {
+    setContext(null)
+    setHolidayContext({ row, holiday })
   }
 
   async function handlePreview(
@@ -140,12 +150,9 @@ export function PlanningPage() {
     return previewBooking(context.row.consultant.id, context.row.leaveYear.id, details, bookingId)
   }
 
-  function replaceWorkspace(workspace: PlanningRow['workspace']) {
-    if (!context) return
+  function replaceWorkspace(consultantId: number, workspace: PlanningRow['workspace']) {
     setRows((current) =>
-      current.map((row) =>
-        row.consultant.id === context.row.consultant.id ? { ...row, workspace } : row,
-      ),
+      current.map((row) => (row.consultant.id === consultantId ? { ...row, workspace } : row)),
     )
   }
 
@@ -154,6 +161,7 @@ export function PlanningPage() {
     setBusy(true)
     try {
       replaceWorkspace(
+        context.row.consultant.id,
         await saveBooking(context.row.consultant.id, context.row.leaveYear.id, details, bookingId),
       )
       setContext(null)
@@ -167,12 +175,21 @@ export function PlanningPage() {
     setBusy(true)
     try {
       replaceWorkspace(
+        context.row.consultant.id,
         await removeBooking(context.row.consultant.id, context.row.leaveYear.id, bookingId),
       )
       setContext(null)
     } finally {
       setBusy(false)
     }
+  }
+
+  async function handleHolidaySave(details: HolidayTreatmentInput) {
+    const leaveYear = holidayContext?.row.leaveYear
+    if (!holidayContext || !leaveYear) return
+    const { row, holiday } = holidayContext
+    await saveHolidayTreatment(row.consultant.id, leaveYear.id, holiday.holiday_date, details)
+    replaceWorkspace(row.consultant.id, await getPlanning(row.consultant.id, leaveYear.id))
   }
 
   return (
@@ -232,6 +249,7 @@ export function PlanningPage() {
             holidays={holidays}
             onSelectDate={openNew}
             onSelectBooking={openBooking}
+            onSelectHoliday={openHoliday}
           />
         </section>
       )}
@@ -249,6 +267,14 @@ export function PlanningPage() {
           onClose={() => setContext(null)}
         />
       )}
+      {holidayContext?.row.leaveYear ? (
+        <HolidayTreatmentDialog
+          key={`${holidayContext.row.consultant.id}-${holidayContext.holiday.holiday_date}-${holidayContext.holiday.basis}`}
+          occurrence={holidayContext.holiday}
+          onSave={handleHolidaySave}
+          onClose={() => setHolidayContext(null)}
+        />
+      ) : null}
     </section>
   )
 }

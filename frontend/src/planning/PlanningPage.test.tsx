@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   previewBooking: vi.fn(),
   removeBooking: vi.fn(),
   saveBooking: vi.fn(),
+  saveHolidayTreatment: vi.fn(),
 }))
 
 const today = new Date()
@@ -23,7 +24,10 @@ const nextMonthHoliday = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth
 
 vi.mock('../consultants/api', () => ({ listConsultants: mocks.listConsultants }))
 vi.mock('../leaveYears/api', () => ({ listLeaveYears: mocks.listLeaveYears }))
-vi.mock('../publicHolidays/api', () => ({ getHolidaySettings: mocks.getHolidaySettings }))
+vi.mock('../publicHolidays/api', () => ({
+  getHolidaySettings: mocks.getHolidaySettings,
+  saveHolidayTreatment: mocks.saveHolidayTreatment,
+}))
 vi.mock('./api', () => ({
   getPlanning: mocks.getPlanning,
   previewBooking: mocks.previewBooking,
@@ -107,6 +111,119 @@ describe('PlanningPage', () => {
     fireEvent.click(screen.getByRole('gridcell', { name: `Dr Alex Morgan, ${currentIsoMonth}-01` }))
     const drawer = screen.getByRole('dialog', { name: 'Book Leave' })
     expect(within(drawer).getByText('Dr Alex Morgan')).toBeInTheDocument()
+  })
+
+  it('uses a dedicated treatment flow for public-holiday cells', async () => {
+    const holidayDate = `${currentIsoMonth}-03`
+    const holiday = {
+      holiday_date: holidayDate,
+      name: 'Trust Holiday',
+      notes: '',
+      basis: 'standard' as const,
+      treatment_note: null,
+      contracted_pas: '8.47',
+      deduction_factor: '1',
+      entitlement_hours: '6.776',
+      dcc_entitlement_hours: '4.728',
+      spa_entitlement_hours: '2.048',
+      dcc_deduction_hours: '8',
+      spa_deduction_hours: '0.5',
+    }
+    let retained = false
+    mocks.getHolidaySettings.mockResolvedValue({
+      source: 'static_snapshot',
+      source_date: '2026-08-11',
+      holidays: [{ holiday_date: holidayDate, name: holiday.name, notes: '' }],
+      corrections: [],
+    })
+    mocks.getPlanning.mockImplementation(() =>
+      Promise.resolve({
+        ...workspace,
+        bookings: [
+          {
+            id: 21,
+            leave_year_id: 3,
+            start_date: holidayDate,
+            end_date: holidayDate,
+            state: 'planned' as const,
+            note: null,
+            days: [],
+            created_at: '2026-08-18T12:00:00',
+            updated_at: '2026-08-18T12:00:00',
+          },
+        ],
+        holidays: [
+          retained
+            ? {
+                ...holiday,
+                basis: 'qualifying_on_call' as const,
+                treatment_note: 'Confirmed on-call cover',
+                dcc_deduction_hours: '0',
+                spa_deduction_hours: '0',
+              }
+            : holiday,
+        ],
+      }),
+    )
+    mocks.saveHolidayTreatment.mockImplementation(
+      async (
+        _consultantId: number,
+        _leaveYearId: number,
+        _date: string,
+        details: { basis: string },
+      ) => {
+        retained = details.basis === 'qualifying_on_call'
+        return { occurrences: [] }
+      },
+    )
+
+    render(<PlanningPage />)
+
+    const cell = await screen.findByRole('gridcell', {
+      name: `Dr Alex Morgan, ${holidayDate}, Trust Holiday`,
+    })
+    expect(cell).toHaveTextContent('PH')
+    fireEvent.click(cell)
+
+    const dialog = screen.getByRole('dialog', { name: 'Trust Holiday' })
+    expect(screen.queryByRole('dialog', { name: 'Book Leave' })).not.toBeInTheDocument()
+    fireEvent.change(within(dialog).getByLabelText('Treatment'), {
+      target: { value: 'qualifying_on_call' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save Treatment' }))
+
+    const retainedCell = await screen.findByRole('gridcell', {
+      name: `Dr Alex Morgan, ${holidayDate}, Trust Holiday, Qualifying On Call`,
+    })
+    expect(retainedCell).toHaveTextContent('PH')
+    expect(mocks.saveHolidayTreatment).toHaveBeenCalledWith(7, 3, holidayDate, {
+      basis: 'qualifying_on_call',
+      note: null,
+    })
+    expect(mocks.saveBooking).not.toHaveBeenCalled()
+
+    fireEvent.click(retainedCell)
+    const retainedDialog = screen.getByRole('dialog', { name: 'Trust Holiday' })
+    fireEvent.change(within(retainedDialog).getByLabelText('Treatment'), {
+      target: { value: 'standard' },
+    })
+    fireEvent.click(
+      within(retainedDialog).getByRole('button', { name: 'Restore Standard Treatment' }),
+    )
+
+    await waitFor(() =>
+      expect(mocks.saveHolidayTreatment).toHaveBeenLastCalledWith(
+        7,
+        3,
+        holidayDate,
+        expect.objectContaining({ basis: 'standard', note: null }),
+      ),
+    )
+    expect(
+      await screen.findByRole('gridcell', {
+        name: `Dr Alex Morgan, ${holidayDate}, Trust Holiday`,
+      }),
+    ).toHaveTextContent('PH')
   })
 
   it('previews generated daily deductions in the booking drawer', async () => {

@@ -55,7 +55,6 @@ class AppliedEntitlementRecord(Base):
             """
             mode IN (
                 'calculated',
-                'calculated_with_override',
                 'manual'
             )
             """,

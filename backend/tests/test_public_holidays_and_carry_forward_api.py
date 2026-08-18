@@ -1,5 +1,6 @@
 """Integration tests for public-holiday and carry-forward workflows."""
 
+import sqlite3
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -82,24 +83,45 @@ def test_calendar_corrections_and_consultant_treatments_persist(tmp_path: Path) 
         holidays = client.get(year_path)
         assert any(item["name"] == "Trust Holiday" for item in holidays.json()["occurrences"])
 
+        treatment_path = f"{year_path}/2026-04-06/treatment"
         treated = client.put(
-            f"{year_path}/2025-12-25/treatment",
+            treatment_path,
             json={
                 "basis": "qualifying_on_call",
-                "note": "Operator confirmed qualifying on-call cover",
-                "worked_date": None,
             },
         )
-        christmas = next(
-            item for item in treated.json()["occurrences"] if item["holiday_date"] == "2025-12-25"
+        easter_monday = next(
+            item for item in treated.json()["occurrences"] if item["holiday_date"] == "2026-04-06"
         )
-        assert christmas["basis"] == "qualifying_on_call"
-        assert christmas["dcc_deduction_hours"] == "0"
+        assert easter_monday["basis"] == "qualifying_on_call"
+        assert easter_monday["treatment_note"] is None
+        assert easter_monday["dcc_deduction_hours"] == "0"
+
+        restored = client.put(
+            treatment_path,
+            json={"basis": "standard", "note": None},
+        )
+        easter_monday = next(
+            item for item in restored.json()["occurrences"] if item["holiday_date"] == "2026-04-06"
+        )
+        assert easter_monday["basis"] == "standard"
+        assert easter_monday["dcc_deduction_hours"] == "8.000"
+        assert easter_monday["spa_deduction_hours"] == "0.500"
 
         assert (
             client.delete(f"/api/settings/public-holidays/corrections/{correction_id}").status_code
             == 200
         )
+
+    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
+        assert connection.execute("SELECT COUNT(*) FROM public_holiday_treatments").fetchone() == (
+            0,
+        )
+        actions = connection.execute(
+            "SELECT action FROM audit_events WHERE entity_type = 'public_holiday_treatment' "
+            "ORDER BY id"
+        ).fetchall()
+    assert actions == [("created",), ("deleted",)]
 
 
 def test_carry_forward_can_be_set_and_cleared(tmp_path: Path) -> None:
@@ -127,10 +149,7 @@ def test_entitlement_exposes_workbook_policy_components(tmp_path: Path) -> None:
         client.post(plans, json=job_plan())
         preview = client.post(
             f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/entitlement/preview",
-            params={
-                "consultant_appointment_date": "2012-01-18",
-                "consultant_service_start_date": "2012-01-18",
-            },
+            params={"seven_years_or_more": True},
         )
         assert preview.status_code == 200
         labels = {item["label"] for item in preview.json()["components"]}

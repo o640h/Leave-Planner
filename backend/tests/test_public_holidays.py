@@ -132,9 +132,14 @@ def test_manual_corrections_preserve_the_base_snapshot() -> None:
     assert calendar.holidays == base
 
 
-def test_retained_treatment_requires_an_operator_note() -> None:
-    with pytest.raises(ValueError, match="note"):
-        PublicHolidayTreatment(date(2026, 1, 1), HolidayTreatmentBasis.QUALIFYING_ON_CALL)
+def test_retained_treatment_accepts_an_optional_operator_note() -> None:
+    treatment = PublicHolidayTreatment(
+        date(2026, 1, 1), HolidayTreatmentBasis.QUALIFYING_ON_CALL
+    )
+    assert treatment.note is None
+
+
+def test_holiday_request_rejects_duplicate_treatments() -> None:
     with pytest.raises(ValueError, match="more than one"):
         replace(
             workbook_holiday_request(),

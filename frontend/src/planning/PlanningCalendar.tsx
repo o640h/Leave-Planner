@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 
 import type { Consultant } from '../consultants/types'
 import type { LeaveYear } from '../leaveYears/types'
-import type { Holiday } from '../publicHolidays/types'
+import type { Holiday, HolidayOccurrence } from '../publicHolidays/types'
 import type { LeaveBooking, PlanningWorkspace } from './types'
 
 export type PlanningRow = {
@@ -18,6 +18,7 @@ type Props = {
   holidays: Holiday[]
   onSelectDate: (row: PlanningRow, date: string) => void
   onSelectBooking: (row: PlanningRow, booking: LeaveBooking) => void
+  onSelectHoliday: (row: PlanningRow, holiday: HolidayOccurrence) => void
 }
 
 const stateLetter = { planned: 'P', approved: 'A', taken: 'T', cancelled: 'C' }
@@ -34,7 +35,14 @@ function titleCase(value: string): string {
   return value.replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
 }
 
-export function PlanningCalendar({ month, rows, holidays, onSelectDate, onSelectBooking }: Props) {
+export function PlanningCalendar({
+  month,
+  rows,
+  holidays,
+  onSelectDate,
+  onSelectBooking,
+  onSelectHoliday,
+}: Props) {
   const [year, monthNumber] = month.split('-').map(Number)
   const days = Array.from(
     { length: new Date(year, monthNumber, 0).getDate() },
@@ -98,6 +106,9 @@ export function PlanningCalendar({ month, rows, holidays, onSelectDate, onSelect
                 const dateValue = new Date(year, monthNumber - 1, day)
                 const weekend = dateValue.getDay() === 0 || dateValue.getDay() === 6
                 const holiday = holidays.find((item) => item.holiday_date === date)
+                const holidayOccurrence = row.workspace?.holidays.find(
+                  (item) => item.holiday_date === date,
+                )
                 const bookings = row.workspace?.bookings.filter(
                   (booking) => booking.start_date <= date && booking.end_date >= date,
                 )
@@ -107,19 +118,24 @@ export function PlanningCalendar({ month, rows, holidays, onSelectDate, onSelect
                   !row.leaveYear ||
                   !row.workspace ||
                   date < row.leaveYear.start_date ||
-                  date > row.leaveYear.end_date
+                  date > row.leaveYear.end_date ||
+                  Boolean(holiday && !holidayOccurrence)
+                const retainedHoliday = holidayOccurrence?.basis === 'qualifying_on_call'
                 const className = [
                   'wallchart-cell',
                   weekend && 'wallchart-day--weekend',
                   holiday && 'wallchart-cell--holiday',
-                  booking && `wallchart-cell--${booking.state}`,
+                  retainedHoliday && 'wallchart-cell--holiday-retained',
+                  !holiday && booking && `wallchart-cell--${booking.state}`,
                 ]
                   .filter(Boolean)
                   .join(' ')
                 const holidayName = holiday ? titleCase(holiday.name) : null
-                const label = booking
-                  ? `${row.consultant.name}, ${date}, ${titleCase(booking.state)} Leave`
-                  : `${row.consultant.name}, ${date}${holidayName ? `, ${holidayName}` : ''}`
+                const label = holidayName
+                  ? `${row.consultant.name}, ${date}, ${holidayName}${retainedHoliday ? ', Qualifying On Call' : ''}`
+                  : booking
+                    ? `${row.consultant.name}, ${date}, ${titleCase(booking.state)} Leave`
+                    : `${row.consultant.name}, ${date}`
 
                 return (
                   <button
@@ -128,15 +144,22 @@ export function PlanningCalendar({ month, rows, holidays, onSelectDate, onSelect
                     role="gridcell"
                     aria-label={label}
                     title={
-                      holidayName ?? (booking ? `${titleCase(booking.state)} Leave` : 'Book Leave')
+                      retainedHoliday
+                        ? `${holidayName} - Qualifying On Call`
+                        : (holidayName ??
+                          (booking ? `${titleCase(booking.state)} Leave` : 'Book Leave'))
                     }
                     disabled={unavailable}
                     key={date}
                     onClick={() =>
-                      booking ? onSelectBooking(row, booking) : onSelectDate(row, date)
+                      holidayOccurrence
+                        ? onSelectHoliday(row, holidayOccurrence)
+                        : booking
+                          ? onSelectBooking(row, booking)
+                          : onSelectDate(row, date)
                     }
                   >
-                    {booking ? stateLetter[booking.state] : holiday ? 'PH' : ''}
+                    {holiday ? 'PH' : booking ? stateLetter[booking.state] : ''}
                   </button>
                 )
               })}

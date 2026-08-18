@@ -56,8 +56,10 @@ The workbook displays `To` dates as the next period's boundary. Its formulas sub
 the first period is effectively `[29 August 2025, 1 August 2026)`: 1 August is not counted in job
 plan 1. The second period is `[1 August 2026, 29 August 2026)`.
 
-The application's `DateRange` and effective-version dates are inclusive because inclusive dates
-are clearer in forms and ledgers. The equivalent app records are therefore:
+The operator-facing dates and the pure calculation engine's `DateRange` and effective-version
+dates are inclusive. Persistence retains a half-open exclusive `effective_until` boundary, with
+the frontend API adapter adding or subtracting one day so that this implementation detail is never
+shown to the operator. The equivalent visible periods are therefore:
 
 | Version | Inclusive start | Inclusive end |
 | --- | --- | --- |

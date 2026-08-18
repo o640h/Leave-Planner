@@ -571,7 +571,7 @@ def removal_impact(
     consequences = [
         (
             f"The plan covering {job_plan.effective_from:%d %b %Y} to "
-            f"{job_plan.effective_until:%d %b %Y} will be deleted."
+            f"{job_plan.effective_until - timedelta(days=1):%d %b %Y} will be deleted."
         ),
         f"{len(plans) - 1} job plan(s) will remain in this leave year.",
     ]

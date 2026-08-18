@@ -136,16 +136,19 @@ def test_job_plan_removal_preserves_entitlement_when_it_creates_a_gap(tmp_path: 
         entitlement_path = (
             f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/entitlement"
         )
-        dates = {
-            "consultant_appointment_date": "2010-01-01",
-            "consultant_service_start_date": "2010-01-01",
-        }
-        original = client.put(entitlement_path, json={"mode": "calculated", **dates}).json()
+        original = client.put(
+            entitlement_path,
+            json={"mode": "calculated", "seven_years_or_more": True},
+        ).json()
 
         plan_path = (
             f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/job-plans/{job_plan_id}"
         )
         impact = client.get(f"{plan_path}/removal-impact").json()
+        assert (
+            "The plan covering 29 Aug 2025 to 28 Aug 2026 will be deleted."
+            in impact["consequences"]
+        )
         assert any("will not cover" in item for item in impact["consequences"])
 
         removed = client.post(f"{plan_path}/remove", json={"confirmation": "DELETE"})

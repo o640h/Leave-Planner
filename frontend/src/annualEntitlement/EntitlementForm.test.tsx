@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 
@@ -12,8 +12,7 @@ const emptyWorkspace: EntitlementWorkspace = {
 
 const recommendation: EntitlementRecommendation = {
   inputs: {
-    consultant_appointment_date: '2010-01-01',
-    consultant_service_start_date: '2010-01-01',
+    seven_years_or_more: true,
     policy_versions: ['HR78-v3'],
     public_holiday_source: 'static_snapshot',
     public_holiday_source_date: '2026-08-06',
@@ -55,27 +54,21 @@ it('previews the calculation before applying the recommended values', async () =
     />,
   )
 
-  fireEvent.change(screen.getByLabelText('Appointment Date'), {
-    target: { value: '2010-01-01' },
-  })
-  fireEvent.change(screen.getByLabelText('Reckonable Service Start'), {
-    target: { value: '2010-01-01' },
-  })
+  await user.click(screen.getByRole('checkbox', { name: /Seven Years or More/ }))
   await user.click(screen.getByRole('button', { name: 'Preview Recommendation' }))
 
-  expect(onPreview).toHaveBeenCalledWith('2010-01-01', '2010-01-01')
+  expect(onPreview).toHaveBeenCalledWith(true)
   expect(await screen.findByText('291.368')).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Apply Entitlement' }))
   expect(onSubmit).toHaveBeenCalledWith({
     mode: 'calculated',
     other_hours: '0',
-    consultant_appointment_date: '2010-01-01',
-    consultant_service_start_date: '2010-01-01',
+    seven_years_or_more: true,
   })
 })
 
-it('requires an explanation when the operator enters manual values', async () => {
+it('accepts manual values without an explanation', async () => {
   const user = userEvent.setup()
   const onSubmit = vi.fn().mockResolvedValue(undefined)
 
@@ -94,18 +87,12 @@ it('requires an explanation when the operator enters manual values', async () =>
   await user.type(screen.getByLabelText('SPA Hours'), '90')
   await user.click(screen.getByRole('button', { name: 'Apply Entitlement' }))
 
-  expect(screen.getByRole('alert')).toHaveTextContent('Explain the manually applied values.')
-  expect(onSubmit).not.toHaveBeenCalled()
-
-  await user.type(screen.getByLabelText('Reason'), 'Trust-approved starting values')
-  await user.click(screen.getByRole('button', { name: 'Apply Entitlement' }))
-
   expect(onSubmit).toHaveBeenCalledWith({
     mode: 'manual',
     other_hours: '0',
     dcc_hours: '210',
     spa_hours: '90',
-    reason: 'Trust-approved starting values',
+    reason: null,
   })
 })
 

@@ -229,25 +229,8 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 className="dashboard-panel leave-year-summary"
                 aria-labelledby="year-summary-title"
               >
-                <header className="dashboard-panel-header">
-                  <div className="leave-year-title-group">
-                    <h4 id="year-summary-title">Leave Year</h4>
-                    {leaveYears.length > 1 ? (
-                      <label className="leave-year-selector">
-                        <span className="visually-hidden">Selected Leave Year</span>
-                        <select
-                          value={selectedLeaveYear.id}
-                          onChange={(event) => setSelectedId(Number(event.target.value))}
-                        >
-                          {leaveYears.map((leaveYear) => (
-                            <option key={leaveYear.id} value={leaveYear.id}>
-                              {formatDate(leaveYear.start_date)} - {formatDate(leaveYear.end_date)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    ) : null}
-                  </div>
+                <header className="dashboard-panel-header leave-year-header">
+                  <h4 id="year-summary-title">Leave Year</h4>
                   <div className="dashboard-panel-actions">
                     <button
                       className="button button--quiet overview-delete-button"
@@ -276,6 +259,21 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                       <span>Add Year</span>
                     </button>
                   </div>
+                  {leaveYears.length > 1 ? (
+                    <label className="leave-year-selector">
+                      <span className="visually-hidden">Selected Leave Year</span>
+                      <select
+                        value={selectedLeaveYear.id}
+                        onChange={(event) => setSelectedId(Number(event.target.value))}
+                      >
+                        {leaveYears.map((leaveYear) => (
+                          <option key={leaveYear.id} value={leaveYear.id}>
+                            {formatDate(leaveYear.start_date)} - {formatDate(leaveYear.end_date)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                 </header>
 
                 <div className="leave-year-context">

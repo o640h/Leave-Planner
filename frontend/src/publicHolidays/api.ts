@@ -2,7 +2,7 @@ import { apiRequest } from '../api/client'
 import type {
   HolidayCorrectionAction,
   HolidaySettings,
-  HolidayTreatmentBasis,
+  HolidayTreatmentInput,
   LeaveYearHolidays,
 } from './types'
 
@@ -33,7 +33,7 @@ export const saveHolidayTreatment = (
   consultantId: number,
   leaveYearId: number,
   holidayDate: string,
-  details: { basis: HolidayTreatmentBasis; note: string | null; worked_date: string | null },
+  details: HolidayTreatmentInput,
 ) =>
   apiRequest<LeaveYearHolidays>(`${yearPath(consultantId, leaveYearId)}/${holidayDate}/treatment`, {
     method: 'PUT',

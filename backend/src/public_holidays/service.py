@@ -208,7 +208,6 @@ def treatments_for_leave_year(
             holiday_date=item.holiday_date,
             basis=HolidayTreatmentBasis(item.basis),
             note=item.note,
-            worked_date=item.worked_date,
         )
         for item in records
     )
@@ -249,7 +248,6 @@ def calculate_leave_year_holidays(
                 notes=item.holiday.notes,
                 basis=item.treatment.basis,
                 treatment_note=item.treatment.note,
-                worked_date=item.treatment.worked_date,
                 contracted_pas=item.contracted_pas.value,
                 deduction_factor=item.deduction_factor,
                 entitlement_hours=item.entitlement_hours.value,
@@ -283,6 +281,30 @@ def save_treatment(
             PublicHolidayTreatmentRecord.holiday_date == holiday_date,
         )
     )
+    if details.basis is HolidayTreatmentBasis.STANDARD:
+        if record is not None:
+            record_id = record.id
+            removed_details = {
+                "basis": record.basis,
+                "note": record.note,
+            }
+            session.delete(record)
+            session.flush()
+            record_audit_event(
+                session,
+                consultant_id=consultant_id,
+                entity_type="public_holiday_treatment",
+                entity_id=record_id,
+                action="deleted",
+                details={
+                    "holiday_date": holiday_date.isoformat(),
+                    "before": removed_details,
+                    "after": None,
+                },
+            )
+
+        return calculate_leave_year_holidays(session, consultant_id, leave_year_id)
+
     before = None
     if record is None:
         record = PublicHolidayTreatmentRecord(
@@ -290,10 +312,12 @@ def save_treatment(
         )
         session.add(record)
     else:
-        before = {"basis": record.basis, "note": record.note}
+        before = {
+            "basis": record.basis,
+            "note": record.note,
+        }
     record.basis = details.basis.value
     record.note = details.note
-    record.worked_date = details.worked_date
     session.flush()
     record_audit_event(
         session,

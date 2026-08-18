@@ -42,6 +42,10 @@ from .schemas import (
     EntitlementWorkspace,
 )
 
+# The active workflow uses the current consultant appointment tier. Historical
+# appointment-era rules remain encoded in the versioned policy data for audit.
+ACTIVE_CONSULTANT_APPOINTMENT_DATE = date(2005, 4, 1)
+
 
 def amounts(
     dcc_hours: Decimal,
@@ -139,8 +143,7 @@ def calculate_recommendation(
     consultant_id: int,
     leave_year_id: int,
     *,
-    consultant_appointment_date: date,
-    consultant_service_start_date: date,
+    seven_years_or_more: bool,
 ) -> EntitlementRecommendation:
     """Calculate base leave and public-holiday entitlement."""
 
@@ -150,25 +153,6 @@ def calculate_recommendation(
         leave_year_id,
     )
     period = active_period(leave_year)
-
-    if period is not None:
-        if consultant_appointment_date > period.start:
-            raise ApiError(
-                status_code=422,
-                code="appointment_date_after_leave_year",
-                message=(
-                    "The consultant appointment date cannot be after their active leave-year start."
-                ),
-            )
-
-        if consultant_service_start_date > period.start:
-            raise ApiError(
-                status_code=422,
-                code="service_date_after_leave_year",
-                message=(
-                    "The reckonable service date cannot be after their active leave-year start."
-                ),
-            )
 
     history = calculation_history(
         session,
@@ -182,14 +166,23 @@ def calculate_recommendation(
         leave_year.end_date,
     )
     employment_start = leave_year.employment_start or leave_year.start_date
+    service_reference = period.start if period is not None else leave_year.start_date
+    if seven_years_or_more:
+        try:
+            service_reference = service_reference.replace(year=service_reference.year - 7)
+        except ValueError:
+            service_reference = service_reference.replace(
+                year=service_reference.year - 7,
+                day=28,
+            )
 
     base_calculation = calculate_leave_entitlement(
         LeaveCalculationRequest(
             leave_year=period_dates,
             employment_start=employment_start,
             employment_end=leave_year.employment_end,
-            consultant_appointment_date=(consultant_appointment_date),
-            consultant_service_start_date=(consultant_service_start_date),
+            consultant_appointment_date=ACTIVE_CONSULTANT_APPOINTMENT_DATE,
+            consultant_service_start_date=service_reference,
             policies=DEFAULT_ENTITLEMENT_POLICIES,
             job_plans=history,
         )
@@ -254,8 +247,7 @@ def calculate_recommendation(
 
     return EntitlementRecommendation(
         inputs=EntitlementInputs(
-            consultant_appointment_date=(consultant_appointment_date),
-            consultant_service_start_date=(consultant_service_start_date),
+            seven_years_or_more=seven_years_or_more,
             policy_versions=policy_versions,
             public_holiday_source=holiday_calendar.source.value,
             public_holiday_source_date=holiday_calendar.source_date,
@@ -265,7 +257,9 @@ def calculate_recommendation(
         recommended_entitlement=recommended_amounts,
         components=components,
         trace=tuple(
-            trace_step(step) for step in (base_calculation.trace + holiday_calculation.trace)
+            trace_step(step)
+            for step in (base_calculation.trace + holiday_calculation.trace)
+            if not str(step.rule_id).startswith("entitlement.era")
         ),
     )
 
@@ -419,15 +413,13 @@ def apply_entitlement(
     recommendation = None
 
     if details.mode is not EntitlementMode.MANUAL:
-        assert details.consultant_appointment_date is not None
-        assert details.consultant_service_start_date is not None
+        assert details.seven_years_or_more is not None
 
         recommendation = calculate_recommendation(
             session,
             consultant_id,
             leave_year_id,
-            consultant_appointment_date=(details.consultant_appointment_date),
-            consultant_service_start_date=(details.consultant_service_start_date),
+            seven_years_or_more=details.seven_years_or_more,
         )
         recommendation_record = store_recommendation(
             session,
@@ -515,14 +507,7 @@ def refresh_entitlement(
     mode = EntitlementMode(application.mode)
     details = EntitlementApply(
         mode=mode,
-        consultant_appointment_date=inputs.consultant_appointment_date,
-        consultant_service_start_date=inputs.consultant_service_start_date,
-        dcc_hours=(
-            application.dcc_hours if mode is EntitlementMode.CALCULATED_WITH_OVERRIDE else None
-        ),
-        spa_hours=(
-            application.spa_hours if mode is EntitlementMode.CALCULATED_WITH_OVERRIDE else None
-        ),
+        seven_years_or_more=inputs.seven_years_or_more,
         other_hours=application.other_hours,
         reason=application.reason,
     )

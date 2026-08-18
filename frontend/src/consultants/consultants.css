@@ -317,6 +317,10 @@
   gap: 7px;
 }
 
+.adjustment-modal .field + .field {
+  margin-top: 8px;
+}
+
 .field label {
   font-size: 0.76923rem;
   font-weight: 480;

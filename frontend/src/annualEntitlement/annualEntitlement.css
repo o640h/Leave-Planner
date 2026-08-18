@@ -370,17 +370,20 @@
 
 .entitlement-mode-options {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   padding: 0;
+  border: 0;
   background: transparent;
 }
 
 .entitlement-mode-selector label {
   display: flex;
+  align-items: center;
   min-width: 0;
   gap: 10px;
-  padding: 14px;
+  min-height: 54px;
+  padding: 14px 15px;
   border: 1px solid rgb(var(--border-rgb) / var(--dialog-field-border-opacity));
   border-radius: var(--corner-control);
   background: rgb(var(--dialog-inset-rgb) / var(--dialog-inset-opacity));
@@ -394,24 +397,15 @@
 }
 
 .entitlement-mode-selector input {
-  margin: 2px 0 0;
+  width: 15px;
+  height: 15px;
+  margin: 0;
   accent-color: var(--accent);
-}
-
-.entitlement-mode-selector span {
-  display: grid;
-  gap: 5px;
 }
 
 .entitlement-mode-selector strong {
   font-size: 0.84615rem;
   font-weight: 460;
-}
-
-.entitlement-mode-selector small {
-  color: var(--quiet);
-  font-size: 0.69231rem;
-  line-height: 1.4;
 }
 
 .entitlement-input-section {
@@ -429,7 +423,74 @@
   font-weight: 460;
 }
 
-.entitlement-date-fields,
+.entitlement-service-confirmation {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.entitlement-service-confirmation:has(input:checked) {
+  color: var(--text);
+}
+
+.entitlement-service-confirmation input {
+  position: relative;
+  width: 30px;
+  height: 17px;
+  margin: 0;
+  flex: 0 0 auto;
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--field);
+  cursor: pointer;
+}
+
+.entitlement-service-confirmation input::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--quiet);
+  content: '';
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.entitlement-service-confirmation input:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.entitlement-service-confirmation input:checked::after {
+  background: var(--on-accent);
+  transform: translateX(13px);
+}
+
+.entitlement-service-confirmation span {
+  display: grid;
+  gap: 2px;
+}
+
+.entitlement-service-confirmation strong {
+  font-size: 0.76923rem;
+  font-weight: 460;
+}
+
+.entitlement-service-confirmation small {
+  color: var(--quiet);
+  font-size: 0.65385rem;
+  line-height: 1.35;
+}
+
 .entitlement-hour-fields {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -504,7 +565,6 @@
 }
 
 @media (max-width: 680px) {
-  .entitlement-date-fields,
   .entitlement-hour-fields,
   .entitlement-components,
   .entitlement-calculation-basis dl {

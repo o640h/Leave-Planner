@@ -97,8 +97,8 @@ export function JobPlanForm({
       return false
     }
 
-    if (details.effective_until <= details.effective_from) {
-      setError('Effective Until must be after Effective From.')
+    if (details.effective_until < details.effective_from) {
+      setError('Effective Until must be on or after Effective From.')
       return false
     }
 
@@ -166,7 +166,7 @@ export function JobPlanForm({
       <section className="job-plan-form-section">
         <header>
           <h4>Effective Period</h4>
-          <p>Effective Until is not included in this job plan.</p>
+          <p>Both dates are included in this job plan.</p>
         </header>
 
         <div className="job-plan-date-fields">
@@ -256,7 +256,7 @@ export function JobPlanForm({
 
           {details.week_count > 1 ? (
             <div className="field">
-              <label htmlFor="job-plan-cycle-anchor">Week 1 Monday</label>
+              <label htmlFor="job-plan-cycle-anchor">Week 1 Monday (Optional)</label>
               <DateInput
                 id="job-plan-cycle-anchor"
                 label="Week 1 Monday"
@@ -268,7 +268,7 @@ export function JobPlanForm({
                   })
                 }
               />
-              <small>Optional - otherwise the Monday before Effective From is used.</small>
+              <small>Otherwise the Monday before Effective From is used.</small>
             </div>
           ) : null}
         </div>

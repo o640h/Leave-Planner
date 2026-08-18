@@ -81,8 +81,6 @@ export function EntitlementPanel({
 
         if (result.application?.mode === 'calculated') {
           setNotice('The annual entitlement was recalculated.')
-        } else if (result.application?.mode === 'calculated_with_override') {
-          setNotice('The recommendation was recalculated; the applied override was kept.')
         } else if (result.application?.mode === 'manual') {
           setNotice(
             'The manual entitlement was kept. Review it if the change affects approved hours.',
@@ -109,11 +107,8 @@ export function EntitlementPanel({
       })
   }, [consultantId, leaveYearId, onStatusChange, reloadRevision])
 
-  function requestPreview(
-    appointmentDate: string,
-    serviceStartDate: string,
-  ): Promise<EntitlementRecommendation> {
-    return previewEntitlement(consultantId, leaveYearId, appointmentDate, serviceStartDate)
+  function requestPreview(sevenYearsOrMore: boolean): Promise<EntitlementRecommendation> {
+    return previewEntitlement(consultantId, leaveYearId, sevenYearsOrMore)
   }
 
   async function saveEntitlement(details: EntitlementApplyInput) {

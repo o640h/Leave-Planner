@@ -10,7 +10,6 @@ class EntitlementMode(StrEnum):
     """How the opening entitlement was chosen by the operator."""
 
     CALCULATED = "calculated"
-    CALCULATED_WITH_OVERRIDE = "calculated_with_override"
     MANUAL = "manual"
 
 

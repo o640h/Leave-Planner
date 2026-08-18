@@ -105,8 +105,7 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
             f"{root}/entitlement",
             json={
                 "mode": "calculated",
-                "consultant_appointment_date": "2010-01-01",
-                "consultant_service_start_date": "2010-01-01",
+                "seven_years_or_more": True,
                 "other_hours": "0",
             },
         ).status_code == 200
@@ -283,8 +282,7 @@ def test_summary_api_supports_reference_shapes(
             f"{root}/entitlement",
             json={
                 "mode": "calculated",
-                "consultant_appointment_date": "2019-07-01",
-                "consultant_service_start_date": "2019-07-01",
+                "seven_years_or_more": False,
                 "other_hours": "0",
             },
         ).status_code == 200

@@ -94,17 +94,10 @@ class PublicHolidayTreatment:
     holiday_date: date
     basis: HolidayTreatmentBasis
     note: str | None = None
-    worked_date: date | None = None
 
     def __post_init__(self) -> None:
         if self.note is not None and not self.note.strip():
             raise ValueError("Treatment note cannot be blank")
-
-        if self.retains_leave and self.note is None:
-            raise ValueError("A retained public holiday requires an explanatory note")
-
-        if self.basis is HolidayTreatmentBasis.STANDARD and self.worked_date is not None:
-            raise ValueError("A standard treatment cannot contain a worked date")
 
     @property
     def retains_leave(self) -> bool:

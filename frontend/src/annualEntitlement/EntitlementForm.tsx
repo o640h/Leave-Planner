@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
-import { DateInput } from '../system/DateInput'
 import { NumberInput } from '../system/NumberInput'
 import { formatDecimal } from '../system/decimal'
 import type {
@@ -15,10 +14,7 @@ import type {
 type EntitlementFormProps = {
   initialValue: EntitlementWorkspace
   busy: boolean
-  onPreview: (
-    appointmentDate: string,
-    serviceStartDate: string,
-  ) => Promise<EntitlementRecommendation>
+  onPreview: (sevenYearsOrMore: boolean) => Promise<EntitlementRecommendation>
   onSubmit: (details: EntitlementApplyInput) => Promise<void>
   onCancel: () => void
 }
@@ -64,11 +60,8 @@ export function EntitlementForm({
   const storedRecommendation = initialValue.recommendation
 
   const [mode, setMode] = useState<EntitlementMode>(application?.mode ?? 'calculated')
-  const [appointmentDate, setAppointmentDate] = useState(
-    storedRecommendation?.inputs.consultant_appointment_date ?? '',
-  )
-  const [serviceStartDate, setServiceStartDate] = useState(
-    storedRecommendation?.inputs.consultant_service_start_date ?? '',
+  const [sevenYearsOrMore, setSevenYearsOrMore] = useState(
+    storedRecommendation?.inputs.seven_years_or_more ?? false,
   )
   const [dccHours, setDccHours] = useState(
     application ? formatDecimal(application.entitlement.dcc_hours, 3) : '',
@@ -81,43 +74,22 @@ export function EntitlementForm({
   const [previewing, setPreviewing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const calculatedMode = mode !== 'manual'
-  const editableAmounts = mode !== 'calculated'
+  const calculatedMode = mode === 'calculated'
+  const editableAmounts = mode === 'manual'
   const disabled = busy || previewing
-
-  function invalidatePreview(setter: (value: string) => void, value: string) {
-    setter(value)
-    setPreview(null)
-    setError(null)
-  }
 
   function changeMode(nextMode: EntitlementMode) {
     setMode(nextMode)
     setError(null)
-
-    if (nextMode === 'calculated_with_override' && preview !== null) {
-      setDccHours(formatDecimal(preview.recommended_entitlement.dcc_hours, 3))
-      setSpaHours(formatDecimal(preview.recommended_entitlement.spa_hours, 3))
-    }
   }
 
   async function requestPreview() {
-    if (!appointmentDate || !serviceStartDate) {
-      setError('Enter the Appointment Date and Reckonable Service Start.')
-      return
-    }
-
     setPreviewing(true)
     setError(null)
 
     try {
-      const result = await onPreview(appointmentDate, serviceStartDate)
+      const result = await onPreview(sevenYearsOrMore)
       setPreview(result)
-
-      if (mode === 'calculated_with_override') {
-        setDccHours(formatDecimal(result.recommended_entitlement.dcc_hours, 3))
-        setSpaHours(formatDecimal(result.recommended_entitlement.spa_hours, 3))
-      }
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
     } finally {
@@ -138,25 +110,19 @@ export function EntitlementForm({
       return
     }
 
-    if (editableAmounts && !reason.trim()) {
-      setError('Explain the manually applied values.')
-      return
-    }
-
     const details: EntitlementApplyInput = {
       mode,
       other_hours: '0',
     }
 
     if (calculatedMode) {
-      details.consultant_appointment_date = appointmentDate
-      details.consultant_service_start_date = serviceStartDate
+      details.seven_years_or_more = sevenYearsOrMore
     }
 
     if (editableAmounts) {
       details.dcc_hours = dccHours
       details.spa_hours = spaHours
-      details.reason = reason.trim()
+      details.reason = reason.trim() || null
     }
 
     setError(null)
@@ -189,25 +155,7 @@ export function EntitlementForm({
               disabled={disabled}
               onChange={() => changeMode('calculated')}
             />
-            <span>
-              <strong>Use Recommendation</strong>
-              <small>Apply the calculated values unchanged.</small>
-            </span>
-          </label>
-
-          <label>
-            <input
-              type="radio"
-              name="entitlement-mode"
-              value="calculated_with_override"
-              checked={mode === 'calculated_with_override'}
-              disabled={disabled}
-              onChange={() => changeMode('calculated_with_override')}
-            />
-            <span>
-              <strong>Adjust Recommendation</strong>
-              <small>Start from the calculation, then override it.</small>
-            </span>
+            <strong>Use Recommendation</strong>
           </label>
 
           <label>
@@ -219,10 +167,7 @@ export function EntitlementForm({
               disabled={disabled}
               onChange={() => changeMode('manual')}
             />
-            <span>
-              <strong>Enter Manually</strong>
-              <small>Apply Trust-approved hours directly.</small>
-            </span>
+            <strong>Enter Manually</strong>
           </label>
         </div>
       </fieldset>
@@ -233,33 +178,22 @@ export function EntitlementForm({
             <h4>Calculation Inputs</h4>
           </header>
 
-          <div className="entitlement-date-fields">
-            <div className="field">
-              <label htmlFor="appointment-date">Appointment Date</label>
-              <DateInput
-                id="appointment-date"
-                label="Appointment Date"
-                value={appointmentDate}
-                disabled={disabled}
-                required
-                onChange={(value) => invalidatePreview(setAppointmentDate, value)}
-              />
-              <small>Selects the consultant contract-era entitlement rule.</small>
-            </div>
-
-            <div className="field">
-              <label htmlFor="service-start-date">Reckonable Service Start</label>
-              <DateInput
-                id="service-start-date"
-                label="Reckonable Service Start"
-                value={serviceStartDate}
-                disabled={disabled}
-                required
-                onChange={(value) => invalidatePreview(setServiceStartDate, value)}
-              />
-              <small>Determines when the seven-year service tier is reached.</small>
-            </div>
-          </div>
+          <label className="entitlement-service-confirmation">
+            <input
+              type="checkbox"
+              checked={sevenYearsOrMore}
+              disabled={disabled}
+              onChange={(event) => {
+                setSevenYearsOrMore(event.target.checked)
+                setPreview(null)
+                setError(null)
+              }}
+            />
+            <span>
+              <strong>Seven Years or More</strong>
+              <small>Apply the seven-year service entitlement for this leave year.</small>
+            </span>
+          </label>
 
           <button
             className="button button--quiet"
@@ -327,13 +261,12 @@ export function EntitlementForm({
           </div>
 
           <div className="field">
-            <label htmlFor="entitlement-reason">Reason</label>
+            <label htmlFor="entitlement-reason">Reason (Optional)</label>
             <textarea
               id="entitlement-reason"
               rows={3}
               value={reason}
               disabled={disabled}
-              aria-required="true"
               onChange={(event) => {
                 setReason(event.target.value)
                 setError(null)

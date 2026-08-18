@@ -9,7 +9,7 @@ The consultant directory replaces the name and post-title fields repeated at the
 - Select an existing consultant and edit those fields.
 - Close and reopen the application without losing the records.
 
-The directory deliberately does not contain specialty, appointment date, service-start date, or leave-year dates. Those facts are not part of the workbook's identifying header and will be introduced only by the later calculation workflow that needs them.
+The directory deliberately does not contain specialty, appointment date, service-start date, or leave-year dates. Those facts are not part of the workbook's identifying header. The entitlement workflow uses a leave-year-specific seven-year service confirmation instead of storing appointment or service dates on the consultant.
 
 ## How a change moves through the application
 

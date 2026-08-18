@@ -6,8 +6,32 @@ function jobPlanPath(consultantId: number, leaveYearId: number): string {
   return `/api/consultants/${consultantId}/leave-years/${leaveYearId}/job-plans`
 }
 
+function shiftIsoDate(value: string, days: number): string {
+  const [year, month, day] = value.split('-').map(Number)
+  const result = new Date(Date.UTC(year, month - 1, day))
+
+  result.setUTCDate(result.getUTCDate() + days)
+  return result.toISOString().slice(0, 10)
+}
+
+function toApiJobPlan(details: JobPlanInput): JobPlanInput {
+  return {
+    ...details,
+    effective_until: shiftIsoDate(details.effective_until, 1),
+  }
+}
+
+function fromApiJobPlan<T extends JobPlanInput>(details: T): T {
+  return {
+    ...details,
+    effective_until: shiftIsoDate(details.effective_until, -1),
+  }
+}
+
 export function listJobPlans(consultantId: number, leaveYearId: number): Promise<JobPlan[]> {
-  return apiRequest<JobPlan[]>(jobPlanPath(consultantId, leaveYearId))
+  return apiRequest<JobPlan[]>(jobPlanPath(consultantId, leaveYearId)).then((records) =>
+    records.map((record) => fromApiJobPlan(record)),
+  )
 }
 
 export function previewJobPlan(
@@ -17,8 +41,8 @@ export function previewJobPlan(
 ): Promise<JobPlanPreview> {
   return apiRequest<JobPlanPreview>(`${jobPlanPath(consultantId, leaveYearId)}/preview`, {
     method: 'POST',
-    body: JSON.stringify(details),
-  })
+    body: JSON.stringify(toApiJobPlan(details)),
+  }).then((preview) => fromApiJobPlan(preview))
 }
 
 export function createJobPlan(
@@ -28,8 +52,8 @@ export function createJobPlan(
 ): Promise<JobPlan> {
   return apiRequest<JobPlan>(jobPlanPath(consultantId, leaveYearId), {
     method: 'POST',
-    body: JSON.stringify(details),
-  })
+    body: JSON.stringify(toApiJobPlan(details)),
+  }).then((record) => fromApiJobPlan(record))
 }
 
 export function updateJobPlan(
@@ -40,10 +64,11 @@ export function updateJobPlan(
   regenerateBookingDays = false,
 ): Promise<JobPlan> {
   const query = regenerateBookingDays ? '?regenerate_booking_days=true' : ''
+
   return apiRequest<JobPlan>(`${jobPlanPath(consultantId, leaveYearId)}/${jobPlanId}${query}`, {
     method: 'PUT',
-    body: JSON.stringify(details),
-  })
+    body: JSON.stringify(toApiJobPlan(details)),
+  }).then((record) => fromApiJobPlan(record))
 }
 
 export function jobPlanUpdateImpact(
@@ -56,7 +81,7 @@ export function jobPlanUpdateImpact(
     `${jobPlanPath(consultantId, leaveYearId)}/${jobPlanId}/update-impact`,
     {
       method: 'POST',
-      body: JSON.stringify(details),
+      body: JSON.stringify(toApiJobPlan(details)),
     },
   )
 }

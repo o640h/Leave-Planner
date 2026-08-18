@@ -49,16 +49,14 @@ class HolidayTreatmentWrite(BaseModel):
 
     basis: HolidayTreatmentBasis
     note: str | None = Field(default=None, max_length=500)
-    worked_date: date | None = None
 
     @model_validator(mode="after")
-    def require_retention_note(self) -> "HolidayTreatmentWrite":
+    def normalise_treatment_details(self) -> "HolidayTreatmentWrite":
         retained = self.basis is not HolidayTreatmentBasis.STANDARD
-        if retained and not self.note:
-            raise ValueError("Explain why this public-holiday deduction is retained")
+        if self.note == "":
+            self.note = None
         if not retained:
             self.note = None
-            self.worked_date = None
         return self
 
 
@@ -68,7 +66,6 @@ class HolidayOccurrenceRead(BaseModel):
     notes: str
     basis: HolidayTreatmentBasis
     treatment_note: str | None
-    worked_date: date | None
     contracted_pas: ExactDecimal
     deduction_factor: ExactDecimal
     entitlement_hours: ExactDecimal

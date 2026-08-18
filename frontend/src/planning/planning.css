@@ -242,6 +242,11 @@
   color: var(--warning);
 }
 
+.wallchart-cell--holiday-retained {
+  background: rgb(138 186 154 / 0.25);
+  color: var(--nominal);
+}
+
 .wallchart-cell--holiday:disabled {
   opacity: 1;
   background: rgb(199 161 109 / 0.09);

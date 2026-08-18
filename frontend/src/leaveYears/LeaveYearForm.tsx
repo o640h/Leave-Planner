@@ -94,7 +94,7 @@ export function LeaveYearForm({
         </div>
 
         <div className="field">
-          <label htmlFor="employment-start">Employment Start</label>
+          <label htmlFor="employment-start">Employment Start (Optional)</label>
           <DateInput
             id="employment-start"
             label="Employment Start"
@@ -102,11 +102,11 @@ export function LeaveYearForm({
             disabled={busy}
             onChange={(value) => updateDate('employment_start', value, true)}
           />
-          <small>Optional - leave blank when employment covers the full year.</small>
+          <small>Leave blank when employment covers the full year.</small>
         </div>
 
         <div className="field">
-          <label htmlFor="employment-end">Employment End</label>
+          <label htmlFor="employment-end">Employment End (Optional)</label>
           <DateInput
             id="employment-end"
             label="Employment End"
@@ -114,7 +114,7 @@ export function LeaveYearForm({
             disabled={busy}
             onChange={(value) => updateDate('employment_end', value, true)}
           />
-          <small>Optional - leave blank when employment continues.</small>
+          <small>Leave blank when employment continues.</small>
         </div>
       </div>
 

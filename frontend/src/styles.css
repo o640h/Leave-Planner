@@ -61,6 +61,12 @@ select {
   font: inherit;
 }
 
+textarea {
+  max-width: 100%;
+  resize: none;
+  overflow-y: auto;
+}
+
 button {
   cursor: pointer;
 }

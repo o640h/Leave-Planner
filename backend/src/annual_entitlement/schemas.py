@@ -23,8 +23,7 @@ class EntitlementAmounts(BaseModel):
 class EntitlementInputs(BaseModel):
     """Inputs responsible for a calculated recommendation."""
 
-    consultant_appointment_date: date
-    consultant_service_start_date: date
+    seven_years_or_more: bool
     policy_versions: tuple[str, ...]
     public_holiday_source: str
     public_holiday_source_date: date
@@ -74,8 +73,7 @@ class EntitlementApply(BaseModel):
 
     mode: EntitlementMode
 
-    consultant_appointment_date: date | None = None
-    consultant_service_start_date: date | None = None
+    seven_years_or_more: bool | None = None
 
     dcc_hours: NonNegativeDecimal | None = None
     spa_hours: NonNegativeDecimal | None = None
@@ -85,30 +83,16 @@ class EntitlementApply(BaseModel):
 
     @model_validator(mode="after")
     def validate_mode_inputs(self) -> Self:
-        calculated_mode = self.mode in {
-            EntitlementMode.CALCULATED,
-            EntitlementMode.CALCULATED_WITH_OVERRIDE,
-        }
+        if self.reason == "":
+            self.reason = None
 
-        if calculated_mode and (
-            self.consultant_appointment_date is None or self.consultant_service_start_date is None
+        if self.mode is EntitlementMode.CALCULATED and self.seven_years_or_more is None:
+            raise ValueError("Confirm whether the consultant has seven years of service")
+
+        if self.mode is EntitlementMode.MANUAL and (
+            self.dcc_hours is None or self.spa_hours is None
         ):
-            raise ValueError(
-                "Appointment and reckonable service dates are required "
-                "for a calculated recommendation"
-            )
-
-        if self.mode in {
-            EntitlementMode.CALCULATED_WITH_OVERRIDE,
-            EntitlementMode.MANUAL,
-        }:
-            if self.dcc_hours is None or self.spa_hours is None:
-                raise ValueError("DCC and SPA hours are required for a manual value")
-
-            if not self.reason:
-                raise ValueError(
-                    "Explain why the applied entitlement differs from the calculated value"
-                )
+            raise ValueError("DCC and SPA hours are required for a manual value")
 
         return self
 

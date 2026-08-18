@@ -35,9 +35,13 @@ def test_alembic_upgrade_creates_foundation_schema(tmp_path: Path) -> None:
     booking_day_columns = {
         column["name"] for column in inspect(engine).get_columns("leave_booking_days")
     }
+    holiday_treatment_columns = {
+        column["name"] for column in inspect(engine).get_columns("public_holiday_treatments")
+    }
     assert {"contracted_pas", "deduction_factor"} <= booking_day_columns
     assert "additional_dcc_hours" not in job_plan_columns
     assert "additional_spa_hours" not in job_plan_columns
+    assert "worked_date" not in holiday_treatment_columns
     engine.dispose()
 
 

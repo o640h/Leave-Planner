@@ -124,19 +124,20 @@
   display: grid;
 }
 
-.leave-year-title-group {
-  display: flex;
+.leave-year-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  min-width: 0;
-  gap: 12px;
+  gap: 8px 12px;
 }
 
 .leave-year-selector {
+  grid-column: 1 / -1;
   min-width: 0;
 }
 
 .leave-year-selector select {
-  width: min(190px, 24vw);
+  width: 100%;
   min-width: 0;
   min-height: 30px;
   padding: 5px 24px 5px 8px;
@@ -260,6 +261,16 @@
 
   .leave-year-range time {
     font-size: 1.07692rem;
+  }
+}
+
+@container (max-width: 360px) {
+  .leave-year-header {
+    grid-template-columns: 1fr;
+  }
+
+  .leave-year-header .dashboard-panel-actions {
+    justify-content: flex-start;
   }
 }
 

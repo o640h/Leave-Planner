@@ -53,14 +53,6 @@ export type JobPlanUpdateImpact = {
   requires_confirmation: boolean
 }
 
-function addOneDay(value: string): string {
-  const [year, month, day] = value.split('-').map(Number)
-  const result = new Date(Date.UTC(year, month - 1, day))
-
-  result.setUTCDate(result.getUTCDate() + 1)
-  return result.toISOString().slice(0, 10)
-}
-
 export function cycleDays(weekCount: number, existing: JobPlanDayInput[] = []): JobPlanDayInput[] {
   return Array.from({ length: weekCount }, (_, weekIndex) =>
     Array.from({ length: 7 }, (_, weekday) => {
@@ -90,7 +82,7 @@ export function cycleDays(weekCount: number, existing: JobPlanDayInput[] = []): 
 export function emptyJobPlanInput(leaveYear: LeaveYear): JobPlanInput {
   return {
     effective_from: leaveYear.start_date,
-    effective_until: addOneDay(leaveYear.end_date),
+    effective_until: leaveYear.end_date,
     cycle_anchor_date: null,
     week_count: 1,
     contracted_pas: '0',

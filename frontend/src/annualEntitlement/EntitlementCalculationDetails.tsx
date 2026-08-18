@@ -12,10 +12,7 @@ function value(value: string | null | undefined): string {
 }
 
 export function EntitlementCalculationDetails({ recommendation }: Props) {
-  const policy = recommendation.trace.filter(
-    (step) =>
-      step.rule_id.startsWith('entitlement.era') || step.rule_id.startsWith('entitlement.tier'),
-  )
+  const policy = traceGroup(recommendation.trace, 'entitlement.tier')
   const prorata = traceGroup(recommendation.trace, 'entitlement.pa-proration')
   const periods = traceGroup(recommendation.trace, 'leave-calculation.calendar-days')
 
@@ -25,12 +22,12 @@ export function EntitlementCalculationDetails({ recommendation }: Props) {
         <summary>Calculation Basis</summary>
         <div className="entitlement-basis-grid">
           <div>
-            <span>Appointment Date</span>
-            <strong>{recommendation.inputs.consultant_appointment_date}</strong>
-          </div>
-          <div>
-            <span>Reckonable Service Start</span>
-            <strong>{recommendation.inputs.consultant_service_start_date}</strong>
+            <span>Service Tier</span>
+            <strong>
+              {recommendation.inputs.seven_years_or_more
+                ? 'Seven Years or More'
+                : 'Less Than Seven Years'}
+            </strong>
           </div>
           <div>
             <span>Policy</span>
@@ -47,7 +44,11 @@ export function EntitlementCalculationDetails({ recommendation }: Props) {
         <ul className="calculation-lines">
           {policy.map((step) => (
             <li key={`${step.rule_id}-${step.effective_date}`}>
-              <strong>{step.context.appointment_era ?? step.description}</strong>
+              <strong>
+                {recommendation.inputs.seven_years_or_more
+                  ? 'Seven Years or More'
+                  : 'Less Than Seven Years'}
+              </strong>
               {step.amount ? <span>{value(step.amount)} full-time hours</span> : null}
             </li>
           ))}

@@ -71,4 +71,3 @@ class PublicHolidayTreatmentRecord(Base):
     holiday_date: Mapped[date] = mapped_column(Date, nullable=False)
     basis: Mapped[str] = mapped_column(String(30), nullable=False)
     note: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    worked_date: Mapped[date | None] = mapped_column(Date, nullable=True)

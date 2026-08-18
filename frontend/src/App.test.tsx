@@ -71,14 +71,19 @@ describe('consultant directory', () => {
     expect(screen.getByRole('dialog', { name: 'Add Consultant' })).toBeInTheDocument()
 
     await user.type(screen.getByRole('textbox', { name: 'Consultant Name' }), 'Dr Alex Morgan')
-    await user.type(screen.getByRole('textbox', { name: 'Post Title' }), 'Consultant in Radiology')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Post Title (Optional)' }),
+      'Consultant in Radiology',
+    )
     await user.click(screen.getByRole('button', { name: 'Create Consultant' }))
 
     expect(await screen.findAllByText('Consultant in Radiology')).toHaveLength(2)
 
     await user.click(screen.getByRole('button', { name: 'Edit Consultant' }))
     const editDialog = screen.getByRole('dialog', { name: 'Edit Consultant' })
-    const postTitle = within(editDialog).getByRole('textbox', { name: 'Post Title' })
+    const postTitle = within(editDialog).getByRole('textbox', {
+      name: 'Post Title (Optional)',
+    })
     await user.clear(postTitle)
     await user.type(postTitle, 'Clinical Lead')
     await user.click(within(editDialog).getByRole('button', { name: 'Save Changes' }))
@@ -232,7 +237,7 @@ describe('consultant directory', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit' }))
     const editor = screen.getByRole('dialog', { name: 'Edit Leave Year' })
-    await user.type(within(editor).getByLabelText('Employment Start'), '2026-01-01')
+    await user.type(within(editor).getByLabelText('Employment Start (Optional)'), '2026-01-01')
     await user.click(within(editor).getByRole('button', { name: 'Save Changes' }))
 
     expect(await screen.findByText('1 Jan 2026')).toBeInTheDocument()

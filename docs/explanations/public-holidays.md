@@ -96,14 +96,19 @@ The operator selects one of two treatments:
 - `STANDARD` uses the normal weekday deduction;
 - `QUALIFYING_ON_CALL` retains the equivalent leave by making the deduction zero.
 
-A retained treatment requires an explanatory note. `worked_date` can record the actual attendance
-date when it differs from the officially designated holiday date.
+An explanatory note is optional because the selected on-call treatment already records why leave
+is retained. The application does not ask for a separate worked date because it has no effect on
+the entitlement or deduction.
+
+Standard treatment is the absence of an exceptional treatment record. When an operator restores
+Standard after recording qualifying on-call cover, the application deletes the persisted override,
+records that restoration in audit history, and recalculates the ordinary weekday deduction.
 
 The software deliberately does not infer whether a shift or on-call period qualifies. HRS09's
 introductory wording refers to attendance or significant disruption, while its example table also
 awards a day for some formal on-call commitments without a call-in or disruption. That ambiguity
-requires Trust policy-owner confirmation. Until confirmed, the operator records the approved
-treatment and evidence rather than the software inventing a rule.
+requires Trust policy-owner confirmation. Until confirmed, the operator explicitly selects the
+approved treatment and may record supporting evidence rather than the software inventing a rule.
 
 ## Substitute holidays and avoiding duplicates
 
@@ -112,8 +117,8 @@ New Year's Day falls on a weekend. The calendar stores that designated date, not
 weekend date and the substitute date.
 
 If the consultant worked the original weekend day but the leave is retained against the substitute
-holiday, `holiday_date` remains the designated GOV.UK holiday and `worked_date` records the actual
-date worked. This supports HRS09's instruction not to award both the original and substitute date.
+holiday, the treatment remains attached to the designated GOV.UK holiday. This supports HRS09's
+instruction not to award both the original and substitute date without adding rota metadata.
 
 If one shift qualifies against two distinct public holidays, each official holiday receives its own
 treatment record. This mirrors the policy examples without adding shift or rota modelling.
@@ -138,9 +143,12 @@ audit purposes.
 ## Where the operator controls it
 
 The Settings page owns the shared England and Wales calendar, optional GOV.UK synchronisation, and
-Trust corrections. The consultant Overview shows applicable holidays and lets the operator record
-qualifying-on-call treatment with a note. The later Planning calendar will show
-the same persisted dates as context; it will not maintain a second holiday source.
+Trust corrections. The consultant Overview shows the calculation details and provides the same
+treatment editor for audit review. Planning is the primary treatment workflow: a public-holiday
+cell always remains labelled `PH` and opens the dedicated treatment dialog instead of the ordinary
+leave-booking editor. Standard holidays use the muted-gold holiday treatment; qualifying-on-call
+overrides use the retained-treatment colour until Standard is restored. Planning reads the shared
+calendar and consultant-year occurrences; it does not maintain a second holiday source.
 
 The leave ledger consumes these calculated deductions and must not reimplement public-holiday
 policy. Changing the shared calendar or a correction refreshes calculable entitlement

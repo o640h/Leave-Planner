@@ -277,7 +277,7 @@ export function BookingDrawer({
                 </select>
               </label>
               <label className="booking-note">
-                <span>Note</span>
+                <span>Note (Optional)</span>
                 <input
                   value={details.note ?? ''}
                   maxLength={500}
@@ -343,7 +343,7 @@ export function BookingDrawer({
                         />
                         <input
                           aria-label={`Replacement reason for ${day.leave_date}`}
-                          placeholder="Optional"
+                          placeholder="(Optional)"
                           value={draft?.reason ?? ''}
                           disabled={disabled || Boolean(day.public_holiday_name)}
                           onChange={(event) =>

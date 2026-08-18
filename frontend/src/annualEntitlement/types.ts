@@ -1,6 +1,6 @@
 import { formatDecimal } from '../system/decimal'
 
-export type EntitlementMode = 'calculated' | 'calculated_with_override' | 'manual'
+export type EntitlementMode = 'calculated' | 'manual'
 
 export type EntitlementAmounts = {
   dcc_hours: string
@@ -10,8 +10,7 @@ export type EntitlementAmounts = {
 }
 
 export type EntitlementInputs = {
-  consultant_appointment_date: string
-  consultant_service_start_date: string
+  seven_years_or_more: boolean
   policy_versions: string[]
   public_holiday_source: string
   public_holiday_source_date: string
@@ -63,12 +62,11 @@ export type EntitlementWorkspace = {
 
 export type EntitlementApplyInput = {
   mode: EntitlementMode
-  consultant_appointment_date?: string
-  consultant_service_start_date?: string
+  seven_years_or_more?: boolean
   dcc_hours?: string
   spa_hours?: string
   other_hours: string
-  reason?: string
+  reason?: string | null
 }
 
 export function displayAmounts(amounts: EntitlementAmounts): EntitlementAmounts {

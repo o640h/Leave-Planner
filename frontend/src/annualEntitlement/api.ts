@@ -19,12 +19,10 @@ export function getEntitlement(
 export function previewEntitlement(
   consultantId: number,
   leaveYearId: number,
-  appointmentDate: string,
-  serviceStartDate: string,
+  sevenYearsOrMore: boolean,
 ): Promise<EntitlementRecommendation> {
   const query = new URLSearchParams({
-    consultant_appointment_date: appointmentDate,
-    consultant_service_start_date: serviceStartDate,
+    seven_years_or_more: String(sevenYearsOrMore),
   })
 
   return apiRequest<EntitlementRecommendation>(

@@ -87,13 +87,10 @@ def test_calculated_entitlement_matches_the_workbook_and_survives_restart(
     with TestClient(app_for(tmp_path)) as client:
         consultant_id, leave_year_id = setup_year(client)
         path = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/entitlement"
-        dates = {
-            "consultant_appointment_date": "2010-01-01",
-            "consultant_service_start_date": "2010-01-01",
-        }
+        selection = {"seven_years_or_more": True}
 
         # Preview is read-only and explains base plus public-holiday hours.
-        preview = client.post(f"{path}/preview", params=dates)
+        preview = client.post(f"{path}/preview", params=selection)
         assert preview.status_code == 200
         recommendation = preview.json()
         assert Decimal(recommendation["base_entitlement"]["total_hours"]) == Decimal("243.936")
@@ -105,7 +102,7 @@ def test_calculated_entitlement_matches_the_workbook_and_survives_restart(
         )
 
         # Calculated mode applies the recommendation without editable totals.
-        applied = client.put(path, json={"mode": "calculated", **dates})
+        applied = client.put(path, json={"mode": "calculated", **selection})
         assert applied.status_code == 200
         body = applied.json()
         assert Decimal(body["application"]["entitlement"]["dcc_hours"]) == Decimal("203.304")
@@ -120,7 +117,7 @@ def test_calculated_entitlement_matches_the_workbook_and_survives_restart(
         assert stored.json()["recommendation"] is not None
 
 
-def test_manual_entitlement_requires_a_reason_and_replaces_the_applied_values(
+def test_manual_entitlement_accepts_an_optional_reason_and_replaces_the_applied_values(
     tmp_path: Path,
 ) -> None:
     """Manual control should remain explicit, traceable, and independent of dates."""
@@ -128,17 +125,19 @@ def test_manual_entitlement_requires_a_reason_and_replaces_the_applied_values(
     with TestClient(app_for(tmp_path)) as client:
         consultant_id, leave_year_id = setup_year(client)
         path = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/entitlement"
-        without_reason = {
+        manual_values = {
             "mode": "manual",
             "dcc_hours": "210",
             "spa_hours": "90",
             "other_hours": "0",
         }
-        assert client.put(path, json=without_reason).status_code == 422
+        without_reason = client.put(path, json=manual_values)
+        assert without_reason.status_code == 200
+        assert without_reason.json()["application"]["reason"] is None
 
         applied = client.put(
             path,
-            json={**without_reason, "reason": "Trust-approved starting values"},
+            json={**manual_values, "reason": "Trust-approved starting values"},
         )
         assert applied.status_code == 200
         assert applied.json()["recommendation"] is None
@@ -176,10 +175,7 @@ def test_calculation_is_blocked_when_job_plan_dates_have_a_gap(
 
         response = client.post(
             f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/entitlement/preview",
-            params={
-                "consultant_appointment_date": "2010-01-01",
-                "consultant_service_start_date": "2010-01-01",
-            },
+            params={"seven_years_or_more": True},
         )
 
     assert response.status_code == 422
@@ -196,11 +192,10 @@ def test_refresh_recalculates_a_calculated_entitlement_after_job_plan_change(
         entitlement_path = (
             f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/entitlement"
         )
-        dates = {
-            "consultant_appointment_date": "2010-01-01",
-            "consultant_service_start_date": "2010-01-01",
-        }
-        original = client.put(entitlement_path, json={"mode": "calculated", **dates}).json()
+        selection = {"seven_years_or_more": True}
+        original = client.put(
+            entitlement_path, json={"mode": "calculated", **selection}
+        ).json()
 
         job_plans_path = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/job-plans"
         job_plan = client.get(job_plans_path).json()[0]

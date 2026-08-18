@@ -61,9 +61,14 @@ When calculating a date, `JobPlanHistory` selects the version whose effective pe
 that date. Versions cannot overlap. A gap is allowed in stored history but causes an explicit
 error if a calculation reaches it, rather than silently using the wrong pattern.
 
-In the stored application, **Effective Until is exclusive**. A plan entered as 29 August 2025 to
-29 August 2026 applies through 28 August 2026. This matches the calculation engine's date ranges
-and prevents adjacent plans from overlapping on their handover date.
+Operators enter and see inclusive From and Until dates. The frontend API boundary converts the
+inclusive Until date to the following day's exclusive storage boundary, then converts it back when
+records are read. A plan shown as 29 August 2025 to 28 August 2026 is therefore stored as
+`[29 August 2025, 29 August 2026)`.
+
+Adjacent plans do not share a date. A plan ending 31 July may be followed by one starting
+1 August. If both operator-entered periods include 1 August, the existing overlap validation
+rejects the second period.
 
 ## One-week and multi-week patterns
 

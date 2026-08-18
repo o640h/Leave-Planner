@@ -15,14 +15,16 @@ calculation machinery should only change when the underlying calculation method 
 
 ## The calculation in plain language
 
-The app answers three questions in order:
+The low-level versioned policy model can answer three questions in order:
 
 1. Which policy version applied on the calculation date?
 2. Which appointment-era and completed-service tier applies to the consultant?
 3. What proportion is due for their contracted programmed activities (PAs)?
 
-The result is a full-year rate. Later calculation work will prorate that rate when a consultant
-starts or leaves during a leave year, reaches a service milestone, or changes hours.
+The result is a full-year rate. The active operator workflow deliberately does not ask for an
+appointment date or calculate an anniversary inside the year. It uses the post-April-2005
+consultant tiers and one `Seven Years or More` confirmation for the complete leave year. The
+low-level appointment-era data remains encoded so historical policy evidence is not discarded.
 
 ## HR78 version 3 consultant rules
 
@@ -83,8 +85,9 @@ tier. Some eras also have a seven-year tier.
 The resolver selects the highest threshold already reached. Six completed years uses the
 zero-year tier; exactly seven years uses the seven-year tier.
 
-This package does not derive completed years from dates. The leave calculation does that because
-it must handle the exact anniversary inside a leave year and leap-year cases.
+The package can still resolve completed-year thresholds for historical calculations. The active
+recommendation supplies either the zero-year or seven-year tier directly from the operator's
+checkbox, so it does not create a mid-year service milestone.
 
 ## Why policy versions are immutable
 
