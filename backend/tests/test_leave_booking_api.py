@@ -1,11 +1,11 @@
 """Integration tests for the persisted leave-booking workflow."""
 
 import json
-import sqlite3
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from database_queries import row, rows
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -15,7 +15,7 @@ from settings import Settings
 
 def app_for(data_dir: Path) -> FastAPI:
     return create_app(
-        settings=Settings(environment="test", data_dir=data_dir),
+        settings=Settings(environment="test", data_dir=data_dir, authentication_required=False),
         frontend_dist=data_dir / "no-frontend-build",
     )
 
@@ -246,11 +246,11 @@ def test_job_plan_edit_previews_and_regenerates_booking_deductions(tmp_path: Pat
             Decimal("8.5") * expected_factor
         )
 
-    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
-        event = connection.execute(
-            "SELECT details FROM audit_events "
-            "WHERE entity_type = 'leave_booking' AND action = 'deductions_regenerated'"
-        ).fetchone()
+    event = row(
+        tmp_path,
+        "SELECT details FROM audit_events "
+        "WHERE entity_type = 'leave_booking' AND action = 'deductions_regenerated'",
+    )
 
     assert event is not None
     details = json.loads(event[0])
@@ -352,13 +352,13 @@ def test_incorrect_booking_can_be_removed_without_losing_audit_evidence(tmp_path
         assert removed.json()["bookings"] == []
         assert Decimal(removed.json()["actual"]["bookings"]["total_hours"]) == 0
 
-    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
-        event = connection.execute(
-            "SELECT action, details FROM audit_events "
-            "WHERE consultant_id = ? AND entity_type = 'leave_booking' "
-            "ORDER BY id DESC LIMIT 1",
-            (consultant_id,),
-        ).fetchone()
+    event = row(
+        tmp_path,
+        "SELECT action, details FROM audit_events "
+        "WHERE consultant_id = :consultant_id AND entity_type = 'leave_booking' "
+        "ORDER BY id DESC LIMIT 1",
+        {"consultant_id": consultant_id},
+    )
     assert event is not None
     assert event[0] == "deleted"
     assert '"state": "taken"' in event[1]
@@ -384,10 +384,10 @@ def test_overlap_warning_and_audit_history(tmp_path: Path) -> None:
             for warning in overlap.json()["warnings"]
         )
 
-    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
-        events = connection.execute(
-            "SELECT action FROM audit_events "
-            "WHERE consultant_id = ? AND entity_type = 'leave_booking'",
-            (consultant_id,),
-        ).fetchall()
+    events = rows(
+        tmp_path,
+        "SELECT action FROM audit_events "
+        "WHERE consultant_id = :consultant_id AND entity_type = 'leave_booking'",
+        {"consultant_id": consultant_id},
+    )
     assert events == [("created",)]

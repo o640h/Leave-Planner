@@ -15,7 +15,6 @@ export function applyTheme(preference: ThemePreference) {
   const resolved = preference === 'system' ? systemTheme() : preference
   document.documentElement.dataset.theme = resolved
   document.documentElement.dataset.themePreference = preference
-  void window.pywebview?.api?.set_theme?.(preference, resolved)
 }
 
 export function saveThemePreference(preference: ThemePreference) {
@@ -25,19 +24,6 @@ export function saveThemePreference(preference: ThemePreference) {
 
 export function initialiseTheme() {
   applyTheme(getThemePreference())
-
-  async function syncDesktopPreference() {
-    const saved = await window.pywebview?.api?.get_theme_preference?.()
-    if (saved === 'dark' || saved === 'light' || saved === 'system') {
-      window.localStorage.setItem(storageKey, saved)
-      applyTheme(saved)
-      return
-    }
-    applyTheme(getThemePreference())
-  }
-
-  if (window.pywebview?.api) void syncDesktopPreference()
-  else window.addEventListener('pywebviewready', () => void syncDesktopPreference(), { once: true })
 
   window.matchMedia?.('(prefers-color-scheme: light)').addEventListener('change', () => {
     if (getThemePreference() === 'system') applyTheme('system')

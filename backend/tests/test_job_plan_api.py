@@ -1,10 +1,10 @@
 """Operator-level API tests for job-plan setup and preview."""
 
 import json
-import sqlite3
 from pathlib import Path
 from typing import Any
 
+from database_queries import rows
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -16,7 +16,7 @@ def app_for(data_dir: Path) -> FastAPI:
     """Run the real API and migrations against an isolated SQLite database."""
 
     return create_app(
-        settings=Settings(environment="test", data_dir=data_dir),
+        settings=Settings(environment="test", data_dir=data_dir, authentication_required=False),
         frontend_dist=data_dir / "no-frontend-build",
     )
 
@@ -100,10 +100,10 @@ def test_preview_save_edit_restart_and_audit_job_plan(tmp_path: Path) -> None:
         assert records.status_code == 200
         assert records.json()[0]["days"][0]["dcc_hours"] == "7.500"
 
-    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
-        events = connection.execute(
-            "SELECT action, details FROM audit_events WHERE entity_type = 'job_plan' ORDER BY id"
-        ).fetchall()
+    events = rows(
+        tmp_path,
+        "SELECT action, details FROM audit_events WHERE entity_type = 'job_plan' ORDER BY id",
+    )
 
     assert [action for action, _details in events] == ["created", "updated"]
     assert json.loads(events[1][1])["before"]["days"][0]["dcc_hours"] == "8.000"

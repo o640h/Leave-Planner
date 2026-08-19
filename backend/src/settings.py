@@ -6,9 +6,11 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import URL
 
+from database import database_url, sqlite_url
 from resources import frontend_distribution
 
 Environment = Literal["development", "production", "test"]
@@ -35,7 +37,7 @@ def default_data_directory(
 
 
 class Settings(BaseSettings):
-    """Environment-controlled settings for development, tests, and packaged runtime."""
+    """Environment-controlled settings for development, tests, and hosted runtime."""
 
     model_config = SettingsConfigDict(
         env_prefix="LEAVE_PLANNER_",
@@ -50,7 +52,19 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, ge=1, le=65535)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     data_dir: Path | None = None
+    database_url: SecretStr | None = None
     frontend_dist: Path | None = None
+    authentication_required: bool = True
+    session_lifetime_hours: int = Field(default=12, ge=1, le=168)
+
+    @model_validator(mode="after")
+    def validate_database_configuration(self) -> Settings:
+        url = self.resolved_database_url
+        if self.environment == "production" and url.get_backend_name() != "postgresql":
+            raise ValueError("Production requires a postgresql+psycopg database URL")
+        if self.environment == "production" and not self.authentication_required:
+            raise ValueError("Production requires authentication")
+        return self
 
     @property
     def resolved_data_dir(self) -> Path:
@@ -58,7 +72,39 @@ class Settings(BaseSettings):
 
     @property
     def database_path(self) -> Path:
-        return self.resolved_data_dir / "leave-planner.sqlite3"
+        path = self.sqlite_database_path
+        if path is None:
+            raise RuntimeError("The configured database is not a file-backed SQLite database")
+        return path
+
+    @property
+    def resolved_database_url(self) -> URL:
+        if self.database_url is None:
+            return sqlite_url(self.resolved_data_dir / "leave-planner.sqlite3")
+        return database_url(self.database_url.get_secret_value())
+
+    @property
+    def sqlite_database_path(self) -> Path | None:
+        url = self.resolved_database_url
+        if url.get_backend_name() != "sqlite" or not url.database or url.database == ":memory:":
+            return None
+        return Path(url.database).expanduser().resolve()
+
+    @property
+    def uses_sqlite(self) -> bool:
+        return self.resolved_database_url.get_backend_name() == "sqlite"
+
+    @property
+    def secure_cookies(self) -> bool:
+        return self.environment == "production"
+
+    @property
+    def session_cookie_name(self) -> str:
+        return "__Host-id" if self.secure_cookies else "leave_planner_id"
+
+    @property
+    def csrf_cookie_name(self) -> str:
+        return "__Host-csrf" if self.secure_cookies else "leave_planner_csrf"
 
     @property
     def backup_directory(self) -> Path:

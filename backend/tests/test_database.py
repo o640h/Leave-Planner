@@ -1,6 +1,7 @@
 """Database migration and online backup smoke tests."""
 
 import sqlite3
+from contextlib import closing
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -10,7 +11,7 @@ from alembic import command
 from sqlalchemy import inspect, text
 
 from backup import create_online_backup
-from database import create_database_engine, create_session_factory, session_scope
+from database import create_database_engine, create_session_factory, session_scope, sqlite_url
 from migrations import alembic_config, upgrade_database
 
 
@@ -19,13 +20,16 @@ def test_alembic_upgrade_creates_foundation_schema(tmp_path: Path) -> None:
 
     upgrade_database(database_path)
 
-    engine = create_database_engine(database_path)
+    engine = create_database_engine(sqlite_url(database_path))
     assert {
         "alembic_version",
         "system_metadata",
         "consultants",
         "leave_years",
         "audit_events",
+        "users",
+        "user_sessions",
+        "security_events",
         "job_plan_versions",
         "job_plan_days",
     } <= set(inspect(engine).get_table_names())
@@ -46,7 +50,7 @@ def test_alembic_upgrade_creates_foundation_schema(tmp_path: Path) -> None:
 
 
 def test_sqlite_engine_enables_integrity_pragmas(tmp_path: Path) -> None:
-    engine = create_database_engine(tmp_path / "engine.sqlite3")
+    engine = create_database_engine(sqlite_url(tmp_path / "engine.sqlite3"))
 
     with engine.connect() as connection:
         assert connection.execute(text("PRAGMA foreign_keys")).scalar_one() == 1
@@ -59,7 +63,7 @@ def test_deduction_migration_backfills_existing_booking_days(tmp_path: Path) -> 
     config = alembic_config(database_path)
     command.upgrade(config, "0009")
 
-    with sqlite3.connect(database_path) as connection:
+    with closing(sqlite3.connect(database_path)) as connection, connection:
         connection.execute("INSERT INTO consultants (id, name) VALUES (1, 'Consultant')")
         connection.execute(
             """
@@ -99,7 +103,7 @@ def test_deduction_migration_backfills_existing_booking_days(tmp_path: Path) -> 
 
     command.upgrade(config, "head")
 
-    with sqlite3.connect(database_path) as connection:
+    with closing(sqlite3.connect(database_path)) as connection, connection:
         contracted_pas, deduction_factor = connection.execute(
             "SELECT contracted_pas, deduction_factor FROM leave_booking_days"
         ).fetchone()
@@ -111,7 +115,7 @@ def test_deduction_migration_backfills_existing_booking_days(tmp_path: Path) -> 
 def test_session_scope_commits_successful_work(tmp_path: Path) -> None:
     database_path = tmp_path / "sessions.sqlite3"
     upgrade_database(database_path)
-    engine = create_database_engine(database_path)
+    engine = create_database_engine(sqlite_url(database_path))
     factory = create_session_factory(engine)
 
     with session_scope(factory) as session:
@@ -130,12 +134,20 @@ def test_session_scope_commits_successful_work(tmp_path: Path) -> None:
     engine.dispose()
 
 
+def test_postgresql_alembic_configuration_preserves_the_driver_and_credentials() -> None:
+    url = "postgresql+psycopg://leave_planner:p%40ss@database:5432/leave_planner"
+
+    configured = alembic_config(url).get_main_option("sqlalchemy.url")
+
+    assert configured == url
+
+
 def test_online_backup_is_consistent_and_readable(tmp_path: Path) -> None:
     source = tmp_path / "live" / "leave-planner.sqlite3"
     source.parent.mkdir()
     upgrade_database(source)
 
-    with sqlite3.connect(source) as connection:
+    with closing(sqlite3.connect(source)) as connection, connection:
         connection.execute("CREATE TABLE example (value TEXT NOT NULL)")
         connection.execute("INSERT INTO example VALUES ('preserved')")
 
@@ -146,7 +158,7 @@ def test_online_backup_is_consistent_and_readable(tmp_path: Path) -> None:
     )
 
     assert backup.name == "leave-planner-manual-20260806T103000Z.sqlite3"
-    with sqlite3.connect(backup) as connection:
+    with closing(sqlite3.connect(backup)) as connection, connection:
         assert connection.execute("SELECT value FROM example").fetchone() == ("preserved",)
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
 

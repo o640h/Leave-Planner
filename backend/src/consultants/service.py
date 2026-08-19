@@ -8,22 +8,32 @@ from sqlalchemy.orm import Session
 from audit import record_audit_event
 from errors import ApiError
 from removal import RemovalCommand, RemovalImpact, RemovalResult
+from workspaces.service import current_workspace_id
 
 from .models import Consultant
 from .schemas import ConsultantCreate, ConsultantUpdate
 
 
 def list_consultants(session: Session) -> tuple[Consultant, ...]:
+    workspace_id = current_workspace_id(session)
     statement = (
         select(Consultant)
-        .where(Consultant.archived_at.is_(None))
+        .where(
+            Consultant.workspace_id == workspace_id,
+            Consultant.archived_at.is_(None),
+        )
         .order_by(Consultant.name, Consultant.id)
     )
     return tuple(session.scalars(statement))
 
 
 def get_consultant(session: Session, consultant_id: int) -> Consultant:
-    consultant = session.get(Consultant, consultant_id)
+    consultant = session.scalar(
+        select(Consultant).where(
+            Consultant.id == consultant_id,
+            Consultant.workspace_id == current_workspace_id(session),
+        )
+    )
     if consultant is None:
         raise ApiError(
             status_code=404,
@@ -34,7 +44,10 @@ def get_consultant(session: Session, consultant_id: int) -> Consultant:
 
 
 def create_consultant(session: Session, details: ConsultantCreate) -> Consultant:
-    consultant = Consultant(**details.model_dump())
+    consultant = Consultant(
+        workspace_id=current_workspace_id(session),
+        **details.model_dump(),
+    )
     session.add(consultant)
     session.flush()
     session.refresh(consultant)

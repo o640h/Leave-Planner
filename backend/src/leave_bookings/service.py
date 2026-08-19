@@ -338,9 +338,7 @@ def regeneration_impact(
     updated = ZERO_ACTIVITY_HOURS
     for change in changes:
         state = LeaveState(change.record.state)
-        current_by_date = {
-            day.leave_date: _domain_day(day, state) for day in change.record.days
-        }
+        current_by_date = {day.leave_date: _domain_day(day, state) for day in change.record.days}
         updated_by_date = {day.leave_date: day for day in change.generated_days}
         for leave_date in change.affected_dates:
             if leave_date in current_by_date:
@@ -385,9 +383,7 @@ def regenerate_booking_days(
     updated = ZERO_ACTIVITY_HOURS
     for change in changes:
         state = LeaveState(change.record.state)
-        current_by_date = {
-            day.leave_date: _domain_day(day, state) for day in change.record.days
-        }
+        current_by_date = {day.leave_date: _domain_day(day, state) for day in change.record.days}
         updated_by_date = {day.leave_date: day for day in change.generated_days}
         before = []
         after = []
@@ -692,6 +688,7 @@ def update_booking(
     booking_id: int,
     details: LeaveBookingWrite,
 ) -> PlanningRead:
+    leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     record = _record(session, leave_year_id, booking_id)
     _save(session, consultant_id, leave_year_id, details, record)
     return planning(session, consultant_id, leave_year_id)

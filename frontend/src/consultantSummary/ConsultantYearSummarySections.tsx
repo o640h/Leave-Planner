@@ -190,7 +190,7 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
             <p key={event.id}>
               <strong>{auditLabel(event)}</strong>
               <time dateTime={event.recorded_at}>
-                {dateTimeFormatter.format(new Date(event.recorded_at))}
+                {event.actor_label} · {dateTimeFormatter.format(new Date(event.recorded_at))}
               </time>
             </p>
           ))}

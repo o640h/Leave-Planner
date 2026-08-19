@@ -24,7 +24,7 @@ def parse_gov_uk_calendar(
 ) -> PublicHolidayCalendar:
     """Parse only the England and Wales division."""
 
-    if not isinstance(payload, (bytes, str)):
+    if not isinstance(payload, bytes | str):
         raise TypeError("GOV.UK payload must be bytes or text")
 
     if type(source_date) is not date:

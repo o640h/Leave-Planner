@@ -33,6 +33,7 @@ def get_leave_year(
     consultant_id: int,
     leave_year_id: int,
 ) -> LeaveYear:
+    consultant_service.get_consultant(session, consultant_id)
     leave_year = session.get(LeaveYear, leave_year_id)
 
     if leave_year is None or leave_year.consultant_id != consultant_id:

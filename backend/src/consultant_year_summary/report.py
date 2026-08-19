@@ -23,6 +23,8 @@ from reportlab.platypus import (  # type: ignore[import-untyped]
     TableStyle,
 )
 
+from leave_bookings.schemas import ActivityHoursRead
+
 from .schemas import LeaveLogEntryRead
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
@@ -91,6 +93,7 @@ def render_leave_log_pdf(
     leave_year_start: date,
     leave_year_end: date,
     entries: tuple[LeaveLogEntryRead, ...],
+    leave_remaining: ActivityHoursRead | None,
     generated_at: datetime | None = None,
 ) -> bytes:
     """Render one complete, multipage leave log entirely in memory."""
@@ -279,7 +282,45 @@ def render_leave_log_pdf(
             ]
         ),
     )
-    story.extend([Spacer(1, 5 * mm), KeepTogether(totals)])
+    if leave_remaining is None:
+        remaining_data = [
+            [
+                Paragraph("Leave Remaining", header_style),
+                Paragraph("Not available until annual entitlement is applied.", cell_style),
+                "",
+                "",
+            ]
+        ]
+    else:
+        remaining_data = [
+            [
+                Paragraph("Leave Remaining", header_style),
+                Paragraph(f"DCC&nbsp;&nbsp; {_hours(leave_remaining.dcc_hours)}h", number_style),
+                Paragraph(f"SPA&nbsp;&nbsp; {_hours(leave_remaining.spa_hours)}h", number_style),
+                Paragraph(
+                    f"Total&nbsp;&nbsp; {_hours(leave_remaining.total_hours)}h",
+                    number_style,
+                ),
+            ]
+        ]
+    remaining_commands: list[tuple[Any, ...]] = [
+        ("BACKGROUND", (0, 0), (-1, -1), ALTERNATE),
+        ("BOX", (0, 0), (-1, -1), 0.5, LINE),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]
+    if leave_remaining is None:
+        remaining_commands.append(("SPAN", (1, 0), (-1, 0)))
+    remaining = Table(
+        remaining_data,
+        colWidths=(88 * mm, 27 * mm, 27 * mm, 34 * mm),
+        hAlign="CENTER",
+        style=TableStyle(remaining_commands),
+    )
+    story.extend([Spacer(1, 5 * mm), KeepTogether([totals, Spacer(1, 2 * mm), remaining])])
 
     def add_page_details(canvas: Canvas, document_template: Any) -> None:
         canvas.saveState()

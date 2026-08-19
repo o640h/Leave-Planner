@@ -15,10 +15,12 @@ from migrations import alembic_config, upgrade_database
 from recovery import create_startup_backups
 from settings import Settings
 
+pytestmark = pytest.mark.sqlite_only
+
 
 def app_for(data_dir: Path) -> FastAPI:
     return create_app(
-        settings=Settings(environment="test", data_dir=data_dir),
+        settings=Settings(environment="test", data_dir=data_dir, authentication_required=False),
         frontend_dist=data_dir / "no-frontend-build",
     )
 

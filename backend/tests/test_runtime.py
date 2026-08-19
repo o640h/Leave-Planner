@@ -4,7 +4,9 @@ import json
 import logging
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import SecretStr, ValidationError
 
 from errors import ApiError
 from logging_config import JsonFormatter
@@ -21,11 +23,44 @@ def test_windows_data_directory_uses_local_app_data(tmp_path: Path) -> None:
 
 
 def test_settings_support_production_overrides(tmp_path: Path) -> None:
-    settings = Settings(environment="production", data_dir=tmp_path, port=8123)
+    settings = Settings(
+        environment="production",
+        data_dir=tmp_path,
+        database_url=SecretStr(
+            "postgresql+psycopg://leave_planner:secret@database/leave_planner"
+        ),
+        port=8123,
+    )
 
     assert settings.environment == "production"
-    assert settings.database_path == tmp_path / "leave-planner.sqlite3"
+    assert settings.resolved_database_url.get_backend_name() == "postgresql"
+    assert settings.sqlite_database_path is None
     assert settings.port == 8123
+    assert "secret" not in repr(settings)
+
+
+@pytest.mark.sqlite_only
+def test_development_defaults_to_a_local_sqlite_database(tmp_path: Path) -> None:
+    settings = Settings(environment="development", data_dir=tmp_path)
+
+    assert settings.uses_sqlite
+    assert settings.database_path == tmp_path / "leave-planner.sqlite3"
+
+
+def test_production_rejects_sqlite_and_unsupported_database_drivers(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="Production requires"):
+        Settings(
+            environment="production",
+            database_url=SecretStr(
+                f"sqlite+pysqlite:///{(tmp_path / 'test.sqlite3').as_posix()}"
+            ),
+        )
+
+    with pytest.raises(ValidationError, match=r"sqlite\+pysqlite or postgresql\+psycopg"):
+        Settings(
+            environment="test",
+            database_url=SecretStr("mysql+pymysql://database/example"),
+        )
 
 
 def test_api_errors_use_stable_envelope(tmp_path: Path) -> None:

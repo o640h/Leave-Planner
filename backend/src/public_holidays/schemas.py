@@ -24,7 +24,7 @@ class HolidayCorrectionWrite(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
 
     @model_validator(mode="after")
-    def validate_action(self) -> "HolidayCorrectionWrite":
+    def validate_action(self) -> HolidayCorrectionWrite:
         if self.action is HolidayCorrectionAction.ADD_OR_REPLACE and not self.replacement_name:
             raise ValueError("Enter the holiday name being added or replaced")
         if self.action is HolidayCorrectionAction.REMOVE:
@@ -51,7 +51,7 @@ class HolidayTreatmentWrite(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
     @model_validator(mode="after")
-    def normalise_treatment_details(self) -> "HolidayTreatmentWrite":
+    def normalise_treatment_details(self) -> HolidayTreatmentWrite:
         retained = self.basis is not HolidayTreatmentBasis.STANDARD
         if self.note == "":
             self.note = None

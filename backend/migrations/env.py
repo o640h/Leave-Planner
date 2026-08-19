@@ -7,27 +7,33 @@ from sqlalchemy import engine_from_config, pool
 
 from annual_entitlement.persistence import AppliedEntitlementRecord  # noqa: F401
 from audit import AuditEvent  # noqa: F401
+from authentication.models import SecurityEvent, User, UserSession  # noqa: F401
 from carry_forward.persistence import CarryForwardRecord  # noqa: F401
 from consultants.models import Consultant
 from job_plans.persistence import JobPlanRecord  # noqa: F401
 from leave_bookings.persistence import LeaveBookingRecord  # noqa: F401
 from leave_years.models import LeaveYear  # noqa: F401
 from public_holidays.persistence import HolidayCalendarVersionRecord  # noqa: F401
+from workspaces.models import Workspace, WorkspaceMembership  # noqa: F401
 
 config = context.config
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+config_file_name = config.config_file_name
+if config_file_name is not None:
+    fileConfig(config_file_name)
 
 target_metadata = Consultant.metadata
 
 
 def run_migrations_offline() -> None:
+    url = config.get_main_option("sqlalchemy.url")
+    if url is None:
+        raise RuntimeError("Alembic requires sqlalchemy.url")
     context.configure(
-        url=config.get_main_option("sqlalchemy.url"),
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        render_as_batch=True,
+        render_as_batch=url.startswith("sqlite"),
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -39,12 +45,17 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata, render_as_batch=True
-        )
-        with context.begin_transaction():
-            context.run_migrations()
+    try:
+        with connectable.connect() as connection:
+            context.configure(
+                connection=connection,
+                target_metadata=target_metadata,
+                render_as_batch=connection.dialect.name == "sqlite",
+            )
+            with context.begin_transaction():
+                context.run_migrations()
+    finally:
+        connectable.dispose()
 
 
 if context.is_offline_mode():

@@ -13,7 +13,7 @@ def app_for(data_dir: Path) -> FastAPI:
     """Give each test a real migrated SQLite database in its temporary folder."""
 
     return create_app(
-        settings=Settings(environment="test", data_dir=data_dir),
+        settings=Settings(environment="test", data_dir=data_dir, authentication_required=False),
         frontend_dist=data_dir / "no-frontend-build",
     )
 

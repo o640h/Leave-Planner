@@ -6,6 +6,16 @@ type ErrorEnvelope = {
   }
 }
 
+export const AUTHENTICATION_REQUIRED_EVENT = 'leave-planner:authentication-required'
+
+const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+function cookieValue(name: string): string | null {
+  const prefix = `${encodeURIComponent(name)}=`
+  const match = document.cookie.split('; ').find((part) => part.startsWith(prefix))
+  return match ? decodeURIComponent(match.slice(prefix.length)) : null
+}
+
 export class ApiClientError extends Error {
   readonly status: number
   readonly code: string
@@ -40,12 +50,24 @@ export async function apiRequest<ResponseBody>(
     headers.set('Content-Type', 'application/json')
   }
 
+  const method = (options.method ?? 'GET').toUpperCase()
+  const csrfToken = cookieValue(
+    window.location.protocol === 'https:' ? '__Host-csrf' : 'leave_planner_csrf',
+  )
+  if (unsafeMethods.has(method) && csrfToken && !headers.has('X-CSRF-Token')) {
+    headers.set('X-CSRF-Token', csrfToken)
+  }
+
   const response = await fetch(path, {
     ...options,
+    credentials: 'same-origin',
     headers,
   })
 
   if (!response.ok) {
+    if (response.status === 401 && path !== '/api/auth/login') {
+      window.dispatchEvent(new Event(AUTHENTICATION_REQUIRED_EVENT))
+    }
     throw await requestError(response)
   }
 
@@ -55,8 +77,13 @@ export async function apiRequest<ResponseBody>(
 export async function apiFileRequest(
   path: string,
 ): Promise<{ blob: Blob; filename: string | null }> {
-  const response = await fetch(path)
-  if (!response.ok) throw await requestError(response)
+  const response = await fetch(path, { credentials: 'same-origin' })
+  if (!response.ok) {
+    if (response.status === 401) {
+      window.dispatchEvent(new Event(AUTHENTICATION_REQUIRED_EVENT))
+    }
+    throw await requestError(response)
+  }
 
   const disposition = response.headers.get('Content-Disposition')
   const filename = disposition?.match(/filename="([^"]+)"/i)?.[1] ?? null

@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from dependencies import DatabaseSession
+from leave_years import service as leave_year_service
 
 from . import service
 from .schemas import LeaveBookingWrite, LeavePreviewRead, PlanningRead
@@ -14,9 +15,7 @@ router = APIRouter(
 
 
 @router.get("/planning", response_model=PlanningRead)
-def get_planning(
-    consultant_id: int, leave_year_id: int, session: DatabaseSession
-) -> PlanningRead:
+def get_planning(consultant_id: int, leave_year_id: int, session: DatabaseSession) -> PlanningRead:
     return service.planning(session, consultant_id, leave_year_id)
 
 
@@ -48,6 +47,7 @@ def preview_booking_update(
     details: LeaveBookingWrite,
     session: DatabaseSession,
 ) -> LeavePreviewRead:
+    leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     service._record(session, leave_year_id, booking_id)
     return service.preview_booking(
         session, consultant_id, leave_year_id, details, excluding_id=booking_id

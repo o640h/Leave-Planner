@@ -10,6 +10,7 @@ from domain import DateRange
 from errors import ApiError
 from job_plans import service as job_plan_service
 from leave_years import service as leave_year_service
+from workspaces.service import current_workspace_id
 
 from .calculator import calculate_public_holidays
 from .calendar import resolved_holidays
@@ -74,10 +75,14 @@ def _latest_calendar_record(session: Session) -> HolidayCalendarVersionRecord:
 
 
 def _active_corrections(session: Session) -> tuple[HolidayCorrectionRecord, ...]:
+    workspace_id = current_workspace_id(session)
     return tuple(
         session.scalars(
             select(HolidayCorrectionRecord)
-            .where(HolidayCorrectionRecord.retired_at.is_(None))
+            .where(
+                HolidayCorrectionRecord.workspace_id == workspace_id,
+                HolidayCorrectionRecord.retired_at.is_(None),
+            )
             .order_by(HolidayCorrectionRecord.holiday_date, HolidayCorrectionRecord.id)
         )
     )
@@ -132,12 +137,14 @@ def _refresh_entitlements(session: Session) -> None:
 
     from annual_entitlement.persistence import AppliedEntitlementRecord
     from annual_entitlement.service import refresh_entitlement
+    from consultants.models import Consultant
     from leave_years.models import LeaveYear
 
     rows = session.execute(
-        select(LeaveYear.consultant_id, LeaveYear.id).join(
-            AppliedEntitlementRecord, AppliedEntitlementRecord.leave_year_id == LeaveYear.id
-        )
+        select(LeaveYear.consultant_id, LeaveYear.id)
+        .join(AppliedEntitlementRecord, AppliedEntitlementRecord.leave_year_id == LeaveYear.id)
+        .join(Consultant, Consultant.id == LeaveYear.consultant_id)
+        .where(Consultant.workspace_id == current_workspace_id(session))
     )
     for consultant_id, leave_year_id in rows:
         try:
@@ -170,6 +177,7 @@ def save_correction(session: Session, details: HolidayCorrectionWrite) -> Holida
             existing.retired_at = now
     session.add(
         HolidayCorrectionRecord(
+            workspace_id=current_workspace_id(session),
             holiday_date=details.holiday_date,
             action=details.action.value,
             replacement_name=details.replacement_name,
@@ -182,7 +190,12 @@ def save_correction(session: Session, details: HolidayCorrectionWrite) -> Holida
 
 
 def remove_correction(session: Session, correction_id: int) -> HolidaySettingsRead:
-    record = session.get(HolidayCorrectionRecord, correction_id)
+    record = session.scalar(
+        select(HolidayCorrectionRecord).where(
+            HolidayCorrectionRecord.id == correction_id,
+            HolidayCorrectionRecord.workspace_id == current_workspace_id(session),
+        )
+    )
     if record is None or record.retired_at is not None:
         raise ApiError(
             status_code=404,

@@ -42,6 +42,7 @@ export type WeekdayCounts = {
 
 export type AuditEvent = {
   id: number
+  actor_label: string
   entity_type: string
   action: string
   recorded_at: string

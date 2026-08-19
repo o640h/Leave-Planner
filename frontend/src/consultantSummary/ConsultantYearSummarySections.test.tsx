@@ -103,6 +103,7 @@ const summary = {
   audit_events: [
     {
       id: 6,
+      actor_label: 'Admin',
       entity_type: 'leave_booking',
       action: 'created',
       recorded_at: '2026-08-11T10:00:00',
@@ -112,8 +113,8 @@ const summary = {
 } satisfies ConsultantYearSummary
 
 afterEach(() => {
-  delete window.pywebview
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('consultant year summary', () => {
@@ -127,6 +128,7 @@ describe('consultant year summary', () => {
     expect(screen.getByText('Workbook reference')).toBeInTheDocument()
     expect(screen.getByText('8.5h')).toBeInTheDocument()
     expect(screen.getByText('1 Events')).toBeInTheDocument()
+    expect(screen.getByText(/Admin ·/)).toBeInTheDocument()
   })
 
   it('switches among actual, confirmed, and projected balances', () => {
@@ -154,9 +156,12 @@ describe('consultant year summary', () => {
     expect(screen.queryByRole('dialog', { name: 'Anonymous' })).not.toBeInTheDocument()
   })
 
-  it('saves the generated PDF through the native desktop dialog', async () => {
-    const savePdf = vi.fn().mockResolvedValue('saved')
-    window.pywebview = { api: { save_pdf: savePdf } }
+  it('downloads the generated PDF through the browser', async () => {
+    const createObjectURL = vi.fn().mockReturnValue('blob:leave-log')
+    const revokeObjectURL = vi.fn()
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL })
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL })
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -174,11 +179,9 @@ describe('consultant year summary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expand Leave Log' }))
     fireEvent.click(screen.getByRole('button', { name: 'Export PDF' }))
 
-    await waitFor(() => expect(savePdf).toHaveBeenCalledOnce())
-    expect(savePdf).toHaveBeenCalledWith(
-      'Anonymous_Leave_Log_2025-08-29_to_2026-08-28.pdf',
-      expect.any(String),
-    )
-    expect(await screen.findByRole('status')).toHaveTextContent('PDF saved.')
+    await waitFor(() => expect(createObjectURL).toHaveBeenCalledOnce())
+    expect(click).toHaveBeenCalledOnce()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:leave-log')
+    expect(await screen.findByRole('status')).toHaveTextContent('PDF download started.')
   })
 })

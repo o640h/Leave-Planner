@@ -17,7 +17,7 @@ from settings import Settings
 
 def app_for(data_dir: Path) -> FastAPI:
     return create_app(
-        settings=Settings(environment="test", data_dir=data_dir),
+        settings=Settings(environment="test", data_dir=data_dir, authentication_required=False),
         frontend_dist=data_dir / "no-frontend-build",
     )
 
@@ -204,6 +204,10 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
     assert "229.5h" in exported_text
     assert "18h" in exported_text
     assert "247.5h" in exported_text
+    assert "Leave Remaining" in exported_text
+    assert "15.05h" in exported_text
+    assert "70.06h" in exported_text
+    assert "85.12h" in exported_text
 
 
 def test_summary_remains_available_before_a_job_plan_is_added(tmp_path: Path) -> None:

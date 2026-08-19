@@ -277,7 +277,7 @@ def _update_impact(
     leave_year_id: int,
     job_plan_id: int,
     details: JobPlanUpdate,
-) -> "BookingRegenerationImpact":
+) -> BookingRegenerationImpact:
     from leave_bookings import service as booking_service
 
     leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)

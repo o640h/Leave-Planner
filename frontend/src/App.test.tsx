@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { App } from './App'
+import { ApplicationWorkspace } from './App'
 import type { Consultant } from './consultants/types'
 
 function json(body: unknown, ok = true) {
@@ -62,7 +62,7 @@ describe('consultant directory', () => {
       }),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
 
     expect(await screen.findByText('Ready')).toBeInTheDocument()
     expect(await screen.findByText('No consultants have been added.')).toBeInTheDocument()
@@ -105,7 +105,7 @@ describe('consultant directory', () => {
       ),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
     expect(await screen.findByRole('heading', { name: 'Consultants' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add Consultant' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Consultants' })).toHaveAttribute(
@@ -137,7 +137,7 @@ describe('consultant directory', () => {
       }),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
     await user.click(screen.getByRole('button', { name: 'Settings' }))
 
     expect(screen.getByRole('heading', { name: 'Appearance' })).toBeInTheDocument()
@@ -174,7 +174,7 @@ describe('consultant directory', () => {
       }),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
     expect(await screen.findByRole('heading', { name: 'Dr Alex Morgan' })).toBeInTheDocument()
 
     const search = screen.getByRole('searchbox', { name: 'Search' })
@@ -224,7 +224,7 @@ describe('consultant directory', () => {
       }),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
     expect(await screen.findByText('No Leave Year Configured')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Add Leave Year' }))
@@ -253,7 +253,7 @@ describe('consultant directory', () => {
       ),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
     await screen.findByText('No consultants have been added.')
     await user.click(screen.getByRole('button', { name: 'Add Consultant' }))
 
@@ -363,7 +363,7 @@ describe('consultant directory', () => {
       }),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
     expect(
       await screen.findByText('No job plan is configured for this leave year.'),
     ).toBeInTheDocument()

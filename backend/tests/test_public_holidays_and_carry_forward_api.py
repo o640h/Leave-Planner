@@ -1,10 +1,10 @@
 """Integration tests for public-holiday and carry-forward workflows."""
 
-import sqlite3
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from database_queries import row, rows
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -14,7 +14,7 @@ from settings import Settings
 
 def app_for(data_dir: Path) -> FastAPI:
     return create_app(
-        settings=Settings(environment="test", data_dir=data_dir),
+        settings=Settings(environment="test", data_dir=data_dir, authentication_required=False),
         frontend_dist=data_dir / "no-frontend-build",
     )
 
@@ -113,14 +113,12 @@ def test_calendar_corrections_and_consultant_treatments_persist(tmp_path: Path) 
             == 200
         )
 
-    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
-        assert connection.execute("SELECT COUNT(*) FROM public_holiday_treatments").fetchone() == (
-            0,
-        )
-        actions = connection.execute(
-            "SELECT action FROM audit_events WHERE entity_type = 'public_holiday_treatment' "
-            "ORDER BY id"
-        ).fetchall()
+    assert row(tmp_path, "SELECT COUNT(*) FROM public_holiday_treatments") == (0,)
+    actions = rows(
+        tmp_path,
+        "SELECT action FROM audit_events WHERE entity_type = 'public_holiday_treatment' "
+        "ORDER BY id",
+    )
     assert actions == [("created",), ("deleted",)]
 
 

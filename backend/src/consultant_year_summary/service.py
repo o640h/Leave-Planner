@@ -213,6 +213,7 @@ def get_summary(
         audit_events=tuple(
             AuditEventRead(
                 id=event.id,
+                actor_label=event.actor_label,
                 entity_type=event.entity_type,
                 action=event.action,
                 recorded_at=event.recorded_at,

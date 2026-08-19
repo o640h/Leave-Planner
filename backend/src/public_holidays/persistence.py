@@ -48,6 +48,9 @@ class HolidayCorrectionRecord(Base):
     __tablename__ = "holiday_corrections"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
     holiday_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     action: Mapped[str] = mapped_column(String(30), nullable=False)
     replacement_name: Mapped[str | None] = mapped_column(String(160), nullable=True)

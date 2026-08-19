@@ -1,35 +1,18 @@
-"""Resolve application resources in source and packaged environments."""
+"""Resolve application resources from the repository layout."""
 
-import sys
 from pathlib import Path
 
 
-def is_packaged() -> bool:
-    """Return whether Leave Planner is running from a PyInstaller bundle."""
-
-    return bool(getattr(sys, "frozen", False))
-
-
 def resource_root() -> Path:
-    """Return the directory containing bundled read-only resources."""
+    """Return the backend directory containing migrations and configuration."""
 
-    current_file = Path(__file__).resolve()
-
-    if is_packaged():
-        return current_file.parent
-
-    return current_file.parents[1]
+    return Path(__file__).resolve().parents[1]
 
 
 def frontend_distribution() -> Path:
     """Return the compiled React frontend directory."""
 
-    root = resource_root()
-
-    if is_packaged():
-        return root / "frontend" / "dist"
-
-    return root.parent / "frontend" / "dist"
+    return resource_root().parent / "frontend" / "dist"
 
 
 def alembic_configuration() -> Path:

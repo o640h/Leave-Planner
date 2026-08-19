@@ -9,16 +9,14 @@ from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Generic, TypeAlias, TypeVar
 
-DecimalInput: TypeAlias = Decimal | int | str
-ResultValue = TypeVar("ResultValue")
+type DecimalInput = Decimal | int | str
 
 
 def _to_decimal(value: DecimalInput, *, field_name: str) -> Decimal:
     """Convert an exact input into a finite Decimal."""
 
-    if isinstance(value, (bool, float)):
+    if isinstance(value, bool | float):
         raise TypeError(f"{field_name} cannot be created from bool or float")
 
     try:
@@ -213,7 +211,7 @@ class CalculationStep:
 
 
 @dataclass(frozen=True, slots=True)
-class CalculationResult(Generic[ResultValue]):
+class CalculationResult[ResultValue]:
     """A value together with its warnings and calculation trace."""
 
     value: ResultValue

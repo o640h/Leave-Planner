@@ -25,7 +25,7 @@ export function HealthStatus() {
     <div className={`service-state service-state--${health}`} aria-live="polite">
       <span aria-hidden="true" />
       <div>
-        <small>Local Service</small>
+        <small>Service</small>
         <strong>
           {health === 'checking' ? 'Connecting' : health === 'ready' ? 'Ready' : 'Unavailable'}
         </strong>

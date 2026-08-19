@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { App } from '../App'
+import { ApplicationWorkspace } from '../App'
 import { CarryForwardControl } from '../carryForward/CarryForwardControl'
 
 function json(body: unknown) {
@@ -34,7 +34,7 @@ describe('holiday and carry-forward workflows', () => {
       }),
     )
 
-    render(<App />)
+    render(<ApplicationWorkspace />)
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     await user.click(screen.getByRole('button', { name: 'Public Holidays' }))
     expect(await screen.findByRole('heading', { name: 'Public Holidays' })).toBeInTheDocument()

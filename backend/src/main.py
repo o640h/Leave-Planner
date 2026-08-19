@@ -4,10 +4,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from annual_entitlement.router import router as entitlement_router
+from authentication.router import router as authentication_router
 from carry_forward.router import router as carry_forward_router
 from consultant_year_summary import router as consultant_year_summary_router
 from consultants import router as consultant_router
@@ -23,6 +24,7 @@ from public_holidays.router import year_router as holiday_year_router
 from recovery import create_startup_backups
 from recovery import router as recovery_router
 from settings import Settings
+from workspaces.dependencies import require_workspace_request
 
 
 def create_app(
@@ -40,8 +42,8 @@ def create_app(
         """Prepare and close application-owned database resources."""
 
         create_startup_backups(runtime)
-        upgrade_database(runtime.database_path)
-        engine = create_database_engine(runtime.database_path)
+        upgrade_database(runtime.resolved_database_url)
+        engine = create_database_engine(runtime.resolved_database_url)
 
         app.state.database_engine = engine
         app.state.session_factory = create_session_factory(engine)
@@ -66,16 +68,19 @@ def create_app(
             "environment": runtime.environment,
         }
 
-    app.include_router(recovery_router)
-    app.include_router(consultant_router)
-    app.include_router(leave_year_router)
-    app.include_router(job_plan_router)
-    app.include_router(leave_booking_router)
-    app.include_router(entitlement_router)
-    app.include_router(carry_forward_router)
-    app.include_router(consultant_year_summary_router)
-    app.include_router(holiday_settings_router)
-    app.include_router(holiday_year_router)
+    app.include_router(authentication_router)
+    protected = [Depends(require_workspace_request)]
+    if runtime.uses_sqlite:
+        app.include_router(recovery_router, dependencies=protected)
+    app.include_router(consultant_router, dependencies=protected)
+    app.include_router(leave_year_router, dependencies=protected)
+    app.include_router(job_plan_router, dependencies=protected)
+    app.include_router(leave_booking_router, dependencies=protected)
+    app.include_router(entitlement_router, dependencies=protected)
+    app.include_router(carry_forward_router, dependencies=protected)
+    app.include_router(consultant_year_summary_router, dependencies=protected)
+    app.include_router(holiday_settings_router, dependencies=protected)
+    app.include_router(holiday_year_router, dependencies=protected)
 
     static_dir = frontend_dist if frontend_dist is not None else runtime.resolved_frontend_dist
     if static_dir.is_dir():

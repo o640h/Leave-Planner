@@ -131,11 +131,11 @@ def restore_backup(
         request.app.state.database_engine.dispose()
         try:
             restore_database(selected_backup, settings.database_path)
-            upgrade_database(settings.database_path)
+            upgrade_database(settings.resolved_database_url)
         finally:
             # Reconnect even if restore fails, so the running application is not
             # left bound to a disposed engine.
-            engine = create_database_engine(settings.database_path)
+            engine = create_database_engine(settings.resolved_database_url)
             request.app.state.database_engine = engine
             request.app.state.session_factory = create_session_factory(engine)
 
@@ -158,7 +158,9 @@ def restore_backup(
 def create_startup_backups(settings: Settings, *, now: datetime | None = None) -> None:
     """Create migration and monthly safety backups before opening the database."""
 
-    database = settings.database_path
+    database = settings.sqlite_database_path
+    if database is None:
+        return
     if not database.is_file():
         return
 

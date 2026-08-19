@@ -1,11 +1,11 @@
 """Operator-level API tests for entitlement recommendation and application."""
 
 import json
-import sqlite3
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from database_queries import row
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -17,7 +17,7 @@ def app_for(data_dir: Path) -> FastAPI:
     """Run the real API and migrations against an isolated database."""
 
     return create_app(
-        settings=Settings(environment="test", data_dir=data_dir),
+        settings=Settings(environment="test", data_dir=data_dir, authentication_required=False),
         frontend_dist=data_dir / "no-frontend-build",
     )
 
@@ -145,11 +145,11 @@ def test_manual_entitlement_accepts_an_optional_reason_and_replaces_the_applied_
             "300"
         )
 
-    with sqlite3.connect(tmp_path / "leave-planner.sqlite3") as connection:
-        event = connection.execute(
-            "SELECT details FROM audit_events "
-            "WHERE entity_type = 'applied_entitlement' ORDER BY id DESC"
-        ).fetchone()
+    event = row(
+        tmp_path,
+        "SELECT details FROM audit_events "
+        "WHERE entity_type = 'applied_entitlement' ORDER BY id DESC LIMIT 1",
+    )
 
     assert event is not None
     assert json.loads(event[0])["after"]["reason"] == "Trust-approved starting values"

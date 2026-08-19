@@ -39,6 +39,9 @@ def export_leave_log(
         leave_year_start=summary.leave_year.start_date,
         leave_year_end=summary.leave_year.end_date,
         entries=summary.leave_log,
+        leave_remaining=(
+            summary.balances.actual.remaining if summary.balances.actual is not None else None
+        ),
     )
     return Response(
         content=content,

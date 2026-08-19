@@ -4,6 +4,7 @@ __pycache__/
 *.pyd
 *.so
 .python-version
+!backend/.python-version
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -49,9 +50,7 @@ temp/
 .tmp/
 
 # Editors and operating systems
-.idea/
 .vscode/*
-.codex/
 !.vscode/settings.json
 !.vscode/extensions.json
 *.swp

@@ -50,6 +50,7 @@ class WeekdayCountsRead(BaseModel):
 
 class AuditEventRead(BaseModel):
     id: int
+    actor_label: str
     entity_type: str
     action: str
     recorded_at: datetime

@@ -35,20 +35,21 @@ def upgrade() -> None:
             )
         ).mappings()
     )
+    update_day = sa.text(
+        """
+        UPDATE leave_booking_days
+        SET contracted_pas = :contracted_pas,
+            deduction_factor = :deduction_factor
+        WHERE id = :day_id
+        """
+    ).bindparams(sa.bindparam("contracted_pas", type_=sa.Numeric(9, 3)))
     for row in rows:
         contracted_pas = Decimal(str(row["contracted_pas"]))
         factor = Decimal("10") / max(contracted_pas, Decimal("10"))
         connection.execute(
-            sa.text(
-                """
-                UPDATE leave_booking_days
-                SET contracted_pas = :contracted_pas,
-                    deduction_factor = :deduction_factor
-                WHERE id = :day_id
-                """
-            ),
+            update_day,
             {
-                "contracted_pas": format(contracted_pas, "f"),
+                "contracted_pas": contracted_pas,
                 "deduction_factor": format(factor, "f"),
                 "day_id": row["id"],
             },

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
 import { ApiClientError, operatorErrorMessage } from '../api/client'
-import { savePdf } from '../desktop/api'
 import { formatDecimal } from '../system/decimal'
+import { downloadFile } from '../system/download'
 import { ModalLayer } from '../system/ModalLayer'
 import { getLeaveLogPdf } from './api'
 import type { ConsultantYearSummary, LeaveLogEntry } from './types'
@@ -86,8 +86,8 @@ export function LeaveLog({ summary }: { summary: ConsultantYearSummary }) {
     try {
       const file = await getLeaveLogPdf(summary.consultant.id, summary.leave_year.id)
       const fallbackName = `Leave_Log_${summary.leave_year.start_date}_to_${summary.leave_year.end_date}.pdf`
-      const result = await savePdf(file.filename ?? fallbackName, file.blob)
-      setExportMessage(result === 'saved' ? 'PDF saved.' : 'Export cancelled.')
+      downloadFile(file.blob, file.filename ?? fallbackName)
+      setExportMessage('PDF download started.')
     } catch (error) {
       setExportFailed(true)
       setExportMessage(
