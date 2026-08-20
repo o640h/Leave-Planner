@@ -44,7 +44,10 @@ used = public-holiday deductions + booking deductions
 remaining = available - used
 ```
 
-Carry-forward is added to DCC, matching the workbook. A booking never changes entitlement; its saved daily deductions change the used and remaining figures.
+Carry-forward is added to the approved DCC and SPA opening balances. The golden workbook's `41.25`
+hours remains entirely DCC, while an independently approved non-direct-clinical carry-over can be
+recorded as SPA. A booking never changes entitlement; its saved daily deductions change the used and
+remaining figures.
 
 The three tabs answer different questions:
 
@@ -59,6 +62,8 @@ The weekday row counts each applicable public-holiday date and each Taken bookin
 
 ## Stored data and operator control
 
-The summary itself has no database table. Consultant details, leave years, job plans, applied entitlement, carry-forward, holidays, bookings, booking-day snapshots, and audit events remain stored in their existing SQLite tables. The summary is read-only composition over those records.
+The summary itself has no database table. Consultant details, leave years, job plans, applied
+entitlement, carry-forward, holidays, bookings, booking-day snapshots, and audit events remain stored
+in their existing application tables. The summary is read-only composition over those records.
 
 Changes are still made in their owning screens. This keeps entered facts separate from calculated output and avoids a second editable copy of the same value.

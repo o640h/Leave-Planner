@@ -186,11 +186,11 @@ sheets:
 
 ## Expected Implementation Sequence
 
-Task 3 first makes database configuration and migrations work against PostgreSQL. Task 4 then adds the
-`Admin` user, password provisioning, sessions, login/logout API, central frontend authentication flow,
-and security events as one vertical slice. Task 5 adds the workspace foreign keys, migrates existing
-roots into the one workspace, scopes every service/API family, and attaches the actor to domain audit
-events. Task 6 finishes the browser account, sign-out, expiry, and unavailable-service states.
+Tasks 3-6 implement this boundary end to end. Database configuration and migrations support
+PostgreSQL; the fixed `Admin` user has manually provisioned credentials and revocable sessions; every
+protected service resolves the private workspace membership; and the browser presents coherent
+account, sign-out, expiry, authorization-denied, and unavailable-server states. PostgreSQL backup and
+restore remain a separately authorised server-owner responsibility for the hosted operations task.
 
 Expected later files include new responsibility-based authentication and workspace packages under
 `backend/src`, Alembic migrations, request dependencies, settings, the central frontend API client,

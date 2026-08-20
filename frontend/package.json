@@ -1,7 +1,7 @@
 {
   "name": "leave-planner-frontend",
   "version": "0.2.0",
-  "description": "Local consultant annual leave planning frontend",
+  "description": "Hosted consultant annual leave planning frontend",
   "main": "index.js",
   "directories": {
     "doc": "docs"

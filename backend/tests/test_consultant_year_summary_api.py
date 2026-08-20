@@ -116,7 +116,13 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
             ).status_code
             == 200
         )
-        assert client.put(f"{root}/carry-forward", json={"hours": "41.25"}).status_code == 200
+        assert (
+            client.put(
+                f"{root}/carry-forward",
+                json={"dcc_hours": "41.25", "spa_hours": "0"},
+            ).status_code
+            == 200
+        )
         assert (
             client.put(
                 f"{root}/public-holidays/2026-05-04/treatment",

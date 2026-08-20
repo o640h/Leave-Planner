@@ -85,8 +85,9 @@ remaining = annual entitlement
 ## Carry-forward
 
 Carry-forward is an approved number of unused hours brought into the next leave year. The operator
-enters one total value, matching the supplied workbook, and the application adds it to the DCC
-opening balance. It cannot be negative and entering zero clears it.
+enters DCC and SPA separately so the opening balance retains the approved activity split. Neither
+value can be negative, and entering zero in both fields clears it. The supplied workbook remains the
+golden example with `41.25` DCC and zero SPA carry-forward.
 
 The persisted workflow is implemented in `backend/src/carry_forward/` and currently appears
 inside Annual Entitlement on the consultant Overview. Once leave-used and leave-remaining totals

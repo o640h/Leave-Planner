@@ -12,10 +12,11 @@ export function getCarryForward(consultantId: number, leaveYearId: number): Prom
 export function setCarryForward(
   consultantId: number,
   leaveYearId: number,
-  hours: string,
+  dccHours: string,
+  spaHours: string,
 ): Promise<CarryForward> {
   return apiRequest(path(consultantId, leaveYearId), {
     method: 'PUT',
-    body: JSON.stringify({ hours }),
+    body: JSON.stringify({ dcc_hours: dccHours, spa_hours: spaHours }),
   })
 }

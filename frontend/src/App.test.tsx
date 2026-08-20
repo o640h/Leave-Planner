@@ -145,6 +145,7 @@ describe('consultant directory', () => {
       'aria-current',
       'page',
     )
+    expect(screen.queryByRole('button', { name: 'Data & Recovery' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Light' }))
     expect(document.documentElement).toHaveAttribute('data-theme', 'light')
@@ -304,7 +305,9 @@ describe('consultant directory', () => {
           return json({
             id: null,
             leave_year_id: 1,
-            hours: '0',
+            dcc_hours: '0',
+            spa_hours: '0',
+            total_hours: '0',
             created_at: null,
           })
         }

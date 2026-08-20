@@ -52,7 +52,9 @@ describe('holiday and carry-forward workflows', () => {
           return json({
             id: null,
             leave_year_id: 1,
-            hours: '0',
+            dcc_hours: '0',
+            spa_hours: '0',
+            total_hours: '0',
             created_at: null,
           })
         }
@@ -60,7 +62,9 @@ describe('holiday and carry-forward workflows', () => {
         return json({
           id: 1,
           leave_year_id: 1,
-          hours: '41.25',
+          dcc_hours: '41.25',
+          spa_hours: '3.5',
+          total_hours: '44.75',
           created_at: '2026-08-10T12:00:00',
         })
       }),
@@ -69,14 +73,18 @@ describe('holiday and carry-forward workflows', () => {
     render(<CarryForwardControl consultantId={1} leaveYearId={1} />)
     await user.click(screen.getByRole('button', { name: 'Add' }))
     const dialog = screen.getByRole('dialog', { name: 'Carry Forward' })
-    const carryForward = within(dialog).getByLabelText('Total Hours')
-    await user.clear(carryForward)
-    await user.type(carryForward, '41.25')
+    const dccCarryForward = within(dialog).getByLabelText('DCC Hours')
+    const spaCarryForward = within(dialog).getByLabelText('SPA Hours')
+    await user.clear(dccCarryForward)
+    await user.type(dccCarryForward, '41.25')
+    await user.clear(spaCarryForward)
+    await user.type(spaCarryForward, '3.5')
     await user.click(within(dialog).getByRole('button', { name: 'Save' }))
 
     expect(saved).toBe(true)
     expect(await screen.findByText('41.25')).toBeInTheDocument()
-    expect(screen.getByText('hours')).toBeInTheDocument()
-    expect(screen.queryByText('Added to the DCC opening balance.')).not.toBeInTheDocument()
+    expect(screen.getByText('3.5')).toBeInTheDocument()
+    expect(screen.getByText('DCC')).toBeInTheDocument()
+    expect(screen.getByText('SPA')).toBeInTheDocument()
   })
 })

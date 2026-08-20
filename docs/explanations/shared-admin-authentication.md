@@ -54,6 +54,10 @@ serialized through the Admin row. A successful login, password reset, account en
 completed lockout clears the failure count. Attempts made during the lockout still perform the
 expensive password verification and return the same temporary-unavailability response.
 
+While the account is locked, the sign-in screen shows a minute-and-second countdown using the
+server-provided retry duration and disables further submissions until it expires. This makes the
+shared, deployment-wide lock visible and avoids extending load with repeated login requests.
+
 ## Persistence and audit
 
 - `users` stores the stable Admin identity, Argon2id hash, enabled state, password version, and dated

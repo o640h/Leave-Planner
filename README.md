@@ -41,4 +41,5 @@ Local browser development continues to use an isolated SQLite file by default. H
 requires a `postgresql+psycopg` database URL. See
 [`docs/explanations/postgresql-foundation.md`](docs/explanations/postgresql-foundation.md) and
 [`backend/.env.example`](backend/.env.example) for the configuration and disposable PostgreSQL test
-command.
+command. The one-time transfer of an accepted local database is documented in
+[`docs/explanations/sqlite-to-postgresql-import.md`](docs/explanations/sqlite-to-postgresql-import.md).

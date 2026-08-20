@@ -468,10 +468,10 @@ def _calculation(
             CarryForward(
                 carry_forward_id=str(carry.id or leave_year_id),
                 effective_date=leave_year.start_date,
-                hours=_hours(carry.hours, Decimal("0"), Decimal("0")),
+                hours=_hours(carry.dcc_hours, carry.spa_hours, Decimal("0")),
             ),
         )
-        if carry.hours > 0
+        if carry.total_hours > 0
         else ()
     )
     request = LeaveRecordsRequest(

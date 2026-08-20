@@ -127,17 +127,41 @@ def test_carry_forward_can_be_set_and_cleared(tmp_path: Path) -> None:
         consultant_id, leave_year_id = setup_year(client)
         path = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/carry-forward"
 
-        carry = client.put(path, json={"hours": "41.25"})
+        carry = client.put(path, json={"dcc_hours": "41.25", "spa_hours": "3.5"})
         assert carry.status_code == 200
-        assert Decimal(carry.json()["hours"]) == Decimal("41.25")
-        assert Decimal(client.get(path).json()["hours"]) == Decimal("41.25")
+        assert Decimal(carry.json()["dcc_hours"]) == Decimal("41.25")
+        assert Decimal(carry.json()["spa_hours"]) == Decimal("3.5")
+        assert Decimal(carry.json()["total_hours"]) == Decimal("44.75")
+        assert Decimal(client.get(path).json()["spa_hours"]) == Decimal("3.5")
 
-        cleared = client.put(path, json={"hours": "0"})
+        cleared = client.put(path, json={"dcc_hours": "0", "spa_hours": "0"})
         assert cleared.status_code == 200
-        assert Decimal(cleared.json()["hours"]) == Decimal("0")
+        assert Decimal(cleared.json()["total_hours"]) == Decimal("0")
 
-        rejected = client.put(path, json={"hours": "-1"})
+        rejected = client.put(path, json={"dcc_hours": "-1", "spa_hours": "0"})
         assert rejected.status_code == 422
+
+
+def test_dcc_and_spa_carry_forward_reach_each_balance_component(tmp_path: Path) -> None:
+    with TestClient(app_for(tmp_path)) as client:
+        consultant_id, leave_year_id = setup_year(client)
+        root = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
+        assert client.post(f"{root}/job-plans", json=job_plan()).status_code == 201
+        assert client.put(
+            f"{root}/entitlement",
+            json={"mode": "calculated", "seven_years_or_more": True, "other_hours": "0"},
+        ).status_code == 200
+        assert client.put(
+            f"{root}/carry-forward",
+            json={"dcc_hours": "5.25", "spa_hours": "2.5"},
+        ).status_code == 200
+
+        planning = client.get(f"{root}/planning")
+
+    assert planning.status_code == 200
+    projected = planning.json()["projected"]
+    assert Decimal(projected["carry_forward"]["dcc_hours"]) == Decimal("5.25")
+    assert Decimal(projected["carry_forward"]["spa_hours"]) == Decimal("2.5")
 
 
 def test_entitlement_exposes_workbook_policy_components(tmp_path: Path) -> None:

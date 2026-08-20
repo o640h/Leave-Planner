@@ -34,7 +34,14 @@ const summary = {
   },
   job_plans: [],
   entitlement: { recommendation: null, application: null },
-  carry_forward: { id: 3, leave_year_id: 2, hours: '41.25', created_at: null },
+  carry_forward: {
+    id: 3,
+    leave_year_id: 2,
+    dcc_hours: '41.25',
+    spa_hours: '0',
+    total_hours: '41.25',
+    created_at: null,
+  },
   allocation_source: 'recommendation',
   job_plan_periods: [
     {

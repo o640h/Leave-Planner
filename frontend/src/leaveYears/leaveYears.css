@@ -230,7 +230,7 @@
   white-space: nowrap;
 }
 
-.leave-year-summary > .carry-forward-control .carry-forward-value strong small {
+.leave-year-summary > .carry-forward-control .carry-forward-value strong small:last-child {
   display: none;
 }
 

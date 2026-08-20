@@ -7,6 +7,8 @@ type ErrorEnvelope = {
 }
 
 export const AUTHENTICATION_REQUIRED_EVENT = 'leave-planner:authentication-required'
+export const AUTHORIZATION_DENIED_EVENT = 'leave-planner:authorization-denied'
+export const SERVICE_UNAVAILABLE_EVENT = 'leave-planner:service-unavailable'
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
@@ -40,6 +42,25 @@ async function requestError(response: Response): Promise<ApiClientError> {
   return new ApiClientError(response.status, code, message, body?.error?.details)
 }
 
+function reportApplicationState(response: Response, path: string, code: string): void {
+  if (response.status === 401 && path !== '/api/auth/login') {
+    window.dispatchEvent(new Event(AUTHENTICATION_REQUIRED_EVENT))
+  } else if (response.status === 403 && code === 'workspace_access_denied') {
+    window.dispatchEvent(new Event(AUTHORIZATION_DENIED_EVENT))
+  } else if (response.status >= 500) {
+    window.dispatchEvent(new Event(SERVICE_UNAVAILABLE_EVENT))
+  }
+}
+
+async function fetchFromApplication(path: string, options: RequestInit): Promise<Response> {
+  try {
+    return await fetch(path, options)
+  } catch (error) {
+    window.dispatchEvent(new Event(SERVICE_UNAVAILABLE_EVENT))
+    throw error
+  }
+}
+
 export async function apiRequest<ResponseBody>(
   path: string,
   options: RequestInit = {},
@@ -58,17 +79,16 @@ export async function apiRequest<ResponseBody>(
     headers.set('X-CSRF-Token', csrfToken)
   }
 
-  const response = await fetch(path, {
+  const response = await fetchFromApplication(path, {
     ...options,
     credentials: 'same-origin',
     headers,
   })
 
   if (!response.ok) {
-    if (response.status === 401 && path !== '/api/auth/login') {
-      window.dispatchEvent(new Event(AUTHENTICATION_REQUIRED_EVENT))
-    }
-    throw await requestError(response)
+    const error = await requestError(response)
+    reportApplicationState(response, path, error.code)
+    throw error
   }
 
   return response.json() as Promise<ResponseBody>
@@ -77,12 +97,11 @@ export async function apiRequest<ResponseBody>(
 export async function apiFileRequest(
   path: string,
 ): Promise<{ blob: Blob; filename: string | null }> {
-  const response = await fetch(path, { credentials: 'same-origin' })
+  const response = await fetchFromApplication(path, { credentials: 'same-origin' })
   if (!response.ok) {
-    if (response.status === 401) {
-      window.dispatchEvent(new Event(AUTHENTICATION_REQUIRED_EVENT))
-    }
-    throw await requestError(response)
+    const error = await requestError(response)
+    reportApplicationState(response, path, error.code)
+    throw error
   }
 
   const disposition = response.headers.get('Content-Disposition')
@@ -115,5 +134,5 @@ export function operatorErrorMessage(error: unknown): string {
     return error.message
   }
 
-  return 'The local service could not be reached. Please try again.'
+  return 'The server could not be reached. Please try again.'
 }

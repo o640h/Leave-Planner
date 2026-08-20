@@ -12,6 +12,7 @@ from sqlalchemy import inspect, text
 
 from backup import create_online_backup
 from database import create_database_engine, create_session_factory, session_scope, sqlite_url
+from database_transfer.service import _source_foreign_keys_are_valid
 from migrations import alembic_config, upgrade_database
 
 
@@ -56,6 +57,16 @@ def test_sqlite_engine_enables_integrity_pragmas(tmp_path: Path) -> None:
         assert connection.execute(text("PRAGMA foreign_keys")).scalar_one() == 1
         assert connection.execute(text("PRAGMA journal_mode")).scalar_one() == "wal"
     engine.dispose()
+
+
+def test_import_foreign_key_check_closes_its_read_only_connection(tmp_path: Path) -> None:
+    database_path = tmp_path / "import-source.sqlite3"
+    upgrade_database(database_path)
+
+    # The restart-safety proof validates the same source twice. Python 3.14 reports an
+    # unclosed sqlite3 connection as an error when either validation reaches finalization.
+    _source_foreign_keys_are_valid(database_path)
+    _source_foreign_keys_are_valid(database_path)
 
 
 def test_deduction_migration_backfills_existing_booking_days(tmp_path: Path) -> None:

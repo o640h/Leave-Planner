@@ -29,7 +29,11 @@ def get_carry_forward(session: Session, consultant_id: int, leave_year_id: int) 
     return CarryForwardRead(
         id=records[-1].id if records else None,
         leave_year_id=leave_year_id,
-        hours=sum((record.dcc_hours for record in records), Decimal("0")),
+        dcc_hours=sum((record.dcc_hours for record in records), Decimal("0")),
+        spa_hours=sum((record.spa_hours for record in records), Decimal("0")),
+        total_hours=sum(
+            (record.dcc_hours + record.spa_hours for record in records), Decimal("0")
+        ),
         created_at=records[-1].created_at if records else None,
     )
 
@@ -46,12 +50,12 @@ def set_carry_forward(
     session.flush()
 
     record_id = before.id
-    if details.hours > 0:
+    if details.dcc_hours > 0 or details.spa_hours > 0:
         record = CarryForwardRecord(
             leave_year_id=leave_year_id,
             kind="carry_forward",
-            dcc_hours=details.hours,
-            spa_hours=Decimal("0"),
+            dcc_hours=details.dcc_hours,
+            spa_hours=details.spa_hours,
             other_hours=Decimal("0"),
             reason="Carry forward from previous leave year",
             source=None,
@@ -66,6 +70,15 @@ def set_carry_forward(
         entity_type="carry_forward",
         entity_id=record_id or leave_year_id,
         action="updated",
-        details={"before": str(before.hours), "after": str(details.hours)},
+        details={
+            "before": {
+                "dcc_hours": str(before.dcc_hours),
+                "spa_hours": str(before.spa_hours),
+            },
+            "after": {
+                "dcc_hours": str(details.dcc_hours),
+                "spa_hours": str(details.spa_hours),
+            },
+        },
     )
     return get_carry_forward(session, consultant_id, leave_year_id)

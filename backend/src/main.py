@@ -97,7 +97,7 @@ app = create_app()
 
 
 def main() -> None:
-    """Run the configured local development server."""
+    """Run the configured development server."""
 
     import uvicorn
 

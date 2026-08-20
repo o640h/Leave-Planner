@@ -218,6 +218,19 @@ p {
   margin-top: auto;
 }
 
+.account-indicator {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  margin: 0 auto;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  background: var(--surface-subtle);
+  font-size: 0.69231rem;
+  font-weight: 520;
+}
+
 .rail-footer .service-state {
   margin-top: 0;
 }
@@ -230,46 +243,93 @@ p {
   display: grid;
   min-height: 0;
   place-items: center;
-  padding: 32px;
+  padding: 40px;
 }
 
 .authentication-panel {
-  width: min(360px, 100%);
-  padding: 34px;
+  display: grid;
+  grid-template-columns: minmax(230px, 0.78fr) minmax(340px, 1.22fr);
+  width: min(760px, 100%);
+  min-height: 430px;
   border: 1px solid var(--line-strong);
   border-radius: var(--corner-panel);
   background: var(--panel);
   box-shadow: var(--panel-shadow);
 }
 
+.authentication-identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 38px 34px;
+  border-right: 1px solid var(--line);
+  background: var(--rail);
+}
+
 .authentication-mark {
   display: grid;
-  width: 42px;
-  height: 42px;
-  margin-bottom: 22px;
+  width: 48px;
+  height: 48px;
   place-items: center;
   border: 1px solid var(--line-strong);
   color: var(--accent);
   background: var(--surface-subtle);
 }
 
-.authentication-product,
-.authentication-account {
+.authentication-mark .app-icon {
+  width: 25px;
+  height: 25px;
+}
+
+.authentication-identity h2 {
+  margin: 0 0 8px;
+  font: 430 1.46154rem/1.15 var(--brand);
+  letter-spacing: -0.03em;
+}
+
+.authentication-identity p,
+.authentication-heading p {
+  margin: 0;
   color: var(--muted);
-}
-
-.authentication-product {
-  margin-bottom: 8px;
   font-size: 0.76923rem;
+  line-height: 1.55;
 }
 
-.authentication-panel h1 {
-  margin-bottom: 4px;
-  font: 430 1.53846rem/1.2 var(--brand);
+.authentication-form-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 46px 48px;
+}
+
+.authentication-heading {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.authentication-heading h1 {
+  margin: 0 0 8px;
+  font: 430 1.84615rem/1.1 var(--brand);
+  letter-spacing: -0.035em;
 }
 
 .authentication-account {
-  margin-bottom: 28px;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--surface-subtle);
+  font-size: 0.69231rem;
+}
+
+.authentication-account .app-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
 }
 
 .authentication-panel form {
@@ -290,6 +350,36 @@ p {
   background: var(--field);
 }
 
+.authentication-password-control {
+  position: relative;
+}
+
+.authentication-password-control input {
+  padding-right: 62px;
+}
+
+.authentication-password-toggle {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+  background: transparent;
+  font: 0.69231rem/1 var(--ui);
+}
+
+.authentication-password-toggle:hover {
+  color: var(--text);
+}
+
+.authentication-password-toggle:focus-visible {
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--focus);
+}
+
 .authentication-panel .button {
   width: 100%;
   margin-top: 6px;
@@ -303,12 +393,37 @@ p {
 }
 
 .authentication-notice {
-  margin-bottom: 18px;
+  margin: -12px 0 20px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--warning);
+  color: var(--muted);
+  background: var(--surface-subtle);
+  line-height: 1.5;
+}
+
+.authentication-lockout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 2px 0 4px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--warning);
+  color: var(--muted);
+  background: var(--surface-subtle);
+  font-size: 0.76923rem;
+  line-height: 1.45;
+}
+
+.authentication-lockout strong {
+  color: var(--warning);
+  font: 500 0.92308rem/1 var(--brand);
+  font-variant-numeric: tabular-nums;
 }
 
 .authentication-panel .service-state {
   justify-content: flex-start;
-  margin-top: 26px;
+  margin-top: 30px;
 }
 
 .authentication-panel .service-state div {
@@ -320,6 +435,65 @@ p {
 
 .authentication-loading {
   color: var(--muted);
+}
+
+.application-status-page {
+  display: grid;
+  min-height: 0;
+  padding: 32px;
+  place-items: center;
+}
+
+.application-status-panel {
+  width: min(460px, 100%);
+  padding: 38px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  box-shadow: var(--panel-shadow);
+}
+
+.application-status-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 26px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  color: var(--warning);
+  background: var(--surface-subtle);
+}
+
+.application-status-panel h1 {
+  margin: 0 0 12px;
+  font: 430 1.53846rem/1.2 var(--brand);
+  letter-spacing: -0.025em;
+}
+
+.application-status-panel > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.application-status-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 28px;
+}
+
+.application-notice {
+  position: absolute;
+  z-index: 20;
+  top: 14px;
+  right: 18px;
+  max-width: 420px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  color: var(--danger-text);
+  background: var(--panel);
+  box-shadow: var(--panel-shadow);
+  font-size: 0.76923rem;
 }
 
 .service-state > span {
@@ -822,6 +996,17 @@ details[open] > :not(summary) {
     border-bottom: 1px solid var(--line);
   }
 
+  .rail-footer {
+    display: flex;
+    width: auto;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .account-indicator {
+    display: none;
+  }
+
   .brand {
     width: 42px;
     height: 42px;
@@ -855,5 +1040,37 @@ details[open] > :not(summary) {
 
   .application-content {
     overflow: visible;
+  }
+
+  .authentication-page {
+    padding: 18px;
+  }
+
+  .authentication-panel {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .authentication-identity {
+    display: flex;
+    min-height: 116px;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 20px;
+    padding: 22px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .authentication-form-area {
+    padding: 30px 24px;
+  }
+
+  .application-status-page {
+    padding: 18px;
+  }
+
+  .application-status-panel {
+    padding: 28px 24px;
   }
 }

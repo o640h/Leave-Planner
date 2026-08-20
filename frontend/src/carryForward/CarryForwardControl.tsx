@@ -14,17 +14,19 @@ type Props = { consultantId: number; leaveYearId: number; onSaved?: () => void }
 
 export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Props) {
   const [record, setRecord] = useState<CarryForward | null>(null)
-  const [hours, setHours] = useState('0')
+  const [dccHours, setDccHours] = useState('0')
+  const [spaHours, setSpaHours] = useState('0')
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const hasCarryForward = record !== null && formatDecimal(record.hours) !== '0'
+  const hasCarryForward = record !== null && formatDecimal(record.total_hours) !== '0'
 
   useEffect(() => {
     getCarryForward(consultantId, leaveYearId)
       .then((result) => {
         setRecord(result)
-        setHours(formatDecimal(result.hours, 2))
+        setDccHours(formatDecimal(result.dcc_hours, 2))
+        setSpaHours(formatDecimal(result.spa_hours, 2))
       })
       .catch((requestError: unknown) => setError(operatorErrorMessage(requestError)))
   }, [consultantId, leaveYearId])
@@ -34,9 +36,10 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
     setBusy(true)
     setError(null)
     try {
-      const saved = await setCarryForward(consultantId, leaveYearId, hours)
+      const saved = await setCarryForward(consultantId, leaveYearId, dccHours, spaHours)
       setRecord(saved)
-      setHours(formatDecimal(saved.hours, 2))
+      setDccHours(formatDecimal(saved.dcc_hours, 2))
+      setSpaHours(formatDecimal(saved.spa_hours, 2))
       setOpen(false)
       onSaved?.()
     } catch (requestError) {
@@ -50,10 +53,18 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
     <div className="carry-forward-control">
       <div className="carry-forward-value">
         <span>Carry Forward</span>
-        <strong>
-          {record ? formatDecimal(record.hours, 2) : '-'}
-          {record ? <small>hours</small> : null}
-        </strong>
+        <div className="carry-forward-activities">
+          <strong>
+            <small>DCC</small>
+            {record ? formatDecimal(record.dcc_hours, 2) : '-'}
+            {record ? <small>hours</small> : null}
+          </strong>
+          <strong>
+            <small>SPA</small>
+            {record ? formatDecimal(record.spa_hours, 2) : '-'}
+            {record ? <small>hours</small> : null}
+          </strong>
+        </div>
       </div>
       <button
         className="button button--overview-action button--with-icon"
@@ -88,20 +99,35 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
                 <header>
                   <h2 id="carry-forward-title">Carry Forward</h2>
                 </header>
-                <div className="field">
-                  <label htmlFor="carry-forward-hours">Total Hours</label>
-                  <NumberInput
-                    id="carry-forward-hours"
-                    label="Total Hours"
-                    min="0"
-                    step="0.25"
-                    buttonSteps={4}
-                    value={hours}
-                    disabled={busy}
-                    onChange={setHours}
-                  />
-                  <small>Enter zero to clear the value.</small>
+                <div className="carry-forward-fields">
+                  <div className="field">
+                    <label htmlFor="carry-forward-dcc-hours">DCC Hours</label>
+                    <NumberInput
+                      id="carry-forward-dcc-hours"
+                      label="DCC Hours"
+                      min="0"
+                      step="0.25"
+                      buttonSteps={4}
+                      value={dccHours}
+                      disabled={busy}
+                      onChange={setDccHours}
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="carry-forward-spa-hours">SPA Hours</label>
+                    <NumberInput
+                      id="carry-forward-spa-hours"
+                      label="SPA Hours"
+                      min="0"
+                      step="0.25"
+                      buttonSteps={4}
+                      value={spaHours}
+                      disabled={busy}
+                      onChange={setSpaHours}
+                    />
+                  </div>
                 </div>
+                <small>Enter zero in both fields to clear the carry-forward.</small>
                 <div className="form-actions">
                   <button
                     className="button button--quiet"

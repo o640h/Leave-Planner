@@ -39,18 +39,18 @@ The normal backend suite continues to use isolated SQLite databases for fast foc
 migration tests against PostgreSQL. The test fixture drops and recreates that database's `public`
 schema before each test, so never point it at a database containing data that must be retained.
 
-From `backend` in PowerShell:
+From the repository root in PowerShell, use the password-prompting wrapper. It targets only the
+disposable `leave_planner_test` database on the Synology NAS and clears its temporary credentials
+afterward:
 
 ```powershell
-$env:VIRTUAL_ENV = (Resolve-Path "..\.venv").Path
-$env:LEAVE_PLANNER_TEST_POSTGRES_URL = "postgresql+psycopg://leave_planner:<password>@<host>:<port>/leave_planner_test"
-uv run --active --no-sync pytest
+.\scripts\PostgresTest.ps1
 ```
 
 The focused server proof is:
 
 ```powershell
-uv run --active --no-sync pytest tests/test_postgresql_runtime.py
+.\scripts\PostgresTest.ps1 -Focused
 ```
 
 That proof applies every migration, checks core tables, creates and reads a consultant through the
