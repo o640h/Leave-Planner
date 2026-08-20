@@ -8,9 +8,11 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr, ValidationError
 
+import main as main_module
 from errors import ApiError
 from logging_config import JsonFormatter
 from main import create_app
+from migrations import DatabaseUpgradeRequired
 from settings import Settings, default_data_directory
 
 
@@ -39,6 +41,31 @@ def test_settings_support_production_overrides(tmp_path: Path) -> None:
     assert "secret" not in repr(settings)
 
 
+def test_settings_read_database_url_from_secret_file(tmp_path: Path) -> None:
+    secret_file = tmp_path / "database-url.txt"
+    secret_file.write_text(
+        "postgresql+psycopg://leave_planner:secret@database/leave_planner\n",
+        encoding="utf-8",
+    )
+
+    settings = Settings(environment="production", database_url_file=secret_file)
+
+    assert settings.resolved_database_url.username == "leave_planner"
+    assert settings.resolved_database_url.password == "secret"
+    assert "secret" not in repr(settings)
+
+
+def test_settings_reject_ambiguous_database_secrets(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="either database_url or database_url_file"):
+        Settings(
+            environment="production",
+            database_url=SecretStr(
+                "postgresql+psycopg://leave_planner:secret@database/leave_planner"
+            ),
+            database_url_file=tmp_path / "database-url.txt",
+        )
+
+
 @pytest.mark.sqlite_only
 def test_development_defaults_to_a_local_sqlite_database(tmp_path: Path) -> None:
     settings = Settings(environment="development", data_dir=tmp_path)
@@ -55,6 +82,29 @@ def test_production_rejects_sqlite_and_unsupported_database_drivers(tmp_path: Pa
                 f"sqlite+pysqlite:///{(tmp_path / 'test.sqlite3').as_posix()}"
             ),
         )
+
+
+def test_production_refuses_to_start_before_explicit_migration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = Settings(
+        environment="production",
+        database_url=SecretStr(
+            "postgresql+psycopg://leave_planner:secret@database/leave_planner"
+        ),
+    )
+
+    def reject_unmigrated_database(_location: object) -> None:
+        raise DatabaseUpgradeRequired("Run the explicit migration command")
+
+    monkeypatch.setattr(main_module, "require_database_current", reject_unmigrated_database)
+    app = create_app(settings=settings)
+
+    with (
+        pytest.raises(DatabaseUpgradeRequired, match="explicit migration command"),
+        TestClient(app),
+    ):
+        pass
 
     with pytest.raises(ValidationError, match=r"sqlite\+pysqlite or postgresql\+psycopg"):
         Settings(

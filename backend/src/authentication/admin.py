@@ -4,7 +4,7 @@ import argparse
 from getpass import getpass
 
 from database import create_database_engine, create_session_factory, session_scope
-from migrations import upgrade_database
+from migrations import require_database_current, upgrade_database
 from recovery import create_startup_backups
 from settings import Settings
 
@@ -22,7 +22,10 @@ def confirmed_password() -> str:
 def run(operation: str, settings: Settings | None = None) -> None:
     runtime = settings or Settings()
     create_startup_backups(runtime)
-    upgrade_database(runtime.resolved_database_url)
+    if runtime.environment == "production":
+        require_database_current(runtime.resolved_database_url)
+    else:
+        upgrade_database(runtime.resolved_database_url)
     engine = create_database_engine(runtime.resolved_database_url)
     factory = create_session_factory(engine)
     try:

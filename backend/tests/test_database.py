@@ -13,7 +13,12 @@ from sqlalchemy import inspect, text
 from backup import create_online_backup
 from database import create_database_engine, create_session_factory, session_scope, sqlite_url
 from database_transfer.service import _source_foreign_keys_are_valid
-from migrations import alembic_config, upgrade_database
+from migrations import (
+    DatabaseUpgradeRequired,
+    alembic_config,
+    require_database_current,
+    upgrade_database,
+)
 
 
 def test_alembic_upgrade_creates_foundation_schema(tmp_path: Path) -> None:
@@ -48,6 +53,18 @@ def test_alembic_upgrade_creates_foundation_schema(tmp_path: Path) -> None:
     assert "additional_spa_hours" not in job_plan_columns
     assert "worked_date" not in holiday_treatment_columns
     engine.dispose()
+
+
+def test_current_schema_check_requires_explicit_upgrade(tmp_path: Path) -> None:
+    database_path = tmp_path / "unmigrated.sqlite3"
+    database_path.touch()
+
+    with pytest.raises(DatabaseUpgradeRequired, match="explicit migration command"):
+        require_database_current(database_path)
+
+    upgrade_database(database_path)
+
+    require_database_current(database_path)
 
 
 def test_sqlite_engine_enables_integrity_pragmas(tmp_path: Path) -> None:

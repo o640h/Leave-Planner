@@ -53,12 +53,15 @@ class Settings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     data_dir: Path | None = None
     database_url: SecretStr | None = None
+    database_url_file: Path | None = None
     frontend_dist: Path | None = None
     authentication_required: bool = True
     session_lifetime_hours: int = Field(default=12, ge=1, le=168)
 
     @model_validator(mode="after")
     def validate_database_configuration(self) -> Settings:
+        if self.database_url is not None and self.database_url_file is not None:
+            raise ValueError("Configure either database_url or database_url_file, not both")
         url = self.resolved_database_url
         if self.environment == "production" and url.get_backend_name() != "postgresql":
             raise ValueError("Production requires a postgresql+psycopg database URL")
@@ -79,9 +82,18 @@ class Settings(BaseSettings):
 
     @property
     def resolved_database_url(self) -> URL:
-        if self.database_url is None:
-            return sqlite_url(self.resolved_data_dir / "leave-planner.sqlite3")
-        return database_url(self.database_url.get_secret_value())
+        if self.database_url is not None:
+            return database_url(self.database_url.get_secret_value())
+        if self.database_url_file is not None:
+            secret_path = self.database_url_file.expanduser().resolve()
+            try:
+                value = secret_path.read_text(encoding="utf-8").strip()
+            except OSError as error:
+                raise ValueError("The database URL secret file could not be read") from error
+            if not value:
+                raise ValueError("The database URL secret file is empty")
+            return database_url(value)
+        return sqlite_url(self.resolved_data_dir / "leave-planner.sqlite3")
 
     @property
     def sqlite_database_path(self) -> Path | None:

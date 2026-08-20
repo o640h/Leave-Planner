@@ -4,8 +4,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from annual_entitlement.router import router as entitlement_router
 from authentication.router import router as authentication_router
@@ -18,7 +21,7 @@ from job_plans.router import router as job_plan_router
 from leave_bookings.router import router as leave_booking_router
 from leave_years import router as leave_year_router
 from logging_config import configure_logging
-from migrations import upgrade_database
+from migrations import require_database_current, upgrade_database
 from public_holidays.router import settings_router as holiday_settings_router
 from public_holidays.router import year_router as holiday_year_router
 from recovery import create_startup_backups
@@ -42,7 +45,10 @@ def create_app(
         """Prepare and close application-owned database resources."""
 
         create_startup_backups(runtime)
-        upgrade_database(runtime.resolved_database_url)
+        if runtime.environment == "production":
+            require_database_current(runtime.resolved_database_url)
+        else:
+            upgrade_database(runtime.resolved_database_url)
         engine = create_database_engine(runtime.resolved_database_url)
 
         app.state.database_engine = engine
@@ -62,11 +68,19 @@ def create_app(
     install_error_handlers(app)
 
     @app.get("/api/health", tags=["system"])
-    async def health() -> dict[str, str]:
-        return {
-            "status": "ok",
-            "environment": runtime.environment,
-        }
+    def health(request: Request) -> JSONResponse:
+        try:
+            with request.app.state.database_engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+        except SQLAlchemyError:
+            return JSONResponse(
+                status_code=503,
+                content={"status": "unavailable", "environment": runtime.environment},
+            )
+
+        return JSONResponse(
+            content={"status": "ok", "environment": runtime.environment},
+        )
 
     app.include_router(authentication_router)
     protected = [Depends(require_workspace_request)]

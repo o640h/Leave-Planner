@@ -33,7 +33,7 @@ IMPORT_LOCK_NAME = "leave_planner_sqlite_import"
 
 # Parent tables precede every dependent table. Authentication and hosted workspace tables are
 # deliberately absent: the destination account boundary remains authoritative.
-TRANSFER_TABLES = (
+TRANSFER_TABLES: tuple[str, ...] = (
     "holiday_calendar_versions",
     "consultants",
     "holiday_calendar_events",

@@ -43,3 +43,21 @@ requires a `postgresql+psycopg` database URL. See
 [`backend/.env.example`](backend/.env.example) for the configuration and disposable PostgreSQL test
 command. The one-time transfer of an accepted local database is documented in
 [`docs/explanations/sqlite-to-postgresql-import.md`](docs/explanations/sqlite-to-postgresql-import.md).
+
+## Container Deployment
+
+The production deployment is defined by [`Dockerfile`](Dockerfile) and
+[`deploy/compose.yml`](deploy/compose.yml). It builds the React assets into the lean FastAPI image,
+runs PostgreSQL on an internal-only container network, and requires a separate successful migration
+service before the application starts. Generate ignored secret files and validate the configuration
+from the repository root:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\NewDeploymentSecrets.ps1"
+docker compose --file deploy/compose.yml config --quiet
+```
+
+Do not regenerate secrets after the persistent PostgreSQL volume is initialized. The initial release,
+Admin provisioning, restart/recreation checks, upgrades, resource limits, and Synology handoff are
+documented in
+[`docs/explanations/container-deployment.md`](docs/explanations/container-deployment.md).

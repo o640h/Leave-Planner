@@ -41,6 +41,7 @@ exports/
 .env
 .env.*
 !.env.example
+deploy/secrets/*.txt
 
 # Logs and temporary files
 *.log
