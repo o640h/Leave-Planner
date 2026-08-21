@@ -4,7 +4,8 @@ import os
 import sys
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -57,9 +58,14 @@ class Settings(BaseSettings):
     frontend_dist: Path | None = None
     authentication_required: bool = True
     session_lifetime_hours: int = Field(default=12, ge=1, le=168)
+    public_origin: str | None = None
+    max_request_bytes: int = Field(default=1_048_576, ge=1, le=10_485_760)
+    request_rate_limit: int = Field(default=240, ge=1, le=10_000)
+    login_rate_limit: int = Field(default=10, ge=1, le=1_000)
+    rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
 
     @model_validator(mode="after")
-    def validate_database_configuration(self) -> Settings:
+    def validate_database_configuration(self) -> Self:
         if self.database_url is not None and self.database_url_file is not None:
             raise ValueError("Configure either database_url or database_url_file, not both")
         url = self.resolved_database_url
@@ -67,6 +73,21 @@ class Settings(BaseSettings):
             raise ValueError("Production requires a postgresql+psycopg database URL")
         if self.environment == "production" and not self.authentication_required:
             raise ValueError("Production requires authentication")
+        if self.public_origin is not None:
+            parsed = urlsplit(self.public_origin)
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not parsed.hostname
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.path not in {"", "/"}
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise ValueError("public_origin must be an HTTP(S) origin without a path")
+            if self.environment == "production" and parsed.scheme != "https":
+                raise ValueError("Production public_origin must use HTTPS")
+            self.public_origin = self.public_origin.rstrip("/")
         return self
 
     @property
@@ -109,6 +130,12 @@ class Settings(BaseSettings):
     @property
     def secure_cookies(self) -> bool:
         return self.environment == "production"
+
+    @property
+    def public_host(self) -> str | None:
+        if self.public_origin is None:
+            return None
+        return urlsplit(self.public_origin).hostname
 
     @property
     def session_cookie_name(self) -> str:

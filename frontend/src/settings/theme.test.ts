@@ -9,12 +9,20 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('stores and applies an explicit browser theme preference', () => {
-  saveThemePreference('light')
+it('uses light for a browser without a saved preference', () => {
+  initialiseTheme()
 
   expect(getThemePreference()).toBe('light')
   expect(document.documentElement.dataset.theme).toBe('light')
   expect(document.documentElement.dataset.themePreference).toBe('light')
+})
+
+it('stores and applies an explicit browser theme preference', () => {
+  saveThemePreference('dark')
+
+  expect(getThemePreference()).toBe('dark')
+  expect(document.documentElement.dataset.theme).toBe('dark')
+  expect(document.documentElement.dataset.themePreference).toBe('dark')
 })
 
 it('resolves the system preference in the browser', () => {

@@ -147,9 +147,11 @@ describe('consultant directory', () => {
     )
     expect(screen.queryByRole('button', { name: 'Data & Recovery' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Light' }))
-    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
-    expect(window.localStorage.getItem('leave-planner-theme')).toBe('light')
+    expect(screen.getByRole('button', { name: /Light/ })).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'Dark' }))
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    expect(window.localStorage.getItem('leave-planner-theme')).toBe('dark')
 
     await user.click(screen.getByRole('button', { name: 'Public Holidays' }))
     expect(await screen.findByRole('heading', { name: 'Public Holidays' })).toBeInTheDocument()

@@ -28,7 +28,8 @@ def validate_request_origin(request: Request) -> None:
     origin = request.headers.get("origin")
     if origin is None:
         return
-    expected = str(request.base_url).rstrip("/")
+    settings = runtime_settings(request)
+    expected = settings.public_origin or str(request.base_url).rstrip("/")
     if origin.rstrip("/") != expected:
         raise ApiError(status_code=403, code="csrf_failed", message="Request could not be verified")
 

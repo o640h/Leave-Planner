@@ -93,11 +93,11 @@ def _canonical(value: Any) -> Any:
             for key, item in sorted(value.items())
             if key not in {"created_at", "updated_at", "recorded_at"}
         }
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         return [_canonical(item) for item in value]
     if isinstance(value, Decimal):
         return format(value, "f")
-    if isinstance(value, (date, datetime)):
+    if isinstance(value, date | datetime):
         return value.isoformat()
     return value
 

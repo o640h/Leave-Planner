@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from annual_entitlement.router import router as entitlement_router
 from authentication.router import router as authentication_router
@@ -17,6 +18,7 @@ from consultant_year_summary import router as consultant_year_summary_router
 from consultants import router as consultant_router
 from database import create_database_engine, create_session_factory
 from errors import install_error_handlers
+from http_security import HostedHttpSecurityMiddleware
 from job_plans.router import router as job_plan_router
 from leave_bookings.router import router as leave_booking_router
 from leave_years import router as leave_year_router
@@ -39,6 +41,8 @@ def create_app(
 
     runtime = settings or Settings()
     configure_logging(runtime.log_level)
+    if runtime.environment == "production" and runtime.public_host is None:
+        raise RuntimeError("Production requires LEAVE_PLANNER_PUBLIC_ORIGIN")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -65,6 +69,13 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.settings = runtime
+    app.add_middleware(HostedHttpSecurityMiddleware, settings=runtime)
+    if runtime.environment == "production":
+        assert runtime.public_host is not None
+        app.add_middleware(
+            TrustedHostMiddleware,
+            allowed_hosts=[runtime.public_host, "127.0.0.1", "localhost"],
+        )
     install_error_handlers(app)
 
     @app.get("/api/health", tags=["system"])

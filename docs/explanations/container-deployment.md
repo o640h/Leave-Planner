@@ -15,8 +15,9 @@ The Compose project has three services:
 - `migrate` is a one-shot release service. It uses the schema-owner credential, runs Alembic, verifies
   the resulting revision, and must finish successfully before the application may start.
 - `application` uses a separate runtime credential with data access but no schema ownership. It joins
-  the internal database network and a separate edge network, and publishes port `8080` for LAN-only
-  Task 8 acceptance.
+  the internal database network and a separate edge network. The NAS publishes port `8080` on its
+  loopback interface only, so the selected host-level HTTPS tunnel or proxy can reach it but LAN and
+  internet clients cannot bypass HTTPS.
 
 Normal development remains unchanged: Vite runs on `localhost:5173`, FastAPI runs on
 `127.0.0.1:8000`, and the development server upgrades its isolated SQLite schema automatically.
@@ -47,9 +48,10 @@ Docker Compose can validate the complete merged configuration without starting a
 docker compose --file deploy/compose.yml config --quiet
 ```
 
-The optional values in `deploy/.env.example` default to LAN port `8080` on all NAS interfaces. No
-router forwarding is configured, so this is reachable only from the current private network during
-Task 8. Task 9 will replace direct LAN access with the Synology HTTPS reverse proxy.
+Copy `deploy/.env.example` to `deploy/.env` on the deployment host. Its values bind port `8080`
+to `127.0.0.1` and configure the exact public origin. Compose and production startup both refuse
+to run without that HTTPS origin. Change it when the public hostname changes; do not add aliases
+casually because the same value anchors host validation and CSRF origin checks.
 
 ## Initial release commands
 
@@ -67,16 +69,54 @@ startup PostgreSQL creates separate migrator and application roles from the moun
 migration container then upgrades the empty database and exits successfully; only then does the
 application start.
 
-Check health from a LAN computer:
+During initial LAN-only acceptance, health was checked directly from a LAN computer. After the
+hosted boundary is deployed, use the HTTPS hostname instead:
 
 ```powershell
-Invoke-RestMethod "http://192.168.1.253:8080/api/health"
+Invoke-RestMethod "https://leave-planner.example-tailnet.ts.net/api/health"
 ```
 
-The expected result is `status: ok` and `environment: production`. The frontend is also served at
-`http://192.168.1.253:8080`, but production cookies deliberately require HTTPS. Full Admin sign-in is
-therefore accepted through the HTTPS address established in Task 9, rather than weakening cookie
-security for this temporary HTTP check.
+The expected result is `status: ok` and `environment: production`. Direct
+`http://192.168.1.253:8080` access is intentionally unavailable.
+
+## Public HTTPS edge
+
+The proof-of-concept edge is Tailscale Funnel. Tailscale publishes the stable
+`https://leave-planner.<tailnet>.ts.net` hostname, terminates trusted TLS, and carries requests over
+an outbound connection to `http://127.0.0.1:8080`. The application accepts that exact public host,
+honours forwarding headers only because the published backend port is loopback-only, limits requests
+to 1 MiB, applies per-client and stricter login throttles, and emits the browser security headers.
+
+Enable and inspect the Funnel on the NAS with:
+
+```sh
+sudo /var/packages/Tailscale/target/bin/tailscale funnel --bg 8080
+sudo /var/packages/Tailscale/target/bin/tailscale funnel status
+```
+
+The Funnel configuration survives package restarts. To take the application off the internet
+urgently without stopping its private services:
+
+```sh
+sudo /var/packages/Tailscale/target/bin/tailscale funnel --https=443 off
+```
+
+Do not create a Leave Planner router forwarding rule or enable DMZ. Do not expose DSM administration,
+port `8080`, PostgreSQL, Container Manager, or SSH. During acceptance the EE Hub's custom port
+forwarding proved nonfunctional even though an existing Plex UPnP mapping worked, so all temporary
+Leave Planner mappings were removed. Synology DDNS, its certificate, and the DSM reverse proxy were
+validated locally but are not part of the selected public route.
+
+The Tailscale machine has key expiry disabled so an unattended expiry cannot remove the public edge.
+A daily DSM root task runs the package's absolute `tailscale update --yes` command. Tailscale manages
+the Funnel hostname and certificate; after package, identity, DNS, or certificate alerts, confirm
+`tailscale funnel status` and the public health endpoint. Keep the machine name generic because its
+Funnel hostname can appear in public certificate-transparency records.
+
+A later paid domain can use an outbound Cloudflare Tunnel without moving the application or database.
+Set the new exact `LEAVE_PLANNER_PUBLIC_ORIGIN` in `deploy/.env`, recreate the application
+container, validate the new HTTPS route, and then disable Funnel. Tailscale may remain installed for
+private NAS administration.
 
 Create the fixed account once after migration:
 

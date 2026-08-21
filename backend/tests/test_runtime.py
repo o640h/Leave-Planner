@@ -27,6 +27,7 @@ def test_windows_data_directory_uses_local_app_data(tmp_path: Path) -> None:
 def test_settings_support_production_overrides(tmp_path: Path) -> None:
     settings = Settings(
         environment="production",
+        public_origin="https://leaveplanner.synology.me",
         data_dir=tmp_path,
         database_url=SecretStr(
             "postgresql+psycopg://leave_planner:secret@database/leave_planner"
@@ -48,7 +49,11 @@ def test_settings_read_database_url_from_secret_file(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    settings = Settings(environment="production", database_url_file=secret_file)
+    settings = Settings(
+        environment="production",
+        public_origin="https://leaveplanner.synology.me",
+        database_url_file=secret_file,
+    )
 
     assert settings.resolved_database_url.username == "leave_planner"
     assert settings.resolved_database_url.password == "secret"
@@ -59,6 +64,7 @@ def test_settings_reject_ambiguous_database_secrets(tmp_path: Path) -> None:
     with pytest.raises(ValidationError, match="either database_url or database_url_file"):
         Settings(
             environment="production",
+            public_origin="https://leaveplanner.synology.me",
             database_url=SecretStr(
                 "postgresql+psycopg://leave_planner:secret@database/leave_planner"
             ),
@@ -78,6 +84,7 @@ def test_production_rejects_sqlite_and_unsupported_database_drivers(tmp_path: Pa
     with pytest.raises(ValidationError, match="Production requires"):
         Settings(
             environment="production",
+            public_origin="https://leaveplanner.synology.me",
             database_url=SecretStr(
                 f"sqlite+pysqlite:///{(tmp_path / 'test.sqlite3').as_posix()}"
             ),
@@ -89,6 +96,7 @@ def test_production_refuses_to_start_before_explicit_migration(
 ) -> None:
     settings = Settings(
         environment="production",
+        public_origin="https://leaveplanner.synology.me",
         database_url=SecretStr(
             "postgresql+psycopg://leave_planner:secret@database/leave_planner"
         ),

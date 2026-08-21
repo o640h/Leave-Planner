@@ -8,7 +8,7 @@ function systemTheme(): 'dark' | 'light' {
 
 export function getThemePreference(): ThemePreference {
   const saved = window.localStorage.getItem(storageKey)
-  return saved === 'light' || saved === 'system' ? saved : 'dark'
+  return saved === 'dark' || saved === 'system' ? saved : 'light'
 }
 
 export function applyTheme(preference: ThemePreference) {

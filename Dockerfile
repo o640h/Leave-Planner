@@ -24,7 +24,7 @@ RUN uv sync --locked --no-group dev
 
 FROM python:3.14.7-slim-bookworm AS runtime
 
-ARG APP_VERSION=0.2.0
+ARG APP_VERSION=0.2.1
 LABEL org.opencontainers.image.title="Leave Planner" \
       org.opencontainers.image.version="${APP_VERSION}"
 
@@ -48,4 +48,4 @@ COPY --from=frontend-build /build/frontend/dist /app/frontend/dist
 USER 10001:10001
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
