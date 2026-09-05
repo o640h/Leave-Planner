@@ -475,7 +475,7 @@
   }
 }
 
-@media (max-width: 680px) {
+@container (max-width: 680px) {
   .leave-log-modal-header {
     display: grid;
     align-items: start;

@@ -142,6 +142,59 @@ p {
   background: var(--canvas);
 }
 
+.workspace-frame {
+  width: min(1440px, 100vw);
+  height: min(900px, 100dvh);
+  grid-template-rows: minmax(0, 1fr) 24px;
+  container: workspace / inline-size;
+}
+
+.workspace-frame--expanded {
+  width: 100vw;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+}
+
+.workspace-sizing {
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  border-top: 1px solid var(--line);
+  background: var(--rail);
+}
+
+.workspace-sizing button {
+  padding: 0 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.69231rem;
+}
+
+.workspace-sizing button:focus-visible {
+  border-color: var(--focus-line);
+  color: var(--text);
+}
+
+.workspace-resize {
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.workspace-resize svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+}
+
+@container workspace (max-width: 740px) {
+  .application-content {
+    overflow: auto;
+  }
+}
+
 .application-rail {
   display: flex;
   position: relative;
@@ -516,6 +569,7 @@ p {
 }
 
 .application-content {
+  container: content / inline-size;
   position: relative;
   min-width: 0;
   min-height: 0;
@@ -1040,6 +1094,29 @@ details[open] > :not(summary) {
 
   .application-content {
     overflow: visible;
+  }
+
+  .workspace-frame {
+    display: grid;
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .workspace-frame .application-shell {
+    min-height: 0;
+    height: 100%;
+    grid-template-rows: 54px minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .workspace-frame .application-content {
+    overflow: auto;
+  }
+
+  .workspace-sizing {
+    display: none;
   }
 
   .authentication-page {

@@ -1,0 +1,25 @@
+# Optional overlay. Do not enable until the operator has chosen the public domain.
+services:
+  tunnel:
+    image: ${CLOUDFLARED_IMAGE:?Set the tested cloudflared image digest in deploy/.env}
+    command: ["tunnel", "--no-autoupdate", "run", "--token-file", "/run/secrets/cloudflare_tunnel_token"]
+    restart: unless-stopped
+    read_only: true
+    user: "65532:65532"
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    networks: [edge_network]
+    secrets: [cloudflare_tunnel_token]
+    depends_on:
+      application:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+secrets:
+  cloudflare_tunnel_token:
+    file: ./secrets/cloudflare_tunnel_token.txt

@@ -13,6 +13,7 @@ import { PlanningPage } from './planning/PlanningPage'
 import { SettingsPage } from './settings/SettingsPage'
 import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
+import { WorkspaceFrame } from './system/WorkspaceFrame'
 
 type ApplicationWorkspaceProps = {
   user?: AuthenticatedUser
@@ -24,7 +25,7 @@ export function ApplicationWorkspace({ user, onSignOut, signOutError }: Applicat
   const [page, setPage] = useState<'consultants' | 'planning' | 'settings'>('consultants')
 
   return (
-    <div className="application-frame">
+    <WorkspaceFrame>
       <div className="application-shell">
         <aside className="application-rail">
           <div className="brand" aria-hidden="true">
@@ -97,7 +98,7 @@ export function ApplicationWorkspace({ user, onSignOut, signOutError }: Applicat
           {page === 'settings' && <SettingsPage />}
         </main>
       </div>
-    </div>
+    </WorkspaceFrame>
   )
 }
 

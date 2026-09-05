@@ -30,6 +30,8 @@ frontend/coverage/
 # Local application state
 data/
 backups/
+*.dump
+*.dump.*
 exports/
 *.db
 *.db-shm

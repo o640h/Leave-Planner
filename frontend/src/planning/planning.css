@@ -507,7 +507,7 @@
   flex: 1;
 }
 
-@media (max-width: 900px) {
+@container content (max-width: 900px) {
   .planning-page {
     padding: 18px;
   }
@@ -521,6 +521,16 @@
   }
 
   .booking-drawer {
-    width: calc(100% - 60px);
+    width: min(560px, 100%);
+  }
+}
+
+@container content (max-width: 560px) {
+  .planning-page {
+    padding: 14px 10px;
+  }
+  .planning-toolbar {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }

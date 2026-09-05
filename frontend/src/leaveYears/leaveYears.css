@@ -274,7 +274,7 @@
   }
 }
 
-@media (max-width: 680px) {
+@container (max-width: 680px) {
   .dashboard-empty {
     align-items: flex-start;
     flex-direction: column;

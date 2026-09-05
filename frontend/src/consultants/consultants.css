@@ -533,7 +533,7 @@
   opacity: 1;
 }
 
-@media (max-width: 1050px) {
+@container content (max-width: 990px) {
   .directory-workspace {
     grid-template-columns: 232px minmax(0, 1fr);
   }
@@ -547,7 +547,7 @@
   }
 }
 
-@media (max-width: 680px) {
+@container content (max-width: 680px) {
   .directory,
   .directory-workspace {
     height: auto;

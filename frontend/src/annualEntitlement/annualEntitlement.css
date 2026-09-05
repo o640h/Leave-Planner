@@ -566,7 +566,7 @@
   }
 }
 
-@media (max-width: 680px) {
+@container (max-width: 680px) {
   .entitlement-hour-fields,
   .entitlement-components,
   .entitlement-calculation-basis dl {

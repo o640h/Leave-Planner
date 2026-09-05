@@ -431,7 +431,7 @@
   margin-top: 20px;
 }
 
-@media (max-width: 760px) {
+@container (max-width: 760px) {
   .job-plan-card {
     grid-template-columns: 1fr auto;
   }
@@ -446,7 +446,7 @@
   }
 }
 
-@media (max-width: 560px) {
+@container (max-width: 560px) {
   .job-plan-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -470,7 +470,7 @@
   }
 
   .record-modal.job-plan-modal {
-    width: calc(100vw - 20px);
+    width: calc(100% - 20px);
     max-height: calc(100dvh - 20px);
   }
 

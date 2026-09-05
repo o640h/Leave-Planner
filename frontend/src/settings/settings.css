@@ -185,7 +185,7 @@
   background: linear-gradient(90deg, #111 0 50%, #f1f3f1 50%);
 }
 
-@container (max-width: 700px) {
+@container content (max-width: 700px) {
   .settings-workspace {
     grid-template-columns: 180px minmax(0, 1fr);
   }
@@ -196,5 +196,31 @@
 
   .theme-options {
     grid-template-columns: 1fr;
+  }
+}
+
+@container content (max-width: 500px) {
+  .settings-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .settings-directory {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .settings-directory > header {
+    display: none;
+  }
+  .settings-directory nav {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 4px;
+  }
+  .settings-category {
+    min-height: 40px;
+    padding: 0 10px;
+  }
+  .settings-section {
+    padding: 20px 16px;
   }
 }
