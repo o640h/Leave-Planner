@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react'
 import { ApiClientError, operatorErrorMessage } from '../api/client'
 import { AppIcon } from '../system/AppIcon'
 import { HealthStatus } from '../system/HealthStatus'
+import { ProductIdentity } from '../system/ProductIdentity'
 import { login } from './api'
 import type { Session } from './types'
 
@@ -86,15 +87,7 @@ export function LoginScreen({ notice = null, onAuthenticated }: LoginScreenProps
     <div className="application-frame authentication-frame">
       <main className="authentication-page">
         <section className="authentication-panel" aria-labelledby="sign-in-title">
-          <div className="authentication-identity">
-            <div className="authentication-mark" aria-hidden="true">
-              <AppIcon name="calendar" />
-            </div>
-            <div>
-              <h2>Leave Planner</h2>
-              <p>Consultant annual leave planning.</p>
-            </div>
-          </div>
+          <ProductIdentity />
 
           <div className="authentication-form-area">
             <header className="authentication-heading">

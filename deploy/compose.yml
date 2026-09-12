@@ -1,7 +1,7 @@
 name: leave-planner
 
 x-application-runtime: &application-runtime
-  image: leave-planner:0.2.1
+  image: leave-planner:${LEAVE_PLANNER_VERSION:-0.2.1}
   environment:
     LEAVE_PLANNER_ENVIRONMENT: production
     LEAVE_PLANNER_LOG_LEVEL: INFO
@@ -77,7 +77,7 @@ services:
       context: ..
       dockerfile: Dockerfile
       args:
-        APP_VERSION: "0.2.1"
+        APP_VERSION: ${LEAVE_PLANNER_VERSION:-0.2.1}
     environment:
       LEAVE_PLANNER_ENVIRONMENT: production
       LEAVE_PLANNER_LOG_LEVEL: INFO

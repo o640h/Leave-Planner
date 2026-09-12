@@ -19,9 +19,13 @@ esac
 lock="$backup_dir/.leave-planner-backup-lock"
 mkdir "$lock" 2>/dev/null || fail 'Another backup is running, or a stale lock needs inspection.'
 restore_db=
+partial_archive=
+partial_report=
 cleanup() {
     result=$?
     trap - EXIT
+    [ -z "$partial_archive" ] || rm -f -- "$partial_archive"
+    [ -z "$partial_report" ] || rm -f -- "$partial_report"
     if [ -n "$restore_db" ]; then
         if ! database dropdb -U postgres --if-exists "$restore_db"; then
             printf 'Restore database cleanup failed: %s\n' "$restore_db" >&2
@@ -36,9 +40,11 @@ trap 'exit 1' HUP INT TERM
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 if [ "$action" = backup ]; then
     archive="$backup_dir/leave-planner-$stamp-$$.dump"
-    database pg_dump -U postgres -d leave_planner --format=custom > "$archive.partial"
-    database pg_restore --list < "$archive.partial" > /dev/null
-    mv -- "$archive.partial" "$archive"
+    partial_archive="$archive.partial"
+    database pg_dump -U postgres -d leave_planner --format=custom > "$partial_archive"
+    database pg_restore --list < "$partial_archive" > /dev/null
+    mv -- "$partial_archive" "$archive"
+    partial_archive=
     (cd -- "$backup_dir" && sha256sum "$(basename -- "$archive")" > "$(basename -- "$archive").sha256")
 else
     archive="$backup_dir/$(basename -- "$target")"
@@ -50,7 +56,8 @@ candidate="leave_planner_restore_$(date -u +%Y%m%d%H%M%S)_$$"
 database createdb -U postgres --template=template0 --owner=leave_planner_migrator "$candidate"
 restore_db=$candidate
 database pg_restore -U postgres --dbname="$restore_db" --single-transaction < "$archive"
-database psql -X -U postgres -d "$restore_db" -v ON_ERROR_STOP=1 > "$archive.verify.partial" <<'SQL'
+partial_report="$archive.verify.partial"
+database psql -X -U postgres -d "$restore_db" -v ON_ERROR_STOP=1 > "$partial_report" <<'SQL'
 SELECT version_num AS schema_revision FROM alembic_version;
 SELECT format('SELECT %L AS table_name, count(*) AS restored_rows FROM %I.%I;',
               tablename, schemaname, tablename)
@@ -59,7 +66,8 @@ FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename
 SQL
 database dropdb -U postgres "$restore_db"
 restore_db=
-mv -- "$archive.verify.partial" "$archive.verified.txt"
+mv -- "$partial_report" "$archive.verified.txt"
+partial_report=
 if [ "$action" = backup ]; then
     # Prune only our verified archive sets, after successful restoration of the new dump.
     find "$backup_dir" -maxdepth 1 -type f -name 'leave-planner-*.dump.verified.txt' -mtime +30 |

@@ -73,7 +73,7 @@ During initial LAN-only acceptance, health was checked directly from a LAN compu
 hosted boundary is deployed, use the HTTPS hostname instead:
 
 ```powershell
-Invoke-RestMethod "https://leave-planner.example-tailnet.ts.net/api/health"
+Invoke-RestMethod "https://app.merydio.co.uk/api/health"
 ```
 
 The expected result is `status: ok` and `environment: production`. Direct
@@ -81,25 +81,11 @@ The expected result is `status: ok` and `environment: production`. Direct
 
 ## Public HTTPS edge
 
-The proof-of-concept edge is Tailscale Funnel. Tailscale publishes the stable
-`https://leave-planner.<tailnet>.ts.net` hostname, terminates trusted TLS, and carries requests over
-an outbound connection to `http://127.0.0.1:8080`. The application accepts that exact public host,
-honours forwarding headers only because the published backend port is loopback-only, limits requests
-to 1 MiB, applies per-client and stricter login throttles, and emits the browser security headers.
-
-Enable and inspect the Funnel on the NAS with:
-
-```sh
-sudo /var/packages/Tailscale/target/bin/tailscale funnel --bg 8080
-sudo /var/packages/Tailscale/target/bin/tailscale funnel status
-```
-
-The Funnel configuration survives package restarts. To take the application off the internet
-urgently without stopping its private services:
-
-```sh
-sudo /var/packages/Tailscale/target/bin/tailscale funnel --https=443 off
-```
+The production edge is Cloudflare Tunnel at `https://app.merydio.co.uk`. Cloudflare terminates
+trusted public TLS and carries requests over an outbound connector to `http://application:8000` on
+the private edge network. The application accepts that exact public host, limits requests to 1 MiB,
+applies per-client and stricter login throttles, and emits the browser security headers. Manage the
+connector with both Compose files and follow `custom-domain.md` for token handling and recovery.
 
 Do not create a Leave Planner router forwarding rule or enable DMZ. Do not expose DSM administration,
 port `8080`, PostgreSQL, Container Manager, or SSH. During acceptance the EE Hub's custom port
@@ -107,16 +93,9 @@ forwarding proved nonfunctional even though an existing Plex UPnP mapping worked
 Leave Planner mappings were removed. Synology DDNS, its certificate, and the DSM reverse proxy were
 validated locally but are not part of the selected public route.
 
-The Tailscale machine has key expiry disabled so an unattended expiry cannot remove the public edge.
-A daily DSM root task runs the package's absolute `tailscale update --yes` command. Tailscale manages
-the Funnel hostname and certificate; after package, identity, DNS, or certificate alerts, confirm
-`tailscale funnel status` and the public health endpoint. Keep the machine name generic because its
-Funnel hostname can appear in public certificate-transparency records.
-
-A later paid domain can use an outbound Cloudflare Tunnel without moving the application or database.
-Set the new exact `LEAVE_PLANNER_PUBLIC_ORIGIN` in `deploy/.env`, recreate the application
-container, validate the new HTTPS route, and then disable Funnel. Tailscale may remain installed for
-private NAS administration.
+The earlier Tailscale Funnel was a proof of concept and is no longer the production route. Disable
+its DSM update task and uninstall the package after confirming it is not used for private NAS
+administration.
 
 Create the fixed account once after migration:
 
@@ -152,13 +131,36 @@ restore drill before real consultant data is hosted.
 
 ## Application upgrade
 
-For a reviewed release whose image version and migration set have been updated:
+The normal NAS release is initiated from the repository root in the VS Code PowerShell terminal:
 
 ```powershell
-docker compose --file deploy/compose.yml build --pull application
-docker compose --file deploy/compose.yml run --rm migrate
-docker compose --file deploy/compose.yml up --detach --no-deps application
-docker compose --file deploy/compose.yml ps --all
+.\scripts\DeployToNas.ps1 -Version 0.2.2
+```
+
+Use a new semantic version for every attempt; deployed release directories and image tags are
+immutable. The script runs the complete local backend and frontend checks, creates a source archive
+that excludes local environments and secrets, uploads it with Synology-compatible legacy SCP, and
+invokes the NAS-side release helper. SSH and sudo can request the operator password.
+The PowerShell script runs `DeployRelease.sh` automatically; do not invoke the NAS helper separately.
+
+On the NAS, the helper extracts to `releases/VERSION`, links only the persistent deployment `.env`
+and secret directory, creates and restores a pre-release database dump, builds
+`leave-planner:VERSION`, runs migrations, switches the application, confirms container health, and
+updates the `current` source link. PostgreSQL and the Cloudflare connector are not recreated. The
+previous image is retained and no image or volume prune is performed. After the first scripted
+release, use `/volume1/docker/leave-planner/current/deploy` for source-relative manual diagnostics.
+
+`-SkipChecks` exists for a repeat invocation only when the identical source has already passed the
+checks; ordinary releases must not use it. Optional connection parameters are available through
+`Get-Help .\scripts\DeployToNas.ps1 -Detailed` or the script parameter list.
+
+For diagnosis or a deliberately manual reviewed release, the underlying sequence remains:
+
+```powershell
+docker compose --file deploy/compose.yml --file deploy/compose.cloudflare.yml build --pull application
+docker compose --file deploy/compose.yml --file deploy/compose.cloudflare.yml run --rm migrate
+docker compose --file deploy/compose.yml --file deploy/compose.cloudflare.yml up --detach --no-deps application
+docker compose --file deploy/compose.yml --file deploy/compose.cloudflare.yml ps --all
 ```
 
 If migration fails, keep the existing application release stopped or unchanged and inspect

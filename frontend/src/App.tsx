@@ -13,6 +13,7 @@ import { PlanningPage } from './planning/PlanningPage'
 import { SettingsPage } from './settings/SettingsPage'
 import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
+import { ProductIdentity } from './system/ProductIdentity'
 import { WorkspaceFrame } from './system/WorkspaceFrame'
 
 type ApplicationWorkspaceProps = {
@@ -68,7 +69,7 @@ export function ApplicationWorkspace({ user, onSignOut, signOutError }: Applicat
           <div className="rail-footer">
             {user ? (
               <div className="account-indicator" title={`Signed In As ${user.display_name}`}>
-                <span aria-hidden="true">{user.display_name.slice(0, 1).toUpperCase()}</span>
+                <AppIcon name="profile" />
                 <span className="visually-hidden">Signed In As {user.display_name}</span>
               </div>
             ) : null}
@@ -114,34 +115,41 @@ function ApplicationStatus({ kind, busy = false, onRetry, onSignOut }: Applicati
   return (
     <div className="application-frame authentication-frame">
       <main className="application-status-page">
-        <section className="application-status-panel" aria-labelledby="application-status-title">
-          <div className="application-status-mark" aria-hidden="true">
-            <AppIcon name={unavailable ? 'settings' : 'profile'} />
-          </div>
-          <h1 id="application-status-title">
-            {unavailable ? 'Server Unavailable' : 'Workspace Access Unavailable'}
-          </h1>
-          <p>
-            {unavailable
-              ? 'Leave Planner could not reach the server. Check the connection and try again.'
-              : 'Admin is signed in but does not currently have access to this workspace.'}
-          </p>
-          <div className="application-status-actions">
-            {onRetry ? (
-              <button
-                className="button button--primary"
-                type="button"
-                disabled={busy}
-                onClick={onRetry}
-              >
-                {busy ? 'Checking' : 'Try Again'}
-              </button>
-            ) : null}
-            {onSignOut ? (
-              <button className="button button--quiet" type="button" onClick={onSignOut}>
-                Sign Out
-              </button>
-            ) : null}
+        <section
+          className="authentication-panel application-status-panel"
+          aria-labelledby="application-status-title"
+        >
+          <ProductIdentity />
+          <div className="application-status-content">
+            <div className="application-status-mark" aria-hidden="true">
+              <AppIcon name={unavailable ? 'server' : 'profile'} />
+            </div>
+            <h1 id="application-status-title">
+              {unavailable ? 'Server Unavailable' : 'Workspace Access Unavailable'}
+            </h1>
+            <p>
+              {unavailable
+                ? 'Leave Planner could not reach the server. Check the connection and try again.'
+                : 'Admin is signed in but does not currently have access to this workspace.'}
+            </p>
+            <div className="application-status-actions">
+              {onRetry ? (
+                <button
+                  className="button button--primary button--with-icon"
+                  type="button"
+                  disabled={busy}
+                  onClick={onRetry}
+                >
+                  <AppIcon name="retry" />
+                  {busy ? 'Checking' : 'Try Again'}
+                </button>
+              ) : null}
+              {onSignOut ? (
+                <button className="button button--quiet" type="button" onClick={onSignOut}>
+                  Sign Out
+                </button>
+              ) : null}
+            </div>
           </div>
         </section>
       </main>
@@ -227,10 +235,19 @@ export function App() {
   if (session === null) {
     return (
       <div className="application-frame authentication-frame">
-        <main className="authentication-page">
-          <p className="authentication-loading" role="status">
-            Connecting
-          </p>
+        <main className="application-status-page">
+          <section
+            className="authentication-panel application-status-panel application-status-panel--loading"
+            aria-labelledby="application-loading-title"
+          >
+            <ProductIdentity />
+            <div className="application-status-content" role="status">
+              <div className="application-status-mark" aria-hidden="true">
+                <AppIcon name="server" />
+              </div>
+              <h1 id="application-loading-title">Connecting</h1>
+            </div>
+          </section>
         </main>
       </div>
     )

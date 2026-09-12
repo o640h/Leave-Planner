@@ -12,6 +12,8 @@ type AppIconProps = {
     | 'jobPlan'
     | 'database'
     | 'logout'
+    | 'retry'
+    | 'server'
 }
 
 export function AppIcon({ name }: AppIconProps) {
@@ -25,7 +27,8 @@ export function AppIcon({ name }: AppIconProps) {
   if (name === 'calendar') {
     return (
       <svg {...commonProps}>
-        <path d="M5 4.5h14v15H5zM8 2.5v4M16 2.5v4M5 9h14M8.5 14l2 2 4.5-5" />
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M16 2v3M3 9h18M8 2v3M17 13h-6M13 17H7M7 13h.01M17 17h.01" />
       </svg>
     )
   }
@@ -42,7 +45,8 @@ export function AppIcon({ name }: AppIconProps) {
   if (name === 'wallchart') {
     return (
       <svg {...commonProps}>
-        <path d="M4 5.5h16v14H4zM8 3v5M16 3v5M4 9.5h16M8 13h2M12 13h2M16 13h1M8 16.5h2M12 16.5h2" />
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M16 2v3M3 9h18M8 2v3M17 13h-6M13 17H7M7 13h.01M17 17h.01" />
       </svg>
     )
   }
@@ -113,6 +117,22 @@ export function AppIcon({ name }: AppIconProps) {
         <ellipse cx="12" cy="5.5" rx="7.5" ry="3" />
         <path d="M4.5 5.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" />
         <path d="M4.5 11.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" />
+      </svg>
+    )
+  }
+
+  if (name === 'server') {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 4.5h16v6H4zM4 13.5h16v6H4zM7 7.5h.1M7 16.5h.1M10 7.5h6M10 16.5h6" />
+      </svg>
+    )
+  }
+
+  if (name === 'retry') {
+    return (
+      <svg {...commonProps}>
+        <path d="M19 8V3.5l-2 2A8 8 0 1 0 19.4 15M19 3.5h-4.5" />
       </svg>
     )
   }

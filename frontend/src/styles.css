@@ -160,7 +160,6 @@ p {
   display: flex;
   justify-content: flex-end;
   align-items: stretch;
-  border-top: 1px solid var(--line);
   background: var(--rail);
 }
 
@@ -220,6 +219,7 @@ p {
 .brand .app-icon {
   width: 24px;
   height: 24px;
+  stroke-width: 1.75;
 }
 
 .primary-navigation {
@@ -273,15 +273,23 @@ p {
 
 .account-indicator {
   display: grid;
+  position: relative;
   width: 34px;
   height: 34px;
   margin: 0 auto;
   place-items: center;
-  border: 1px solid var(--line-strong);
-  color: var(--text);
-  background: var(--surface-subtle);
-  font-size: 0.69231rem;
-  font-weight: 520;
+  border: 0;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--surface-raised);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 5px 14px rgb(var(--border-rgb) / 0.08);
+}
+
+.account-indicator .app-icon {
+  width: 17px;
+  height: 17px;
 }
 
 .rail-footer .service-state {
@@ -321,21 +329,32 @@ p {
 
 .authentication-mark {
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border: 1px solid var(--line-strong);
   color: var(--accent);
-  background: var(--surface-subtle);
 }
 
 .authentication-mark .app-icon {
-  width: 25px;
-  height: 25px;
+  width: 30px;
+  height: 30px;
+  stroke-width: 1.75;
+}
+
+.authentication-identity-copy {
+  display: grid;
+  justify-items: start;
+}
+
+.authentication-company {
+  margin-bottom: 7px;
+  color: var(--accent);
+  font: 540 0.76923rem/1 var(--brand);
+  letter-spacing: 0.08em;
 }
 
 .authentication-identity h2 {
-  margin: 0 0 8px;
+  margin: 0 0 8px -1px;
   font: 430 1.46154rem/1.15 var(--brand);
   letter-spacing: -0.03em;
 }
@@ -372,10 +391,10 @@ p {
   width: fit-content;
   align-items: center;
   gap: 8px;
-  padding: 7px 9px;
-  border: 1px solid var(--line);
+  padding: 5px 2px;
+  border: 0;
   color: var(--muted);
-  background: var(--surface-subtle);
+  background: transparent;
   font-size: 0.69231rem;
 }
 
@@ -486,23 +505,22 @@ p {
   font-size: 0.69231rem;
 }
 
-.authentication-loading {
-  color: var(--muted);
-}
-
 .application-status-page {
   display: grid;
   min-height: 0;
-  padding: 32px;
+  padding: 40px;
   place-items: center;
 }
 
 .application-status-panel {
-  width: min(460px, 100%);
-  padding: 38px;
-  border: 1px solid var(--line-strong);
-  background: var(--panel);
-  box-shadow: var(--panel-shadow);
+  min-height: 430px;
+}
+
+.application-status-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 46px 48px;
 }
 
 .application-status-mark {
@@ -522,7 +540,7 @@ p {
   letter-spacing: -0.025em;
 }
 
-.application-status-panel > p {
+.application-status-content > p {
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
@@ -532,6 +550,19 @@ p {
   display: flex;
   gap: 9px;
   margin-top: 28px;
+}
+
+.application-status-actions .button {
+  min-width: 118px;
+}
+
+.application-status-actions .app-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.application-status-panel--loading .application-status-mark {
+  color: var(--accent);
 }
 
 .application-notice {
@@ -1148,6 +1179,10 @@ details[open] > :not(summary) {
   }
 
   .application-status-panel {
-    padding: 28px 24px;
+    min-height: 0;
+  }
+
+  .application-status-content {
+    padding: 30px 24px;
   }
 }

@@ -340,9 +340,11 @@
   box-shadow: 0 8px 20px rgb(0 0 0 / 0.25);
 }
 
-:root[data-theme='dark'] .button--primary:hover:not(:disabled) {
+:root[data-theme='dark'] .button.button--primary:hover:not(:disabled) {
+  border-color: transparent;
   color: var(--on-accent);
   background: var(--accent-hover);
+  box-shadow: 0 9px 20px rgb(0 0 0 / 0.32);
 }
 
 :root[data-theme='dark'] :is(.overview-delete-button, .button--danger) {

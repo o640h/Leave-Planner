@@ -1,0 +1,17 @@
+{
+  "name": "Leave Planner",
+  "short_name": "Leave Planner",
+  "description": "Consultant annual leave planning.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101010",
+  "theme_color": "#587f95",
+  "icons": [
+    {
+      "src": "/calendar-range.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

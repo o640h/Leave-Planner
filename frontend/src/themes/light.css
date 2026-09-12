@@ -329,9 +329,11 @@
   box-shadow: 0 8px 18px rgb(55 104 136 / 0.2);
 }
 
-:root[data-theme='light'] .button--primary:hover:not(:disabled) {
+:root[data-theme='light'] .button.button--primary:hover:not(:disabled) {
+  border-color: transparent;
   color: var(--on-accent);
   background: var(--accent-hover);
+  box-shadow: 0 9px 20px rgb(55 104 136 / 0.24);
 }
 
 :root[data-theme='light'] .overview-delete-button {

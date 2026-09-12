@@ -55,6 +55,7 @@ describe('shared Admin authentication', () => {
     render(<App />)
 
     expect(await screen.findByRole('heading', { name: 'Sign In' })).toBeInTheDocument()
+    expect(screen.getByText('Merydio')).toBeInTheDocument()
     expect(screen.getByText('Admin')).toBeInTheDocument()
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument()
 

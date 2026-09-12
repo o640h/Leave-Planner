@@ -75,19 +75,20 @@ Reinitialisation must recreate the existing role names through `deploy/postgres/
 
 ## Safe release
 
-From `/volume1/docker/leave-planner/deploy`, first take a verified backup. Upload source without
-overwriting `.env`, `secrets`, or backups. Record the current image ID with
-`sudo docker inspect leave-planner-application-1 --format '{{.Image}}'` and retain/tag it before
-building a replacement. Use distinct release tags so the rollback image is not overwritten.
+Use `scripts/DeployToNas.ps1 -Version VERSION` from the local repository. It stages source in a
+versioned NAS directory without overwriting `.env`, `secrets`, or backups, records the current image,
+creates and restore-verifies a pre-release dump, and builds a distinct version tag before migration.
+The previous image is retained rather than overwritten.
 
 ```sh
-sudo docker compose build --pull application
+export LEAVE_PLANNER_VERSION=0.2.2
+sudo docker compose -f compose.yml -f compose.cloudflare.yml build --pull application
 sudo docker compose stop application
-sudo docker compose run --rm migrate
+sudo docker compose -f compose.yml -f compose.cloudflare.yml run --rm migrate
 # Continue only if migration succeeds:
-sudo docker compose up -d --no-deps application
-sudo docker compose ps
-sudo docker compose logs --tail=100 application
+sudo docker compose -f compose.yml -f compose.cloudflare.yml up -d --no-deps application
+sudo docker compose -f compose.yml -f compose.cloudflare.yml ps
+sudo docker compose -f compose.yml -f compose.cloudflare.yml logs --tail=100 application
 ```
 
 On migration failure, preserve output privately and do not launch the new app. Restart an old image
@@ -98,7 +99,7 @@ PostgreSQL major upgrades require a separate dump/restore plan, not just an imag
 
 The operator owns weekly checks of backup success, latest archive age, restore duration, container
 health/restarts, and DSM Storage Manager alerts. Configure and test DSM capacity and health
-notifications; start with a warning at 20% free capacity. Review app, PostgreSQL, Tailscale and
+notifications; start with a warning at 20% free capacity. Review app, PostgreSQL, cloudflared and
 tunnel versions monthly and act promptly on relevant security advisories. Keep log rotation enabled.
 Never log request bodies/passwords/tokens or share unredacted production logs.
 

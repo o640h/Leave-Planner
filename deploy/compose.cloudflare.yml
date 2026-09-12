@@ -1,4 +1,4 @@
-# Optional overlay. Do not enable until the operator has chosen the public domain.
+# Production Cloudflare Tunnel overlay. Use together with compose.yml on the NAS.
 services:
   tunnel:
     image: ${CLOUDFLARED_IMAGE:?Set the tested cloudflared image digest in deploy/.env}

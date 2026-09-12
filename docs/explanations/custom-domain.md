@@ -1,77 +1,84 @@
-# Custom Domain Cutover
+# Custom Domain and Cloudflare Tunnel
 
-Preparation only: no domain has been selected. The working Tailscale Funnel remains unchanged.
-The NAS continues hosting both the application and database; Cloudflare supplies the public HTTPS
-entry point through an outbound connector. No router forwarding, DMZ, Web Station or public
-PostgreSQL port is needed.
+The production application is available at `https://app.merydio.co.uk`. Cloudflare terminates public
+HTTPS and sends requests through an outbound `cloudflared` connector on the NAS to
+`http://application:8000`. The application and PostgreSQL remain on the NAS; no router forwarding,
+DMZ, Web Station, public application port, or public PostgreSQL port is required.
 
-## Operator checkpoints
+## Production configuration
 
-1. Choose and purchase the domain. Add it to your existing Cloudflare account on the Free plan and
-   complete the assigned nameserver setup if purchased elsewhere. Wait for an Active zone. Keep
-   existing email/DNS records if this is not a brand-new domain. Enable account MFA. Tell the
-   developer the exact app hostname (for example `app.example.com`), not credentials.
-2. Create a remotely managed Cloudflare Tunnel in the dashboard (Networking / Tunnels, or Zero
-   Trust / Networks / Connectors). Give it a descriptive name. The Docker installation command
-   contains a secret token: do not paste it into chat, Git, `.env.example`, or shell history.
-   Save only the token in `deploy/secrets/cloudflare_tunnel_token.txt` on the NAS. Restrict the
-   parent secrets directory to administrators; the bind-mounted token must remain readable by
-   container UID 65532. Do not recursively change permissions of existing database secrets.
-3. Select and pin the connector image on the NAS. Pull the current official image, inspect its
-   immutable digest, and put that value in the real `deploy/.env`:
+- Cloudflare is authoritative for `merydio.co.uk`.
+- The published application route is `app.merydio.co.uk` to HTTP service `application:8000`.
+- `deploy/.env` uses `LEAVE_PLANNER_PUBLIC_ORIGIN=https://app.merydio.co.uk`.
+- The tunnel token belongs only in `deploy/secrets/cloudflare_tunnel_token.txt` on the NAS. Never put
+  it in chat, Git, screenshots, `.env`, or shell history.
+- `compose.cloudflare.yml` is an overlay, so project-wide commands include both Compose files.
 
-```sh
-sudo docker pull cloudflare/cloudflared:latest
-sudo docker image inspect cloudflare/cloudflared:latest --format '{{index .RepoDigests 0}}'
-```
+Cloudflare-to-browser traffic is HTTPS. HTTP on the private Docker hop is intentional: both
+containers share the NAS-only edge network, and the application is not published on that network to
+the internet. Cloudflare forwards the original HTTPS scheme and hostname for the application's
+origin, cookie, redirect, and host checks.
+
+## Manage the connector
+
+Pin the tested official connector image by immutable digest in the real `deploy/.env`:
 
 ```dotenv
 CLOUDFLARED_IMAGE=cloudflare/cloudflared@sha256:REPLACE_WITH_INSPECTED_DIGEST
 ```
 
-The token-file option requires cloudflared 2025.4.0 or later. Retain the tested digest for rollback.
-This inspection step intentionally avoids guessing a future image tag or silently updating on restart.
-4. Add a published application route for your chosen hostname, service **HTTP**, URL
-   **application:8000**. Leave the HTTP Host Header override unset so the real public hostname
-   reaches the application's host/origin validation. Do not route DSM, SSH, the database, or other
-   NAS services. Ensure no cache-everything rule applies; bypass caching for `/api/*` and do not
-   enable HTML/script transformations during initial acceptance.
-5. At a planned short cutover, change only the real `.env` public origin to the exact new HTTPS
-   origin, with no path or trailing slash. Keep the loopback bind address. The application derives
-   allowed host and CSRF origin from this setting; do not weaken those checks for two public hosts.
-   Existing login cookies do not transfer to the new hostname: sign in again.
+Start and inspect the Compose-managed connector from NAS SSH:
 
 ```sh
-# NAS SSH, in /volume1/docker/leave-planner/deploy
-sudo docker compose up -d --no-deps application
+cd /volume1/docker/leave-planner/deploy
 sudo docker compose -f compose.yml -f compose.cloudflare.yml up -d --no-deps tunnel
 sudo docker compose -f compose.yml -f compose.cloudflare.yml logs --tail=50 tunnel
 ```
 
-## Acceptance before retiring Funnel
+For later full releases, retain both `-f` arguments so `tunnel` remains part of the project. A healthy
+connector should register multiple Cloudflare connections and the public health endpoint should
+return `status: ok` and `environment: production`.
 
-- Confirm the tunnel reports healthy in Cloudflare and the public certificate is trusted.
-- Open `https://YOUR-HOST/api/health` from an external network/checker; expect production/ok.
-- Sign in through the browser, navigate Consultants, Planning and Settings, and test an authorised
-  PDF download. Confirm unauthenticated downloads remain denied.
-- Check security headers, Secure/HttpOnly/SameSite session cookies and exact-origin rejection.
-  Check that two independent clients do not share a proxy-wide login rate-limit identity.
-- Check the origin cannot be reached publicly on 8000/8080 and PostgreSQL is still unpublished.
-- Confirm an ordinary connector/container restart recovers the public route; no NAS reboot needed.
+## Root-domain holding route
 
-Only then disable the public Funnel on the NAS:
+Until there is a real marketing site, redirect `merydio.co.uk` and `www.merydio.co.uk` to the app.
+In Cloudflare, create one Redirect Rule matching either hostname, with static destination
+`https://app.merydio.co.uk`, status `302`, and query-string preservation enabled. Keep both DNS
+records proxied. Use `302` while this is a holding route; change it to `301` only when the decision is
+permanent. Do not remove mail records when changing website DNS.
+
+## Retire the Tailscale proof of concept
+
+Only after the Compose-managed connector is healthy and the application works over an external
+connection:
 
 ```sh
 sudo /var/packages/Tailscale/target/bin/tailscale funnel --https=443 off
+sudo /var/packages/Tailscale/target/bin/tailscale funnel status
 ```
 
-Keep private Tailscale administration if useful. For subsequent project-wide Compose operations,
-include both `-f` files so the connector is managed with the application. A health check alone does
-not provide alerts: configure tunnel availability notifications/monitoring and test delivery.
+Disable the old daily Tailscale update task in DSM Task Scheduler. If Tailscale is not needed for
+private NAS administration, uninstall the DSM package and remove the NAS machine from the Tailscale
+admin console. These steps do not affect Cloudflare Tunnel or PostgreSQL.
 
-Rollback: stop the tunnel service, restore the previous exact public origin in `.env`, recreate
-the application, and re-enable `tailscale funnel --bg 8080`. Verify the original URL before changing
-DNS further. None of these routing commands changes the PostgreSQL volume.
+Remove only confirmed obsolete containers. The stopped random-name `cloudflared` container and the
+disposable PostgreSQL test container can be removed; do not remove volumes. The exited migration
+container is normal evidence of the one-shot release step and may remain. Never use a broad Docker
+volume or system prune on this NAS.
 
-Sources: [Cloudflare setup](https://developers.cloudflare.com/tunnel/setup/) and
-[token-file parameters](https://developers.cloudflare.com/tunnel/advanced/run-parameters/).
+## Acceptance and rollback
+
+- Test `/api/health`, sign-in, Consultants, Planning, Settings, and an authorised PDF download from
+  a non-LAN connection.
+- Confirm unauthenticated downloads are denied, session cookies are Secure/HttpOnly/SameSite, and
+  the application rejects an unexpected Host or Origin.
+- Confirm PostgreSQL has no published port and neither DSM nor SSH is routed through the tunnel.
+- Confirm a connector restart recovers the route.
+
+If the Cloudflare route fails, inspect the application and tunnel logs before changing DNS. Restart
+the last tested application image if the failure followed a release. Re-enabling the old Funnel is an
+emergency rollback only while Tailscale remains installed; none of these routing actions changes the
+PostgreSQL volume.
+
+Sources: [Cloudflare Tunnel setup](https://developers.cloudflare.com/tunnel/setup/) and
+[Cloudflare Redirect Rules](https://developers.cloudflare.com/rules/url-forwarding/).

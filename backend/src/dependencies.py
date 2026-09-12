@@ -18,4 +18,8 @@ def get_database_session(request: Request) -> Iterator[Session]:
         yield session
 
 
-DatabaseSession = Annotated[Session, Depends(get_database_session)]
+# Finish the database transaction before the response is sent. A request-scoped
+# dependency can commit after response headers (including the new session cookie)
+# have gone to the browser, allowing the browser's immediate follow-up request to
+# briefly miss a session created during login.
+DatabaseSession = Annotated[Session, Depends(get_database_session, scope="function")]
