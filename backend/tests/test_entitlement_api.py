@@ -193,9 +193,7 @@ def test_refresh_recalculates_a_calculated_entitlement_after_job_plan_change(
             f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/entitlement"
         )
         selection = {"seven_years_or_more": True}
-        original = client.put(
-            entitlement_path, json={"mode": "calculated", **selection}
-        ).json()
+        original = client.put(entitlement_path, json={"mode": "calculated", **selection}).json()
 
         job_plans_path = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}/job-plans"
         job_plan = client.get(job_plans_path).json()[0]

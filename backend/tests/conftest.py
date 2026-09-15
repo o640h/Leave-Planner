@@ -7,6 +7,10 @@ import pytest
 from sqlalchemy import text
 
 from database import create_database_engine, database_url
+from settings import Settings
+
+# Developer credentials and origins in backend/.env must never affect or send mail from tests.
+Settings.model_config["env_file"] = None
 
 POSTGRES_TEST_URL = os.environ.get("LEAVE_PLANNER_TEST_POSTGRES_URL")
 

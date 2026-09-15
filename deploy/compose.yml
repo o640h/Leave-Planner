@@ -83,8 +83,12 @@ services:
       LEAVE_PLANNER_LOG_LEVEL: INFO
       LEAVE_PLANNER_DATABASE_URL_FILE: /run/secrets/application_database_url
       LEAVE_PLANNER_PUBLIC_ORIGIN: ${LEAVE_PLANNER_PUBLIC_ORIGIN:?Set LEAVE_PLANNER_PUBLIC_ORIGIN in deploy/.env}
+      LEAVE_PLANNER_EMAIL_PROVIDER: resend
+      LEAVE_PLANNER_EMAIL_FROM: Leave Planner <notifications@merydio.co.uk>
+      LEAVE_PLANNER_RESEND_API_KEY_FILE: /run/secrets/resend_api_key
     secrets:
       - application_database_url
+      - resend_api_key
     depends_on:
       database:
         condition: service_healthy
@@ -130,3 +134,5 @@ secrets:
     file: ./secrets/migration_database_url.txt
   application_database_url:
     file: ./secrets/application_database_url.txt
+  resend_api_key:
+    file: ./secrets/resend_api_key.txt

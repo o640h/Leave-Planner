@@ -196,6 +196,7 @@ def create_session(
         last_seen_at=moment,
         expires_at=moment + lifetime,
         active_workspace_id=active_workspace_id,
+        reauthenticated_at=moment,
     )
     session.add(stored_session)
     session.flush()
@@ -290,14 +291,64 @@ def revoke_all_sessions(session: Session, user_id: int, *, now: datetime) -> Non
     )
 
 
-def reset_account_password(session: Session, account: User, password: str) -> None:
+def reauthenticate_session(
+    session: Session,
+    authenticated: AuthenticatedUser,
+    password: str,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    account = session.get(User, authenticated.id)
+    if not password_is_valid(account, password):
+        return False
+    moment = now or utc_now()
+    stored_session = session.get(UserSession, authenticated.session_id)
+    if stored_session is None or stored_session.revoked_at is not None:
+        return False
+    stored_session.reauthenticated_at = moment
+    record_security_event(
+        session,
+        "reauthentication_succeeded",
+        user_id=authenticated.id,
+        actor_label=authenticated.display_name,
+        details={"source": "http"},
+    )
+    return True
+
+
+def session_was_recently_reauthenticated(
+    session: Session,
+    session_id: int,
+    *,
+    maximum_age: timedelta,
+    now: datetime | None = None,
+) -> bool:
+    reauthenticated_at = session.scalar(
+        select(UserSession.reauthenticated_at).where(
+            UserSession.id == session_id,
+            UserSession.revoked_at.is_(None),
+        )
+    )
+    if reauthenticated_at is None:
+        return False
+    moment = now or utc_now()
+    return comparable_datetime(reauthenticated_at) >= moment - maximum_age
+
+
+def reset_account_password(
+    session: Session,
+    account: User,
+    password: str,
+    *,
+    actor_label: str = "Server Owner",
+) -> None:
     moment = utc_now()
     account.password_hash = hash_password(password)
     account.password_version += 1
     account.password_changed_at = moment
     clear_failed_logins(account)
     revoke_all_sessions(session, account.id, now=moment)
-    record_security_event(session, "password_reset", user_id=account.id, actor_label="Server Owner")
+    record_security_event(session, "password_reset", user_id=account.id, actor_label=actor_label)
 
 
 def set_account_state(session: Session, account: User, state: str) -> None:

@@ -69,13 +69,11 @@ def upgrade() -> None:
         sa.Column("override_reason", sa.String(length=500), nullable=True),
         sa.UniqueConstraint("booking_id", "leave_date", name="uq_leave_booking_day_date"),
         sa.CheckConstraint(
-            "standard_dcc_hours >= 0 AND standard_spa_hours >= 0 "
-            "AND standard_other_hours >= 0",
+            "standard_dcc_hours >= 0 AND standard_spa_hours >= 0 AND standard_other_hours >= 0",
             name="ck_leave_booking_day_standard_hours",
         ),
         sa.CheckConstraint(
-            "deduction_dcc_hours >= 0 AND deduction_spa_hours >= 0 "
-            "AND deduction_other_hours >= 0",
+            "deduction_dcc_hours >= 0 AND deduction_spa_hours >= 0 AND deduction_other_hours >= 0",
             name="ck_leave_booking_day_deduction_hours",
         ),
     )

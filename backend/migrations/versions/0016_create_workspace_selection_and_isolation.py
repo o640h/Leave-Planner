@@ -27,8 +27,7 @@ def _create_postgresql_isolation() -> None:
     # repeated explicitly because existing objects pre-date the default-privilege rule.
     application_role_exists = connection.scalar(
         sa.text(
-            "SELECT EXISTS (SELECT 1 FROM pg_roles "
-            "WHERE rolname = 'leave_planner_application')"
+            "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'leave_planner_application')"
         )
     )
     if application_role_exists:
@@ -49,12 +48,8 @@ def _create_postgresql_isolation() -> None:
     for table in ("workspaces", "workspace_memberships", *_WORKSPACE_ROOTS):
         connection.execute(sa.text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
 
-    current_user = (
-        "NULLIF(current_setting('leave_planner.user_id', true), '')::integer"
-    )
-    current_workspace = (
-        "NULLIF(current_setting('leave_planner.workspace_id', true), '')::integer"
-    )
+    current_user = "NULLIF(current_setting('leave_planner.user_id', true), '')::integer"
+    current_workspace = "NULLIF(current_setting('leave_planner.workspace_id', true), '')::integer"
     connection.execute(
         sa.text(
             "CREATE POLICY workspace_memberships_select ON workspace_memberships FOR SELECT "
@@ -96,9 +91,7 @@ def _create_postgresql_isolation() -> None:
 
 def upgrade() -> None:
     with op.batch_alter_table("consultants") as batch:
-        batch.create_unique_constraint(
-            "uq_consultants_workspace_id_id", ("workspace_id", "id")
-        )
+        batch.create_unique_constraint("uq_consultants_workspace_id_id", ("workspace_id", "id"))
 
     with op.batch_alter_table("workspace_memberships") as batch:
         batch.drop_constraint("ck_workspace_membership_role", type_="check")
@@ -179,14 +172,10 @@ def downgrade() -> None:
         batch.drop_index("ix_users_last_workspace_id")
         batch.drop_constraint("fk_users_last_workspace_id", type_="foreignkey")
         batch.drop_column("last_workspace_id")
-    op.drop_index(
-        "uq_workspace_memberships_single_owner", table_name="workspace_memberships"
-    )
+    op.drop_index("uq_workspace_memberships_single_owner", table_name="workspace_memberships")
     with op.batch_alter_table("workspace_memberships") as batch:
         batch.drop_index("ix_workspace_memberships_linked_consultant_id")
-        batch.drop_constraint(
-            "fk_workspace_membership_linked_consultant", type_="foreignkey"
-        )
+        batch.drop_constraint("fk_workspace_membership_linked_consultant", type_="foreignkey")
         batch.drop_constraint("ck_workspace_membership_consultant_role", type_="check")
         batch.drop_constraint("ck_workspace_membership_role", type_="check")
         batch.create_check_constraint("ck_workspace_membership_role", "role = 'admin'")

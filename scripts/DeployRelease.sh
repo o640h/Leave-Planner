@@ -35,6 +35,7 @@ esac
 [ -f "$archive" ] || fail 'The uploaded release archive is missing.'
 [ -f "$root_dir/deploy/.env" ] || fail 'The persistent deployment .env file is missing.'
 [ -d "$root_dir/deploy/secrets" ] || fail 'The persistent deployment secrets directory is missing.'
+[ -s "$root_dir/deploy/secrets/resend_api_key.txt" ] || fail 'The Resend API key secret is missing or empty.'
 [ -d "$backup_dir" ] || fail 'The restricted NAS backup directory is missing.'
 
 releases_dir="$root_dir/releases"

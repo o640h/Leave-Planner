@@ -12,6 +12,11 @@ ACTIVE = "active"
 DISABLED = "disabled"
 DELETED = "deleted"
 ACCOUNT_STATES = (PENDING_VERIFICATION, ACTIVE, DISABLED, DELETED)
+EMAIL_VERIFICATION = "email_verification"
+PASSWORD_RESET = "password_reset"
+INVITATION = "invitation"
+EMAIL_CHANGE = "email_change"
+ACCOUNT_ACTION_PURPOSES = (EMAIL_VERIFICATION, PASSWORD_RESET, INVITATION, EMAIL_CHANGE)
 
 
 class User(Base):
@@ -78,6 +83,71 @@ class UserSession(Base):
     active_workspace_id: Mapped[int | None] = mapped_column(
         ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    reauthenticated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class AccountActionToken(Base):
+    """Hashed proof for one expiring verification, recovery, or invitation action."""
+
+    __tablename__ = "account_action_tokens"
+    __table_args__ = (
+        CheckConstraint(
+            "purpose IN ('email_verification', 'password_reset', 'invitation', 'email_change')",
+            name="ck_account_action_token_purpose",
+        ),
+        CheckConstraint(
+            "purpose = 'invitation' OR user_id IS NOT NULL",
+            name="ck_account_action_token_user",
+        ),
+        CheckConstraint("expires_at > created_at", name="ck_account_action_token_expiry"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    workspace_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    purpose: Mapped[str] = mapped_column(String(30), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    canonical_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    display_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class EmailDeliveryAttempt(Base):
+    """Redacted result of one provider or development-outbox delivery attempt."""
+
+    __tablename__ = "email_delivery_attempts"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'sent', 'failed')",
+            name="ck_email_delivery_attempt_status",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    action_token_id: Mapped[int | None] = mapped_column(
+        ForeignKey("account_action_tokens.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    purpose: Mapped[str] = mapped_column(String(30), nullable=False)
+    recipient_hint: Mapped[str] = mapped_column(String(340), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    provider_message_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    failure_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class SecurityEvent(Base):

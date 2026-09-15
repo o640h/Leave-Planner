@@ -29,10 +29,10 @@ def test_settings_support_production_overrides(tmp_path: Path) -> None:
         environment="production",
         public_origin="https://leaveplanner.synology.me",
         data_dir=tmp_path,
-        database_url=SecretStr(
-            "postgresql+psycopg://leave_planner:secret@database/leave_planner"
-        ),
+        database_url=SecretStr("postgresql+psycopg://leave_planner:secret@database/leave_planner"),
         port=8123,
+        email_provider="resend",
+        resend_api_key_file=Path(__file__),
     )
 
     assert settings.environment == "production"
@@ -53,6 +53,8 @@ def test_settings_read_database_url_from_secret_file(tmp_path: Path) -> None:
         environment="production",
         public_origin="https://leaveplanner.synology.me",
         database_url_file=secret_file,
+        email_provider="resend",
+        resend_api_key_file=Path(__file__),
     )
 
     assert settings.resolved_database_url.username == "leave_planner"
@@ -85,9 +87,7 @@ def test_production_rejects_sqlite_and_unsupported_database_drivers(tmp_path: Pa
         Settings(
             environment="production",
             public_origin="https://leaveplanner.synology.me",
-            database_url=SecretStr(
-                f"sqlite+pysqlite:///{(tmp_path / 'test.sqlite3').as_posix()}"
-            ),
+            database_url=SecretStr(f"sqlite+pysqlite:///{(tmp_path / 'test.sqlite3').as_posix()}"),
         )
 
 
@@ -97,9 +97,9 @@ def test_production_refuses_to_start_before_explicit_migration(
     settings = Settings(
         environment="production",
         public_origin="https://leaveplanner.synology.me",
-        database_url=SecretStr(
-            "postgresql+psycopg://leave_planner:secret@database/leave_planner"
-        ),
+        database_url=SecretStr("postgresql+psycopg://leave_planner:secret@database/leave_planner"),
+        email_provider="resend",
+        resend_api_key_file=Path(__file__),
     )
 
     def reject_unmigrated_database(_location: object) -> None:

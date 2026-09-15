@@ -22,6 +22,7 @@ class HostedHttpSecurityMiddleware(BaseHTTPMiddleware):
         self.settings = settings
         self.requests: dict[str, deque[float]] = defaultdict(deque)
         self.logins: dict[str, deque[float]] = defaultdict(deque)
+        self.account_actions: dict[str, deque[float]] = defaultdict(deque)
 
     async def dispatch(self, request: Request, call_next: CallNext) -> Response:
         content_length = request.headers.get("content-length")
@@ -62,6 +63,20 @@ class HostedHttpSecurityMiddleware(BaseHTTPMiddleware):
         if request.url.path == "/api/auth/login" and request.method == "POST":
             retry_after = self.retry_after(
                 self.logins[client], limit=self.settings.login_rate_limit
+            )
+            if retry_after:
+                return self.secure_response(self.rate_limited_response(retry_after))
+
+        account_action_paths = {
+            "/api/auth/verification/confirm",
+            "/api/auth/password-reset/request",
+            "/api/auth/password-reset/confirm",
+            "/api/auth/email-change/request",
+            "/api/auth/email-change/confirm",
+        }
+        if request.url.path in account_action_paths and request.method == "POST":
+            retry_after = self.retry_after(
+                self.account_actions[client], limit=self.settings.account_action_rate_limit
             )
             if retry_after:
                 return self.secure_response(self.rate_limited_response(retry_after))

@@ -15,6 +15,7 @@ from database import database_url, sqlite_url
 from resources import frontend_distribution
 
 Environment = Literal["development", "production", "test"]
+EmailProvider = Literal["development_outbox", "resend"]
 
 
 def default_data_directory(
@@ -63,6 +64,11 @@ class Settings(BaseSettings):
     request_rate_limit: int = Field(default=240, ge=1, le=10_000)
     login_rate_limit: int = Field(default=10, ge=1, le=1_000)
     rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
+    account_action_rate_limit: int = Field(default=5, ge=1, le=100)
+    email_provider: EmailProvider = "development_outbox"
+    email_from: str = "Leave Planner <notifications@merydio.co.uk>"
+    email_reply_to: str | None = None
+    resend_api_key_file: Path | None = None
 
     @model_validator(mode="after")
     def validate_database_configuration(self) -> Self:
@@ -73,6 +79,8 @@ class Settings(BaseSettings):
             raise ValueError("Production requires a postgresql+psycopg database URL")
         if self.environment == "production" and not self.authentication_required:
             raise ValueError("Production requires authentication")
+        if self.email_provider == "resend" and self.resend_api_key_file is None:
+            raise ValueError("The Resend provider requires resend_api_key_file")
         if self.public_origin is not None:
             parsed = urlsplit(self.public_origin)
             if (
@@ -89,6 +97,19 @@ class Settings(BaseSettings):
                 raise ValueError("Production public_origin must use HTTPS")
             self.public_origin = self.public_origin.rstrip("/")
         return self
+
+    @property
+    def resend_api_key(self) -> str:
+        if self.resend_api_key_file is None:
+            raise RuntimeError("The Resend API key file is not configured")
+        path = self.resend_api_key_file.expanduser().resolve()
+        try:
+            value = path.read_text(encoding="utf-8").strip()
+        except OSError as error:
+            raise RuntimeError("The Resend API key file could not be read") from error
+        if not value:
+            raise RuntimeError("The Resend API key file is empty")
+        return value
 
     @property
     def resolved_data_dir(self) -> Path:

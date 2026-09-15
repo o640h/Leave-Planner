@@ -36,10 +36,12 @@ def test_schema_upgrade_is_a_separate_required_service() -> None:
     assert migrate["command"] == ["python", "-m", "migrations", "upgrade"]
     assert migrate["restart"] == "no"
     assert migrate["secrets"] == ["migration_database_url"]
-    assert application["secrets"] == ["application_database_url"]
-    assert application["depends_on"]["migrate"]["condition"] == (
-        "service_completed_successfully"
+    assert application["secrets"] == ["application_database_url", "resend_api_key"]
+    assert application["environment"]["LEAVE_PLANNER_EMAIL_PROVIDER"] == "resend"
+    assert application["environment"]["LEAVE_PLANNER_EMAIL_FROM"] == (
+        "Leave Planner <notifications@merydio.co.uk>"
     )
+    assert application["depends_on"]["migrate"]["condition"] == ("service_completed_successfully")
 
     initialization = (REPOSITORY_ROOT / "deploy/postgres/init-database.sh").read_text(
         encoding="utf-8"
@@ -60,8 +62,7 @@ def test_application_image_runs_as_a_read_only_unprivileged_service() -> None:
     assert application["security_opt"] == ["no-new-privileges:true"]
     assert application["mem_limit"] == "512m"
     assert application["ports"] == [
-        "${LEAVE_PLANNER_BIND_ADDRESS:-127.0.0.1}:"
-        "${LEAVE_PLANNER_HTTP_PORT:-8080}:8000"
+        "${LEAVE_PLANNER_BIND_ADDRESS:-127.0.0.1}:${LEAVE_PLANNER_HTTP_PORT:-8080}:8000"
     ]
     assert application["environment"]["LEAVE_PLANNER_PUBLIC_ORIGIN"] == (
         "${LEAVE_PLANNER_PUBLIC_ORIGIN:?Set LEAVE_PLANNER_PUBLIC_ORIGIN in deploy/.env}"

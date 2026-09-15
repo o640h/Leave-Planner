@@ -79,9 +79,7 @@ def test_email_login_protects_application_and_logout_revokes_session(tmp_path: P
 
         rejected = client.post("/api/auth/login", json=credentials(password="incorrect-password"))
         assert rejected.status_code == 401
-        assert rejected.json()["error"]["message"] == (
-            "Sign in could not be completed. Check your details and try again."
-        )
+        assert rejected.json()["error"]["message"] == "The email or password is incorrect."
         assert rejected.headers["Cache-Control"] == "no-store"
 
         cross_origin = client.post(
@@ -226,7 +224,7 @@ def test_unknown_unverified_disabled_locked_and_wrong_password_are_indistinguish
         (401, "invalid_credentials")
     }
     assert {response.json()["error"]["message"] for response in responses} == {
-        "Sign in could not be completed. Check your details and try again."
+        "The email or password is incorrect."
     }
 
 
@@ -344,7 +342,7 @@ def test_password_policy_uses_account_language(tmp_path: Path) -> None:
     engine = create_database_engine(settings.resolved_database_url)
     try:
         with (
-            pytest.raises(ValueError, match="password must contain at least 10"),
+            pytest.raises(ValueError, match="password must contain at least 8"),
             session_scope(create_session_factory(engine)) as session,
         ):
             create_account(
@@ -431,7 +429,12 @@ def test_production_authentication_and_secure_cookie_contract() -> None:
     with pytest.raises(ValidationError, match="Production requires authentication"):
         Settings(environment="production", database_url=database, authentication_required=False)
 
-    settings = Settings(environment="production", database_url=database)
+    settings = Settings(
+        environment="production",
+        database_url=database,
+        email_provider="resend",
+        resend_api_key_file=Path(__file__),
+    )
     response = Response()
     set_authentication_cookies(response, settings, "session-token", "csrf-token")
     cookie_headers = response.headers.getlist("set-cookie")

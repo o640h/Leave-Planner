@@ -31,7 +31,7 @@ from .service import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
-INVALID_CREDENTIALS = "Sign in could not be completed. Check your details and try again."
+INVALID_CREDENTIALS = "The email or password is incorrect."
 
 
 def no_store(response: Response) -> None:

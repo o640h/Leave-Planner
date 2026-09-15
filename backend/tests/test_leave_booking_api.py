@@ -223,10 +223,7 @@ def test_job_plan_edit_previews_and_regenerates_booking_deductions(tmp_path: Pat
 
         rejected = client.put(f"{root}/job-plans/{job_plan_id}", json=changed_plan)
         assert rejected.status_code == 409
-        assert (
-            rejected.json()["error"]["code"]
-            == "job_plan_booking_impact_confirmation_required"
-        )
+        assert rejected.json()["error"]["code"] == "job_plan_booking_impact_confirmation_required"
         unchanged = client.get(f"{root}/planning").json()["bookings"][0]["days"][0]
         assert Decimal(unchanged["deduction_factor"]) == Decimal("1")
 

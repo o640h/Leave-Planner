@@ -31,9 +31,7 @@ def require_workspace_request(request: Request, session: DatabaseSession) -> Wor
             message="Select a workspace to continue",
         )
 
-    membership = membership_for_user(
-        session, authenticated.id, authenticated.active_workspace_id
-    )
+    membership = membership_for_user(session, authenticated.id, authenticated.active_workspace_id)
     if membership is None:
         raise ApiError(
             status_code=403,

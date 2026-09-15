@@ -12,6 +12,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from annual_entitlement.router import router as entitlement_router
+from authentication.account_router import router as account_action_router
+from authentication.email_delivery import create_email_sender
 from authentication.router import router as authentication_router
 from carry_forward.router import router as carry_forward_router
 from consultant_year_summary import router as consultant_year_summary_router
@@ -70,6 +72,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.settings = runtime
+    app.state.email_sender = create_email_sender(runtime)
     app.add_middleware(HostedHttpSecurityMiddleware, settings=runtime)
     if runtime.environment == "production":
         assert runtime.public_host is not None
@@ -95,6 +98,7 @@ def create_app(
         )
 
     app.include_router(authentication_router)
+    app.include_router(account_action_router)
     app.include_router(workspace_router)
     protected = [Depends(require_operator_workspace_request)]
     if runtime.uses_sqlite:

@@ -92,19 +92,14 @@ def test_postgresql_application_role_rls_requires_workspace_context() -> None:
             if not can_set_role:
                 pytest.skip("The PostgreSQL test role cannot assume the application role")
             connection.execute(
-                text(
-                    "INSERT INTO consultants (workspace_id, name) "
-                    "VALUES (1, 'RLS Proof')"
-                )
+                text("INSERT INTO consultants (workspace_id, name) VALUES (1, 'RLS Proof')")
             )
 
         with engine.connect() as connection:
             transaction = connection.begin()
             connection.execute(text("SET LOCAL ROLE leave_planner_application"))
             assert connection.scalar(text("SELECT count(*) FROM consultants")) == 0
-            connection.execute(
-                text("SELECT set_config('leave_planner.workspace_id', '1', true)")
-            )
+            connection.execute(text("SELECT set_config('leave_planner.workspace_id', '1', true)"))
             assert connection.scalar(text("SELECT count(*) FROM consultants")) == 1
             transaction.rollback()
 

@@ -31,9 +31,7 @@ def get_carry_forward(session: Session, consultant_id: int, leave_year_id: int) 
         leave_year_id=leave_year_id,
         dcc_hours=sum((record.dcc_hours for record in records), Decimal("0")),
         spa_hours=sum((record.spa_hours for record in records), Decimal("0")),
-        total_hours=sum(
-            (record.dcc_hours + record.spa_hours for record in records), Decimal("0")
-        ),
+        total_hours=sum((record.dcc_hours + record.spa_hours for record in records), Decimal("0")),
         created_at=records[-1].created_at if records else None,
     )
 

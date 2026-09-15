@@ -59,7 +59,7 @@ describe('email account authentication', () => {
               {
                 error: {
                   code: 'invalid_credentials',
-                  message: 'Sign in could not be completed. Check your details and try again.',
+                  message: 'The email or password is incorrect.',
                 },
               },
               401,
@@ -78,6 +78,7 @@ describe('email account authentication', () => {
     expect(await screen.findByRole('heading', { name: 'Sign In' })).toBeInTheDocument()
     expect(screen.getByText('Merydio')).toBeInTheDocument()
     expect(screen.getByText('Secure Account')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Verify Email' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Sign In' }))
     expect(await screen.findByText('Enter your email address.')).toBeInTheDocument()
@@ -89,7 +90,7 @@ describe('email account authentication', () => {
     const password = screen.getByLabelText('Password')
     await user.type(password, 'wrong-password')
     await user.click(screen.getByRole('button', { name: 'Sign In' }))
-    expect(await screen.findByText(/Check your details and try again/)).toBeInTheDocument()
+    expect(await screen.findByText('The email or password is incorrect.')).toBeInTheDocument()
 
     await user.clear(password)
     await user.paste('correct-password')
@@ -100,7 +101,7 @@ describe('email account authentication', () => {
     await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByRole('heading', { name: 'Consultants' })).toBeInTheDocument()
-    expect(screen.getByText('Signed In As Primary Operator')).toBeInTheDocument()
+    expect(screen.getByText('Change Email For Primary Operator')).toBeInTheDocument()
   })
 
   it('sends the readable CSRF cookie on sign out and returns to sign in', async () => {
@@ -184,6 +185,10 @@ describe('email account authentication', () => {
       await screen.findByRole('heading', { name: 'Workspace Setup Required' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Change Email' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Your account is ready, but no workspace has been created for it yet.'),
+    ).toBeInTheDocument()
   })
 
   it('requires an explicit workspace choice and opens the selected workspace', async () => {

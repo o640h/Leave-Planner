@@ -6,6 +6,7 @@ import {
   SERVICE_UNAVAILABLE_EVENT,
 } from './api/client'
 import { getSession, logout } from './authentication/api'
+import { AccountActionScreen, type AccountActionMode } from './authentication/AccountActionScreen'
 import { LoginScreen } from './authentication/LoginScreen'
 import type { AuthenticatedUser, Session, WorkspaceContext } from './authentication/types'
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
@@ -23,6 +24,7 @@ type ApplicationWorkspaceProps = {
   signOutError?: string | null
   workspace?: WorkspaceContext
   onWorkspaceSelected?: (context: WorkspaceContext) => void
+  onManageAccount?: () => void
 }
 
 export function ApplicationWorkspace({
@@ -31,6 +33,7 @@ export function ApplicationWorkspace({
   signOutError,
   workspace,
   onWorkspaceSelected,
+  onManageAccount,
 }: ApplicationWorkspaceProps) {
   const [page, setPage] = useState<'consultants' | 'planning' | 'settings'>('consultants')
 
@@ -77,10 +80,15 @@ export function ApplicationWorkspace({
 
           <div className="rail-footer">
             {user ? (
-              <div className="account-indicator" title={`Signed In As ${user.display_name}`}>
+              <button
+                className="account-indicator"
+                type="button"
+                title={`Change Email For ${user.display_name}`}
+                onClick={onManageAccount}
+              >
                 <AppIcon name="profile" />
-                <span className="visually-hidden">Signed In As {user.display_name}</span>
-              </div>
+                <span className="visually-hidden">Change Email For {user.display_name}</span>
+              </button>
             ) : null}
             {onSignOut ? (
               <button
@@ -120,9 +128,16 @@ type ApplicationStatusProps = {
   busy?: boolean
   onRetry?: () => void
   onSignOut?: () => void
+  onManageAccount?: () => void
 }
 
-function ApplicationStatus({ kind, busy = false, onRetry, onSignOut }: ApplicationStatusProps) {
+function ApplicationStatus({
+  kind,
+  busy = false,
+  onRetry,
+  onSignOut,
+  onManageAccount,
+}: ApplicationStatusProps) {
   const unavailable = kind === 'unavailable'
   const title = unavailable
     ? 'Server Unavailable'
@@ -134,7 +149,7 @@ function ApplicationStatus({ kind, busy = false, onRetry, onSignOut }: Applicati
   const message = unavailable
     ? 'Leave Planner could not reach the server. Check the connection and try again.'
     : kind === 'onboarding'
-      ? 'Your account is ready. A workspace can be created during the Owner setup step.'
+      ? 'Your account is ready, but no workspace has been created for it yet.'
       : kind === 'member'
         ? 'Your membership is active. The read-only consultant workspace will be enabled separately.'
         : 'Your account is signed in but does not currently have access to the selected workspace.'
@@ -169,6 +184,11 @@ function ApplicationStatus({ kind, busy = false, onRetry, onSignOut }: Applicati
                   Sign Out
                 </button>
               ) : null}
+              {onManageAccount ? (
+                <button className="button button--quiet" type="button" onClick={onManageAccount}>
+                  Change Email
+                </button>
+              ) : null}
             </div>
           </div>
         </section>
@@ -185,6 +205,16 @@ export function App() {
   const [loginNotice, setLoginNotice] = useState<string | null>(null)
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const [retrying, setRetrying] = useState(false)
+  const initialParameters = new URLSearchParams(window.location.search)
+  const initialAction = initialParameters.get('action') as AccountActionMode | null
+  const [accountAction, setAccountAction] = useState<{
+    mode: AccountActionMode
+    token?: string
+  } | null>(
+    initialAction && ['reset-password', 'verify-email', 'confirm-email'].includes(initialAction)
+      ? { mode: initialAction, token: initialParameters.get('token') ?? '' }
+      : null,
+  )
 
   useEffect(() => {
     let active = true
@@ -244,6 +274,32 @@ export function App() {
     }
   }
 
+  function closeAccountAction(notice?: string) {
+    const completedCredentialAction =
+      accountAction?.mode === 'reset-password' || accountAction?.mode === 'confirm-email'
+    window.history.replaceState({}, '', window.location.pathname)
+    setAccountAction(null)
+    if (notice) setLoginNotice(notice)
+    if (completedCredentialAction) {
+      setSession({ authenticated: false, user: null, workspace: null })
+    }
+  }
+
+  if (accountAction) {
+    return (
+      <AccountActionScreen
+        mode={accountAction.mode}
+        token={accountAction.token}
+        currentEmail={
+          accountAction.mode === 'change-email'
+            ? (session?.user?.display_email ?? undefined)
+            : undefined
+        }
+        onBack={closeAccountAction}
+      />
+    )
+  }
+
   if (applicationState === 'unavailable') {
     return <ApplicationStatus kind="unavailable" busy={retrying} onRetry={retryConnection} />
   }
@@ -282,13 +338,20 @@ export function App() {
           setLoginNotice(null)
           setSession(nextSession)
         }}
+        onForgotPassword={() => setAccountAction({ mode: 'forgot-password' })}
       />
     )
   }
 
   const workspace = session.workspace
   if (!workspace || workspace.state === 'onboarding') {
-    return <ApplicationStatus kind="onboarding" onSignOut={signOut} />
+    return (
+      <ApplicationStatus
+        kind="onboarding"
+        onSignOut={signOut}
+        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+      />
+    )
   }
 
   if (workspace.state === 'selection_required') {
@@ -328,10 +391,22 @@ export function App() {
     (membership) => membership.workspace_id === workspace.active_workspace_id,
   )
   if (!activeMembership) {
-    return <ApplicationStatus kind="access-denied" onSignOut={signOut} />
+    return (
+      <ApplicationStatus
+        kind="access-denied"
+        onSignOut={signOut}
+        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+      />
+    )
   }
   if (activeMembership.role === 'member') {
-    return <ApplicationStatus kind="member" onSignOut={signOut} />
+    return (
+      <ApplicationStatus
+        kind="member"
+        onSignOut={signOut}
+        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+      />
+    )
   }
 
   return (
@@ -344,6 +419,7 @@ export function App() {
       onWorkspaceSelected={(nextWorkspace) =>
         setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
       }
+      onManageAccount={() => setAccountAction({ mode: 'change-email' })}
     />
   )
 }

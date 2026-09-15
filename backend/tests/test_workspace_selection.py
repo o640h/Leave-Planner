@@ -84,9 +84,7 @@ def sign_in(client: TestClient) -> dict[str, str]:
 def test_multiple_memberships_require_selection_and_remember_the_last_workspace(
     tmp_path: Path,
 ) -> None:
-    app, _settings, workspace_ids = create_workspace_app(
-        tmp_path, roles=(OWNER_ROLE, ADMIN_ROLE)
-    )
+    app, _settings, workspace_ids = create_workspace_app(tmp_path, roles=(OWNER_ROLE, ADMIN_ROLE))
     with TestClient(app) as client:
         headers = sign_in(client)
         context = client.get("/api/auth/session").json()["workspace"]
@@ -158,9 +156,7 @@ def test_membership_constraints_prevent_two_owners_and_cross_workspace_links(
                 password=PASSWORD,
                 verified_at=datetime.now(UTC),
             )
-            session.add(
-                WorkspaceMembership(workspace_id=1, user_id=first.id, role=OWNER_ROLE)
-            )
+            session.add(WorkspaceMembership(workspace_id=1, user_id=first.id, role=OWNER_ROLE))
 
         with pytest.raises(IntegrityError), session_scope(factory) as session:
             second_account = session.scalar(
@@ -168,9 +164,7 @@ def test_membership_constraints_prevent_two_owners_and_cross_workspace_links(
             )
             assert second_account is not None
             session.add(
-                WorkspaceMembership(
-                    workspace_id=1, user_id=second_account.id, role=OWNER_ROLE
-                )
+                WorkspaceMembership(workspace_id=1, user_id=second_account.id, role=OWNER_ROLE)
             )
 
         with session_scope(factory) as session:

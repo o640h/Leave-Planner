@@ -31,7 +31,7 @@ run successfully.
 
 ## Secret files
 
-Generate the five deployment secret files once from the repository root:
+Generate the five database deployment secret files once from the repository root:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\NewDeploymentSecrets.ps1"
@@ -40,6 +40,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\NewDeployment
 The files are written under `deploy/secrets` without printing their contents. They are excluded from
 Git and the Docker build context. Transfer that directory to the NAS separately and do not paste its
 contents into source files, screenshots, logs, chat, or commits.
+
+Create `deploy/secrets/resend_api_key.txt` separately from a restricted Resend API key. The generator
+cannot create a provider credential. Production reads it only through the mounted secret file and
+sends as `Leave Planner <notifications@merydio.co.uk>`. Domain verification and safe local testing are
+documented in
+[`transactional-email-and-account-recovery.md`](transactional-email-and-account-recovery.md).
 
 Never run the generator with `-Force` after PostgreSQL has initialized its persistent volume. Merely
 changing these files does not rotate database-role passwords; it instead makes the application unable

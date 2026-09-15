@@ -181,9 +181,7 @@ def create_startup_backups(settings: Settings, *, now: datetime | None = None) -
     moment = (now or datetime.now(UTC)).astimezone()
 
     automatic_backups = tuple(
-        backup
-        for backup in list_backups(settings.backup_directory)
-        if backup.kind == "automatic"
+        backup for backup in list_backups(settings.backup_directory) if backup.kind == "automatic"
     )
     has_current_month = any(
         (local_created := backup.created_at.astimezone()).year == moment.year

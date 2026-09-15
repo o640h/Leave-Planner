@@ -68,10 +68,13 @@ def upgrade() -> None:
             service_start = (
                 date.fromisoformat(service_start_text) if service_start_text else active_start
             )
-            inputs["seven_years_or_more"] = _completed_years(
-                service_start,
-                active_start,
-            ) >= 7
+            inputs["seven_years_or_more"] = (
+                _completed_years(
+                    service_start,
+                    active_start,
+                )
+                >= 7
+            )
         connection.execute(
             sa.text(
                 "UPDATE entitlement_recommendations "

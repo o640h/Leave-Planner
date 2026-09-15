@@ -1,5 +1,7 @@
 """Hosted origin, request-boundary, and browser-header tests."""
 
+from pathlib import Path
+
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
@@ -10,9 +12,7 @@ from http_security import HostedHttpSecurityMiddleware
 from main import create_app
 from settings import Settings
 
-DATABASE_URL = SecretStr(
-    "postgresql+psycopg://leave_planner:secret@database/leave_planner"
-)
+DATABASE_URL = SecretStr("postgresql+psycopg://leave_planner:secret@database/leave_planner")
 PUBLIC_ORIGIN = "https://leaveplanner.synology.me"
 
 
@@ -21,6 +21,7 @@ def production_settings(
     max_request_bytes: int = 1_048_576,
     request_rate_limit: int = 240,
     login_rate_limit: int = 10,
+    account_action_rate_limit: int = 5,
 ) -> Settings:
     return Settings(
         environment="production",
@@ -29,6 +30,9 @@ def production_settings(
         max_request_bytes=max_request_bytes,
         request_rate_limit=request_rate_limit,
         login_rate_limit=login_rate_limit,
+        account_action_rate_limit=account_action_rate_limit,
+        email_provider="resend",
+        resend_api_key_file=Path(__file__),
     )
 
 
@@ -53,13 +57,22 @@ def boundary_app(settings: Settings) -> FastAPI:
 
 def test_production_requires_an_exact_https_public_origin() -> None:
     with pytest.raises(RuntimeError, match="PUBLIC_ORIGIN"):
-        create_app(settings=Settings(environment="production", database_url=DATABASE_URL))
+        create_app(
+            settings=Settings(
+                environment="production",
+                database_url=DATABASE_URL,
+                email_provider="resend",
+                resend_api_key_file=Path(__file__),
+            )
+        )
 
     with pytest.raises(ValidationError, match="must use HTTPS"):
         Settings(
             environment="production",
             database_url=DATABASE_URL,
             public_origin="http://leaveplanner.synology.me",
+            email_provider="resend",
+            resend_api_key_file=Path(__file__),
         )
 
     with pytest.raises(ValidationError, match="without a path"):
@@ -67,6 +80,8 @@ def test_production_requires_an_exact_https_public_origin() -> None:
             environment="production",
             database_url=DATABASE_URL,
             public_origin=f"{PUBLIC_ORIGIN}/unexpected",
+            email_provider="resend",
+            resend_api_key_file=Path(__file__),
         )
 
 
@@ -109,6 +124,26 @@ def test_login_has_a_stricter_per_client_limit() -> None:
     with TestClient(app, base_url=PUBLIC_ORIGIN) as client:
         assert client.post("/api/auth/login", json={"password": "example"}).status_code == 200
         limited = client.post("/api/auth/login", json={"password": "example"})
+
+    assert limited.status_code == 429
+    assert limited.json()["error"]["code"] == "rate_limit_exceeded"
+
+
+def test_account_action_requests_and_confirmations_share_a_stricter_limit() -> None:
+    settings = production_settings(request_rate_limit=20, account_action_rate_limit=1)
+    app = boundary_app(settings)
+
+    @app.post("/api/auth/password-reset/request")
+    async def request_probe() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @app.post("/api/auth/verification/confirm")
+    async def confirmation_probe() -> dict[str, str]:
+        return {"status": "ok"}
+
+    with TestClient(app, base_url=PUBLIC_ORIGIN) as client:
+        assert client.post("/api/auth/password-reset/request").status_code == 200
+        limited = client.post("/api/auth/verification/confirm")
 
     assert limited.status_code == 429
     assert limited.json()["error"]["code"] == "rate_limit_exceeded"

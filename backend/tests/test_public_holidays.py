@@ -133,9 +133,7 @@ def test_manual_corrections_preserve_the_base_snapshot() -> None:
 
 
 def test_retained_treatment_accepts_an_optional_operator_note() -> None:
-    treatment = PublicHolidayTreatment(
-        date(2026, 1, 1), HolidayTreatmentBasis.QUALIFYING_ON_CALL
-    )
+    treatment = PublicHolidayTreatment(date(2026, 1, 1), HolidayTreatmentBasis.QUALIFYING_ON_CALL)
     assert treatment.note is None
 
 

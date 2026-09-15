@@ -560,14 +560,17 @@ def removal_impact(
 
     from leave_bookings.persistence import LeaveBookingDayRecord, LeaveBookingRecord
 
-    booking_days = session.scalar(
-        select(func.count(LeaveBookingDayRecord.id))
-        .join(LeaveBookingRecord, LeaveBookingRecord.id == LeaveBookingDayRecord.booking_id)
-        .where(
-            LeaveBookingDayRecord.job_plan_id == job_plan.id,
-            LeaveBookingRecord.state != "cancelled",
+    booking_days = (
+        session.scalar(
+            select(func.count(LeaveBookingDayRecord.id))
+            .join(LeaveBookingRecord, LeaveBookingRecord.id == LeaveBookingDayRecord.booking_id)
+            .where(
+                LeaveBookingDayRecord.job_plan_id == job_plan.id,
+                LeaveBookingRecord.state != "cancelled",
+            )
         )
-    ) or 0
+        or 0
+    )
     consequences = [
         (
             f"The plan covering {job_plan.effective_from:%d %b %Y} to "

@@ -147,14 +147,20 @@ def test_dcc_and_spa_carry_forward_reach_each_balance_component(tmp_path: Path) 
         consultant_id, leave_year_id = setup_year(client)
         root = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
         assert client.post(f"{root}/job-plans", json=job_plan()).status_code == 201
-        assert client.put(
-            f"{root}/entitlement",
-            json={"mode": "calculated", "seven_years_or_more": True, "other_hours": "0"},
-        ).status_code == 200
-        assert client.put(
-            f"{root}/carry-forward",
-            json={"dcc_hours": "5.25", "spa_hours": "2.5"},
-        ).status_code == 200
+        assert (
+            client.put(
+                f"{root}/entitlement",
+                json={"mode": "calculated", "seven_years_or_more": True, "other_hours": "0"},
+            ).status_code
+            == 200
+        )
+        assert (
+            client.put(
+                f"{root}/carry-forward",
+                json={"dcc_hours": "5.25", "spa_hours": "2.5"},
+            ).status_code
+            == 200
+        )
 
         planning = client.get(f"{root}/planning")
 

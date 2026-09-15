@@ -78,7 +78,10 @@ def run(operation: str, settings: Settings | None = None) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Manage Leave Planner email accounts")
-    parser.add_argument("operation", choices=("create", "reset-password", "disable", "enable"))
+    parser.add_argument(
+        "operation",
+        choices=("create", "reset-password", "disable", "enable"),
+    )
     arguments = parser.parse_args()
     try:
         run(arguments.operation)

@@ -10,9 +10,14 @@ import type { Session } from './types'
 type LoginScreenProps = {
   notice?: string | null
   onAuthenticated: (session: Session) => void
+  onForgotPassword: () => void
 }
 
-export function LoginScreen({ notice = null, onAuthenticated }: LoginScreenProps) {
+export function LoginScreen({
+  notice = null,
+  onAuthenticated,
+  onForgotPassword,
+}: LoginScreenProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordVisible, setPasswordVisible] = useState(false)
@@ -116,6 +121,12 @@ export function LoginScreen({ notice = null, onAuthenticated }: LoginScreenProps
                 {submitting ? 'Signing In' : 'Sign In'}
               </button>
             </form>
+
+            <div className="authentication-secondary-actions">
+              <button type="button" onClick={onForgotPassword}>
+                Forgot Password
+              </button>
+            </div>
 
             <HealthStatus />
           </div>

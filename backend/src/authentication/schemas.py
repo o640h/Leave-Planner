@@ -4,10 +4,40 @@ from pydantic import BaseModel, EmailStr, Field
 
 from workspaces.schemas import WorkspaceContextRead
 
+from .passwords import MINIMUM_PASSWORD_LENGTH
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=1024)
+
+
+class EmailActionRequest(BaseModel):
+    email: EmailStr
+
+
+class TokenRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=512)
+
+
+class PasswordResetRequest(TokenRequest):
+    password: str = Field(min_length=MINIMUM_PASSWORD_LENGTH, max_length=1024)
+
+
+class EmailChangeRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=1024)
+
+
+class MessageRead(BaseModel):
+    message: str
+
+
+class DevelopmentEmailRead(BaseModel):
+    id: str
+    recipient: str
+    subject: str
+    text: str
 
 
 class AuthenticatedUserRead(BaseModel):
