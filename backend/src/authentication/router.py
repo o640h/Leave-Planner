@@ -1,4 +1,4 @@
-"""Password-only login, current-session, and logout endpoints."""
+"""Email-and-password login, current-session, and logout endpoints."""
 
 from datetime import timedelta
 from typing import Annotated
@@ -18,7 +18,7 @@ from .dependencies import (
 from .schemas import AuthenticatedUserRead, LoginRequest, SessionRead
 from .service import (
     AuthenticatedUser,
-    admin_user,
+    account_for_email,
     clear_failed_logins,
     create_session,
     lockout_remaining_seconds,
@@ -29,6 +29,7 @@ from .service import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
+INVALID_CREDENTIALS = "Sign in could not be completed. Check your details and try again."
 
 
 def no_store(response: Response) -> None:
@@ -61,16 +62,21 @@ def clear_authentication_cookies(response: Response, settings: Settings) -> None
     response.delete_cookie(settings.csrf_cookie_name, path="/", secure=settings.secure_cookies)
 
 
+def user_read(authenticated: AuthenticatedUser) -> AuthenticatedUserRead:
+    return AuthenticatedUserRead(
+        public_id=authenticated.public_id,
+        display_name=authenticated.display_name,
+        display_email=authenticated.display_email,
+    )
+
+
 @router.get("/session", response_model=SessionRead)
 def session_status(request: Request, response: Response, session: DatabaseSession) -> SessionRead:
     no_store(response)
     authenticated = current_user(request, session)
     if authenticated is None:
         return SessionRead(authenticated=False)
-    return SessionRead(
-        authenticated=True,
-        user=AuthenticatedUserRead(id=authenticated.id, display_name=authenticated.display_name),
-    )
+    return SessionRead(authenticated=True, user=user_read(authenticated))
 
 
 @router.post("/login", response_model=SessionRead)
@@ -82,48 +88,22 @@ def login(
 ) -> SessionRead:
     settings = runtime_settings(request)
     validate_request_origin(request)
-    user = admin_user(session, for_update=True)
-    retry_after = lockout_remaining_seconds(user) if user else 0
-    if retry_after:
-        assert user is not None
-        password_is_valid(user, details.password)
-        record_security_event(
-            session,
-            "login_blocked",
-            user_id=user.id,
-            actor_label="Admin",
-            details={"source": "http"},
-        )
-        session.commit()
-        raise ApiError(
-            status_code=429,
-            code="login_unavailable",
-            message="Sign in could not be completed. Please wait and try again.",
-            details={"retry_after_seconds": retry_after},
-        )
+    user = account_for_email(session, str(details.email), for_update=True)
+    locked = user is not None and lockout_remaining_seconds(user) > 0
+    valid = password_is_valid(user, details.password)
 
-    if not password_is_valid(user, details.password):
-        locked_for = record_failed_login(user) if user else 0
+    if locked or not valid:
+        if user is not None and not locked:
+            record_failed_login(user)
         record_security_event(
             session,
-            "login_locked" if locked_for else "login_failed",
+            "login_failed",
             user_id=user.id if user else None,
-            actor_label="Admin",
+            actor_label=user.display_name if user else "Unknown Account",
             details={"source": "http"},
         )
         session.commit()
-        if locked_for:
-            raise ApiError(
-                status_code=429,
-                code="login_unavailable",
-                message="Sign in could not be completed. Please wait and try again.",
-                details={"retry_after_seconds": locked_for},
-            )
-        raise ApiError(
-            status_code=401,
-            code="invalid_credentials",
-            message="Sign in could not be completed. Check the password and try again.",
-        )
+        raise ApiError(status_code=401, code="invalid_credentials", message=INVALID_CREDENTIALS)
 
     assert user is not None
     clear_failed_logins(user)
@@ -134,10 +114,14 @@ def login(
     )
     set_authentication_cookies(response, settings, tokens.session_token, tokens.csrf_token)
     no_store(response)
-    return SessionRead(
-        authenticated=True,
-        user=AuthenticatedUserRead(id=user.id, display_name=user.display_name),
+    authenticated = AuthenticatedUser(
+        id=user.id,
+        public_id=user.public_id,
+        display_name=user.display_name,
+        display_email=user.display_email,
+        session_id=0,
     )
+    return SessionRead(authenticated=True, user=user_read(authenticated))
 
 
 @router.post("/logout", response_model=SessionRead)

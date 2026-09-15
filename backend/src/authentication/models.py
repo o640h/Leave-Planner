@@ -1,22 +1,42 @@
-"""Persisted users, sessions, and append-only security events."""
+"""Persisted email accounts, sessions, and append-only security events."""
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
 
+PENDING_VERIFICATION = "pending_verification"
+ACTIVE = "active"
+DISABLED = "disabled"
+DELETED = "deleted"
+ACCOUNT_STATES = (PENDING_VERIFICATION, ACTIVE, DISABLED, DELETED)
+
 
 class User(Base):
-    """One application-managed login identity."""
+    """One application-managed global email identity."""
 
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint(
+            "security_state IN ('pending_verification', 'active', 'disabled', 'deleted')",
+            name="ck_users_security_state",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    display_name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    public_id: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
+    display_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    canonical_email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
+    display_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    security_state: Mapped[str] = mapped_column(
+        String(30), nullable=False, default=PENDING_VERIFICATION
+    )
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
-    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     password_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     failed_login_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(

@@ -129,7 +129,7 @@ def test_deduction_migration_backfills_existing_booking_days(tmp_path: Path) -> 
             """
         )
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0014")
 
     with closing(sqlite3.connect(database_path)) as connection, connection:
         contracted_pas, deduction_factor = connection.execute(

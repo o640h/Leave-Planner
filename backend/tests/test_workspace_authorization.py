@@ -2,7 +2,7 @@
 
 import sqlite3
 from contextlib import closing
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from alembic import command
@@ -12,7 +12,8 @@ from httpx2 import Response
 from sqlalchemy import delete, select
 
 from audit import AuditEvent
-from authentication.service import admin_user, create_admin, set_admin_enabled
+from authentication.models import DISABLED
+from authentication.service import account_for_email, create_account, set_account_state
 from consultants.models import Consultant
 from database import create_database_engine, create_session_factory, session_scope
 from leave_years.models import LeaveYear
@@ -21,8 +22,10 @@ from migrations import alembic_config, upgrade_database
 from public_holidays.persistence import HolidayCorrectionRecord
 from settings import Settings
 from workspaces.models import Workspace, WorkspaceMembership
+from workspaces.service import ensure_initial_membership
 
-PASSWORD = "shared-admin-password"
+EMAIL = "operator@example.org"
+PASSWORD = "individual-account-password"
 
 
 def configured_app(tmp_path: Path) -> tuple[FastAPI, Settings]:
@@ -31,14 +34,21 @@ def configured_app(tmp_path: Path) -> tuple[FastAPI, Settings]:
     engine = create_database_engine(settings.resolved_database_url)
     try:
         with session_scope(create_session_factory(engine)) as session:
-            create_admin(session, PASSWORD)
+            account = create_account(
+                session,
+                display_name="Primary Operator",
+                email=EMAIL,
+                password=PASSWORD,
+                verified_at=datetime.now(UTC),
+            )
+            ensure_initial_membership(session, account)
     finally:
         engine.dispose()
     return create_app(settings=settings, frontend_dist=tmp_path / "missing-frontend"), settings
 
 
 def sign_in(client: TestClient) -> dict[str, str]:
-    response = client.post("/api/auth/login", json={"password": PASSWORD})
+    response = client.post("/api/auth/login", json={"email": EMAIL, "password": PASSWORD})
     assert response.status_code == 200
     csrf = client.cookies.get("leave_planner_csrf")
     assert csrf
@@ -81,7 +91,9 @@ def test_disabled_admin_cannot_use_any_data_surface(tmp_path: Path) -> None:
         engine = create_database_engine(settings.resolved_database_url)
         try:
             with session_scope(create_session_factory(engine)) as session:
-                set_admin_enabled(session, enabled=False)
+                account = account_for_email(session, EMAIL)
+                assert account is not None
+                set_account_state(session, account, DISABLED)
         finally:
             engine.dispose()
 
@@ -100,7 +112,7 @@ def test_authenticated_user_without_membership_cannot_use_any_data_surface(
         engine = create_database_engine(settings.resolved_database_url)
         try:
             with session_scope(create_session_factory(engine)) as session:
-                user = admin_user(session)
+                user = account_for_email(session, EMAIL)
                 assert user is not None
                 session.execute(
                     delete(WorkspaceMembership).where(WorkspaceMembership.user_id == user.id)
@@ -139,14 +151,14 @@ def test_foreign_workspace_records_are_not_visible_or_mutable(tmp_path: Path) ->
                 owned_event = session.scalar(
                     select(AuditEvent).where(AuditEvent.consultant_id == owned_id)
                 )
-                user = admin_user(session)
+                user = account_for_email(session, EMAIL)
                 membership = session.scalar(select(WorkspaceMembership))
                 assert owned_event is not None
                 assert user is not None
                 assert membership is not None
                 assert owned_event.workspace_id == membership.workspace_id
                 assert owned_event.actor_user_id == user.id
-                assert owned_event.actor_label == "Admin"
+                assert owned_event.actor_label == "Primary Operator"
 
                 foreign_workspace = Workspace(name="Foreign Workspace")
                 session.add(foreign_workspace)
@@ -256,7 +268,7 @@ def test_workspace_migration_backfills_existing_roots_and_admin_membership(
             """
         )
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0014")
 
     with closing(sqlite3.connect(database_path)) as connection, connection:
         workspace_id = connection.execute("SELECT id FROM workspaces").fetchone()[0]

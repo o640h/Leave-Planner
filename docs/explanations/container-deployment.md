@@ -97,15 +97,10 @@ The earlier Tailscale Funnel was a proof of concept and is no longer the product
 its DSM update task and uninstall the package after confirming it is not used for private NAS
 administration.
 
-Create the fixed account once after migration:
-
-```powershell
-docker compose --file deploy/compose.yml exec application python -m authentication.admin create
-```
-
-This is an interactive server-owner command and does not accept the password as a command-line
-argument. In Synology Container Manager, the equivalent is opening the application container's
-terminal and running `python -m authentication.admin create`.
+The shared Admin provisioning command was retired by the clean-start email identity migration.
+Deploy the individual-account schema together with the first-Owner onboarding task; do not invent a
+legacy email address or attach a named account to the old workspace. The replacement interactive
+account tooling never accepts a password as a command-line argument.
 
 ## Persistence and restart acceptance
 

@@ -15,7 +15,7 @@ password_hasher = PasswordHasher(
     type=Type.ID,
 )
 
-# Public dummy material equalises the expensive verification path before Admin exists.
+# Public dummy material equalises the expensive verification path for unknown email accounts.
 DUMMY_PASSWORD_HASH = (
     "$argon2id$v=19$m=19456,t=2,p=1$Qyt7AdIPvBXl4fQABaPr8A$"
     "vFXPjq5bpdDwsvsrWywsPcJUpPnaupqbpwtgp/FDxKI"
@@ -24,9 +24,7 @@ DUMMY_PASSWORD_HASH = (
 
 def validate_new_password(password: str) -> None:
     if len(password) < MINIMUM_PASSWORD_LENGTH:
-        raise ValueError(
-            f"The Admin password must contain at least {MINIMUM_PASSWORD_LENGTH} characters"
-        )
+        raise ValueError(f"The password must contain at least {MINIMUM_PASSWORD_LENGTH} characters")
 
 
 def hash_password(password: str) -> str:
@@ -37,5 +35,5 @@ def hash_password(password: str) -> str:
 def verify_password(password_hash: str, password: str) -> bool:
     try:
         return password_hasher.verify(password_hash, password)
-    except (InvalidHashError, VerificationError):
+    except InvalidHashError, VerificationError:
         return False

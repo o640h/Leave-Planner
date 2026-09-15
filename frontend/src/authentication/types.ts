@@ -1,6 +1,7 @@
 export type AuthenticatedUser = {
-  id: number
+  public_id: string
   display_name: string
+  display_email: string
 }
 
 export type Session = {

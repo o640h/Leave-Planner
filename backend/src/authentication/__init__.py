@@ -1,4 +1,4 @@
-"""Shared Admin authentication and server-managed sessions."""
+"""Email identity authentication and server-managed sessions."""
 
 from .models import SecurityEvent, User, UserSession
 

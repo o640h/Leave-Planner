@@ -78,9 +78,7 @@ def _sha256(path: Path) -> str:
 
 
 def _source_foreign_keys_are_valid(path: Path) -> None:
-    with closing(
-        sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
-    ) as connection:
+    with closing(sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)) as connection:
         failures = connection.execute("PRAGMA foreign_key_check").fetchall()
     if failures:
         raise RuntimeError(f"The SQLite source contains {len(failures)} foreign-key failures")
@@ -187,11 +185,9 @@ def _target_boundary(connection: Connection) -> tuple[int, int]:
             )
         )
     )
-    if len(users) != 1 or len(workspaces) != 1 or memberships != (
-        (workspaces[0][0], users[0][0]),
-    ):
+    if len(users) != 1 or len(workspaces) != 1 or memberships != ((workspaces[0][0], users[0][0]),):
         raise RuntimeError(
-            "PostgreSQL must contain exactly one Admin, one workspace, and its membership"
+            "PostgreSQL must contain exactly one account, one workspace, and its membership"
         )
     return users[0][0], workspaces[0][0]
 
@@ -238,9 +234,7 @@ def _reset_sequence(connection: Connection, table_name: str, rows: list[dict[str
     if not identifiers:
         return
     connection.execute(
-        text(
-            "SELECT setval(pg_get_serial_sequence(:table_name, 'id'), :identifier, true)"
-        ),
+        text("SELECT setval(pg_get_serial_sequence(:table_name, 'id'), :identifier, true)"),
         {"table_name": table_name, "identifier": max(identifiers)},
     )
 
@@ -326,7 +320,7 @@ def import_sqlite_database(
 
             target_access = WorkspaceAccess(
                 user_id=admin_id,
-                actor_label="Admin",
+                actor_label="System Import",
                 workspace_id=workspace_id,
                 role="admin",
             )
@@ -348,8 +342,7 @@ def import_sqlite_database(
                 raise RuntimeError(
                     "PostgreSQL consultant-year reconciliation failed for "
                     + ", ".join(
-                        f"{consultant_id}/{year_id}"
-                        for consultant_id, year_id in differing
+                        f"{consultant_id}/{year_id}" for consultant_id, year_id in differing
                     )
                 )
 

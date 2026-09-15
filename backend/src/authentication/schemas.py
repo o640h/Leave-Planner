@@ -1,15 +1,17 @@
 """Authentication API contracts."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
+    email: EmailStr
     password: str = Field(min_length=1, max_length=1024)
 
 
 class AuthenticatedUserRead(BaseModel):
-    id: int
+    public_id: str
     display_name: str
+    display_email: str
 
 
 class SessionRead(BaseModel):

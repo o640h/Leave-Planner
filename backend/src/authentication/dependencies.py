@@ -20,7 +20,13 @@ def runtime_settings(request: Request) -> Settings:
 def current_user(request: Request, session: Session) -> AuthenticatedUser | None:
     settings = runtime_settings(request)
     if not settings.authentication_required:
-        return AuthenticatedUser(id=0, display_name="Test Operator", session_id=0)
+        return AuthenticatedUser(
+            id=0,
+            public_id="test-operator",
+            display_name="Test Operator",
+            display_email="test@example.invalid",
+            session_id=0,
+        )
     return authenticated_user(session, request.cookies.get(settings.session_cookie_name))
 
 

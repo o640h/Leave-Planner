@@ -1,6 +1,7 @@
 """Verified SQLite to PostgreSQL transfer of the workbook-shaped dataset."""
 
 import os
+from datetime import UTC, datetime
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
@@ -12,12 +13,13 @@ from pydantic import SecretStr
 from pypdf import PdfReader
 from reference_cases.workbook import WORKBOOK_LEAVE_ROWS
 
-from authentication.service import create_admin
+from authentication.service import create_account
 from database import create_database_engine, create_session_factory, database_url, session_scope
 from database_transfer import import_sqlite_database
 from main import create_app
 from migrations import upgrade_database
 from settings import Settings
+from workspaces.service import ensure_initial_membership
 
 POSTGRES_TEST_URL = os.environ.get("LEAVE_PLANNER_TEST_POSTGRES_URL")
 
@@ -153,10 +155,13 @@ def _add_synthetic_sources(client: TestClient) -> None:
         root = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
         for plan in plans:
             assert client.post(f"{root}/job-plans", json=plan).status_code == 201
-        assert client.put(
-            f"{root}/entitlement",
-            json={"mode": "calculated", "seven_years_or_more": False, "other_hours": "0"},
-        ).status_code == 200
+        assert (
+            client.put(
+                f"{root}/entitlement",
+                json={"mode": "calculated", "seven_years_or_more": False, "other_hours": "0"},
+            ).status_code
+            == 200
+        )
 
 
 def _create_workbook_source(data_dir: Path) -> tuple[Path, int, int]:
@@ -181,39 +186,51 @@ def _create_workbook_source(data_dir: Path) -> tuple[Path, int, int]:
             ).json()["id"]
         )
         root = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
-        assert client.post(
-            f"{root}/job-plans", json=_job_plan("2025-08-29", "2026-08-01")
-        ).status_code == 201
-        assert client.post(
-            f"{root}/job-plans", json=_job_plan("2026-08-01", "2026-08-29")
-        ).status_code == 201
-        assert client.put(
-            f"{root}/entitlement",
-            json={"mode": "calculated", "seven_years_or_more": True, "other_hours": "0"},
-        ).status_code == 200
-        assert client.put(
-            f"{root}/carry-forward",
-            json={"dcc_hours": "41.25", "spa_hours": "0"},
-        ).status_code == 200
-        assert client.put(
-            f"{root}/public-holidays/2026-05-04/treatment",
-            json={"basis": "qualifying_on_call", "note": "Workbook on-call entry"},
-        ).status_code == 200
+        assert (
+            client.post(f"{root}/job-plans", json=_job_plan("2025-08-29", "2026-08-01")).status_code
+            == 201
+        )
+        assert (
+            client.post(f"{root}/job-plans", json=_job_plan("2026-08-01", "2026-08-29")).status_code
+            == 201
+        )
+        assert (
+            client.put(
+                f"{root}/entitlement",
+                json={"mode": "calculated", "seven_years_or_more": True, "other_hours": "0"},
+            ).status_code
+            == 200
+        )
+        assert (
+            client.put(
+                f"{root}/carry-forward",
+                json={"dcc_hours": "41.25", "spa_hours": "0"},
+            ).status_code
+            == 200
+        )
+        assert (
+            client.put(
+                f"{root}/public-holidays/2026-05-04/treatment",
+                json={"basis": "qualifying_on_call", "note": "Workbook on-call entry"},
+            ).status_code
+            == 200
+        )
 
         for leave_date, dcc, spa in WORKBOOK_LEAVE_ROWS:
             iso_date = leave_date.isoformat()
-            assert client.post(
-                f"{root}/bookings",
-                json={
-                    "start_date": iso_date,
-                    "end_date": iso_date,
-                    "state": "taken",
-                    "note": "Workbook reference",
-                    "overrides": [
-                        {"leave_date": iso_date, "dcc_hours": dcc, "spa_hours": spa}
-                    ],
-                },
-            ).status_code == 201
+            assert (
+                client.post(
+                    f"{root}/bookings",
+                    json={
+                        "start_date": iso_date,
+                        "end_date": iso_date,
+                        "state": "taken",
+                        "note": "Workbook reference",
+                        "overrides": [{"leave_date": iso_date, "dcc_hours": dcc, "spa_hours": spa}],
+                    },
+                ).status_code
+                == 201
+            )
 
         _add_synthetic_sources(client)
 
@@ -227,7 +244,14 @@ def _prepare_target(url: str) -> None:
     factory = create_session_factory(engine)
     try:
         with session_scope(factory) as session:
-            create_admin(session, "ImportTestPassword!")
+            account = create_account(
+                session,
+                display_name="Import Operator",
+                email="import@example.org",
+                password="ImportTestPassword!",
+                verified_at=datetime.now(UTC),
+            )
+            ensure_initial_membership(session, account)
     finally:
         engine.dispose()
 
@@ -281,12 +305,8 @@ def test_workbook_database_import_reconciles_and_is_restart_safe(tmp_path: Path)
     assert Decimal(summary["carry_forward"]["spa_hours"]) == Decimal("0")
     assert Decimal(actual["used"]["dcc_hours"]) == Decimal("229.5")
     assert Decimal(actual["used"]["spa_hours"]) == Decimal("18")
-    assert Decimal(actual["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal(
-        "15.054"
-    )
-    assert Decimal(actual["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal(
-        "70.064"
-    )
+    assert Decimal(actual["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal("15.054")
+    assert Decimal(actual["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal("70.064")
     assert pdf_response.status_code == 200
     assert pdf_response.headers["content-type"] == "application/pdf"
     exported_text = "\n".join(
