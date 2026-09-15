@@ -15,6 +15,7 @@ from .account_actions import (
     EMAIL_VERIFICATION,
     PASSWORD_RESET,
     PASSWORD_RESET_LIFETIME,
+    VERIFICATION_LIFETIME,
     action_link,
     consume_action,
     deliver_message,
@@ -24,6 +25,7 @@ from .account_actions import (
     password_reset_message,
     revoke_user_actions,
     valid_action,
+    verification_message,
 )
 from .dependencies import (
     require_authenticated_request,
@@ -38,12 +40,16 @@ from .schemas import (
     EmailChangeRequest,
     MessageRead,
     PasswordResetRequest,
+    RegistrationConfigurationRead,
+    RegistrationRequest,
     TokenRequest,
 )
 from .service import (
     AuthenticatedUser,
     account_for_email,
+    create_account,
     normalise_email,
+    password_matches,
     reauthenticate_session,
     record_security_event,
     reset_account_password,
@@ -58,6 +64,7 @@ GENERIC_REQUEST_MESSAGE = (
 )
 INVALID_TOKEN_MESSAGE = "This link is invalid, expired, or has already been used."
 RECENT_REAUTHENTICATION = timedelta(minutes=10)
+REGISTRATION_MESSAGE = "Check your email for the next account-creation step."
 
 
 def sender_for(request: Request) -> EmailSender:
@@ -93,6 +100,60 @@ def deliver(
         details={"purpose": purpose, "failure_code": attempt.failure_code},
     )
     session.commit()
+
+
+@router.get("/registration", response_model=RegistrationConfigurationRead)
+def registration_configuration(request: Request) -> RegistrationConfigurationRead:
+    return RegistrationConfigurationRead(mode=runtime_settings(request).registration_mode)
+
+
+@router.post("/registration", response_model=MessageRead)
+def register_account(
+    details: RegistrationRequest,
+    request: Request,
+    session: DatabaseSession,
+) -> MessageRead:
+    validate_request_origin(request)
+    if runtime_settings(request).registration_mode != "open":
+        raise ApiError(
+            status_code=403,
+            code="registration_unavailable",
+            message="Account creation is not currently available.",
+        )
+
+    account = account_for_email(session, str(details.email), for_update=True)
+    matches = password_matches(account, details.password)
+    created = account is None
+    if account is None:
+        account = create_account(
+            session,
+            display_name=details.display_name,
+            email=str(details.email),
+            password=details.password,
+            actor_label="Self Registration",
+        )
+
+    if account.security_state == PENDING_VERIFICATION and (created or matches):
+        issued = issue_action(
+            session,
+            purpose=EMAIL_VERIFICATION,
+            canonical_email=account.canonical_email,
+            display_email=account.display_email,
+            lifetime=VERIFICATION_LIFETIME,
+            user_id=account.id,
+        )
+        session.commit()
+        link = action_link(public_origin(request), "verify-email", issued.raw_token)
+        deliver(
+            session,
+            request,
+            purpose=EMAIL_VERIFICATION,
+            message=verification_message(account.display_email, link),
+            action_token_id=issued.record.id,
+            user_id=account.id,
+            actor_label=account.display_name,
+        )
+    return MessageRead(message=REGISTRATION_MESSAGE)
 
 
 @router.post("/verification/confirm", response_model=MessageRead)

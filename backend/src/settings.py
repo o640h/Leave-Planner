@@ -16,6 +16,7 @@ from resources import frontend_distribution
 
 Environment = Literal["development", "production", "test"]
 EmailProvider = Literal["development_outbox", "resend"]
+RegistrationMode = Literal["closed", "invitation_only", "open"]
 
 
 def default_data_directory(
@@ -65,6 +66,8 @@ class Settings(BaseSettings):
     login_rate_limit: int = Field(default=10, ge=1, le=1_000)
     rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
     account_action_rate_limit: int = Field(default=5, ge=1, le=100)
+    registration_mode: RegistrationMode = "open"
+    owned_workspace_limit: int = Field(default=3, ge=1, le=20)
     email_provider: EmailProvider = "development_outbox"
     email_from: str = "Leave Planner <notifications@merydio.co.uk>"
     email_reply_to: str | None = None

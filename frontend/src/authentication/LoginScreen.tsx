@@ -11,12 +11,14 @@ type LoginScreenProps = {
   notice?: string | null
   onAuthenticated: (session: Session) => void
   onForgotPassword: () => void
+  onRegister?: () => void
 }
 
 export function LoginScreen({
   notice = null,
   onAuthenticated,
   onForgotPassword,
+  onRegister,
 }: LoginScreenProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -126,6 +128,11 @@ export function LoginScreen({
               <button type="button" onClick={onForgotPassword}>
                 Forgot Password
               </button>
+              {onRegister ? (
+                <button type="button" onClick={onRegister}>
+                  Create Account
+                </button>
+              ) : null}
             </div>
 
             <HealthStatus />

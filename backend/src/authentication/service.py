@@ -87,6 +87,7 @@ def create_account(
     email: str,
     password: str,
     verified_at: datetime | None = None,
+    actor_label: str = "Server Owner",
 ) -> User:
     name = display_name.strip()
     if not name:
@@ -117,7 +118,7 @@ def create_account(
         session,
         "account_created",
         user_id=account.id,
-        actor_label="Server Owner",
+        actor_label=actor_label,
         details={"verified": verified_at is not None},
     )
     return account
@@ -132,6 +133,11 @@ def password_is_valid(user: User | None, password: str) -> bool:
         and user.email_verified_at is not None
         and verified
     )
+
+
+def password_matches(user: User | None, password: str) -> bool:
+    stored_hash = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
+    return bool(verify_password(stored_hash, password) and user is not None)
 
 
 def lockout_remaining_seconds(user: User, *, now: datetime | None = None) -> int:

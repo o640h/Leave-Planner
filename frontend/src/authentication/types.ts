@@ -22,3 +22,9 @@ export type Session = {
   user: AuthenticatedUser | null
   workspace: WorkspaceContext | null
 }
+
+export type RegistrationMode = 'closed' | 'invitation_only' | 'open'
+
+export type RegistrationConfiguration = {
+  mode: RegistrationMode
+}

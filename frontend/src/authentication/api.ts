@@ -1,5 +1,5 @@
 import { apiRequest } from '../api/client'
-import type { Session } from './types'
+import type { RegistrationConfiguration, Session } from './types'
 
 export const getSession = () => apiRequest<Session>('/api/auth/session')
 
@@ -10,6 +10,15 @@ export const login = (email: string, password: string) =>
   })
 
 export const logout = () => apiRequest<Session>('/api/auth/logout', { method: 'POST' })
+
+export const getRegistrationConfiguration = () =>
+  apiRequest<RegistrationConfiguration>('/api/auth/registration')
+
+export const registerAccount = (displayName: string, email: string, password: string) =>
+  apiRequest<{ message: string }>('/api/auth/registration', {
+    method: 'POST',
+    body: JSON.stringify({ display_name: displayName, email, password }),
+  })
 
 export const confirmEmailVerification = (token: string) =>
   apiRequest<{ message: string }>('/api/auth/verification/confirm', {

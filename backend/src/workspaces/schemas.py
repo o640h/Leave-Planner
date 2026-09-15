@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .service import WorkspaceContext
 
@@ -22,6 +22,10 @@ class WorkspaceContextRead(BaseModel):
 
 class WorkspaceSelectionRequest(BaseModel):
     workspace_id: int
+
+
+class WorkspaceCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
 
 
 def context_read(context: WorkspaceContext) -> WorkspaceContextRead:

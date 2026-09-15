@@ -41,6 +41,9 @@ def test_schema_upgrade_is_a_separate_required_service() -> None:
     assert application["environment"]["LEAVE_PLANNER_EMAIL_FROM"] == (
         "Leave Planner <notifications@merydio.co.uk>"
     )
+    assert application["environment"]["LEAVE_PLANNER_REGISTRATION_MODE"] == (
+        "${LEAVE_PLANNER_REGISTRATION_MODE:-open}"
+    )
     assert application["depends_on"]["migrate"]["condition"] == ("service_completed_successfully")
 
     initialization = (REPOSITORY_ROOT / "deploy/postgres/init-database.sh").read_text(

@@ -18,13 +18,15 @@ uv sync --active --locked --group dev
 uv run --active --no-sync uvicorn main:app --app-dir src --reload --host 127.0.0.1 --port 8000
 ```
 
-Phase 7 uses named email accounts. The first Owner and blank workspace are created by the later
-owner-onboarding task; the shared Admin account has been retired. The identity model and temporary
-server-side account command are documented in
-[`docs/explanations/email-identity-authentication.md`](docs/explanations/email-identity-authentication.md).
+Phase 7 uses named email accounts. The shared Admin account has been retired; the first Owner and a
+new blank workspace are created with the explicit `authentication.account_admin create-owner`
+command documented in
+[`docs/explanations/first-owner-workspace.md`](docs/explanations/first-owner-workspace.md).
 Local password recovery does not need a real mailbox: development captures messages in a safe
 outbox. The complete test walkthrough and production Resend boundary are documented in
 [`docs/explanations/transactional-email-and-account-recovery.md`](docs/explanations/transactional-email-and-account-recovery.md).
+Ordinary registration and explicit empty-workspace creation are documented in
+[`docs/explanations/account-registration-and-workspace-creation.md`](docs/explanations/account-registration-and-workspace-creation.md).
 
 Start Vite in the second:
 

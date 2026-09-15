@@ -108,10 +108,17 @@ The earlier Tailscale Funnel was a proof of concept and is no longer the product
 its DSM update task and uninstall the package after confirming it is not used for private NAS
 administration.
 
-The shared Admin provisioning command was retired by the clean-start email identity migration.
-Deploy the individual-account schema together with the first-Owner onboarding task; do not invent a
-legacy email address or attach a named account to the old workspace. The replacement interactive
-account tooling never accepts a password as a command-line argument.
+The shared Admin provisioning command was retired by the clean-start email identity migration. After
+the release migration succeeds, create or verify the first Owner through the migrator connection:
+
+```powershell
+docker compose --file deploy/compose.yml --file deploy/compose.cloudflare.yml run --rm migrate python -m authentication.account_admin create-owner
+```
+
+The command prompts privately for the account and new workspace details. It refuses legacy tenant
+data, discards only the empty workspace scaffold, and creates the Owner membership atomically. Run it
+through `migrate`, not `application`: the application database role is intentionally prevented by row
+isolation from creating an unbound workspace. No password is accepted as a command-line argument.
 
 ## Persistence and restart acceptance
 

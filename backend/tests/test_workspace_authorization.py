@@ -21,8 +21,7 @@ from main import create_app
 from migrations import alembic_config, upgrade_database
 from public_holidays.persistence import HolidayCorrectionRecord
 from settings import Settings
-from workspaces.models import Workspace, WorkspaceMembership
-from workspaces.service import ensure_initial_membership
+from workspaces.models import ADMIN_ROLE, Workspace, WorkspaceMembership
 
 EMAIL = "operator@example.org"
 PASSWORD = "individual-account-password"
@@ -41,7 +40,16 @@ def configured_app(tmp_path: Path) -> tuple[FastAPI, Settings]:
                 password=PASSWORD,
                 verified_at=datetime.now(UTC),
             )
-            ensure_initial_membership(session, account)
+            workspace = session.scalar(select(Workspace))
+            assert workspace is not None
+            session.add(
+                WorkspaceMembership(
+                    workspace_id=workspace.id,
+                    user_id=account.id,
+                    role=ADMIN_ROLE,
+                )
+            )
+            account.last_workspace_id = workspace.id
     finally:
         engine.dispose()
     return create_app(settings=settings, frontend_dist=tmp_path / "missing-frontend"), settings

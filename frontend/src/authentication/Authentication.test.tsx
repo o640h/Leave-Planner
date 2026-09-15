@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -161,9 +161,11 @@ describe('email account authentication', () => {
   })
 
   it('shows onboarding when a signed-in account has no membership', async () => {
+    const user = userEvent.setup()
+    let workspaceCreated = false
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: RequestInfo | URL, options: RequestInit = {}) => {
         const path = input.toString()
         if (path === '/api/auth/session') {
           return json({
@@ -173,7 +175,13 @@ describe('email account authentication', () => {
           })
         }
         if (path === '/api/health') return json({ status: 'ok' })
+        if (path === '/api/workspaces' && options.method === 'POST') {
+          expect(JSON.parse(options.body as string)).toEqual({ name: 'Radiology' })
+          workspaceCreated = true
+          return json(activeWorkspace)
+        }
         if (path === '/api/consultants') {
+          if (workspaceCreated) return json([])
           return json({ error: { code: 'workspace_access_denied', message: 'Access denied' } }, 403)
         }
         throw new Error(`Unexpected request: GET ${path}`)
@@ -181,13 +189,58 @@ describe('email account authentication', () => {
     )
 
     render(<App />)
-    expect(
-      await screen.findByRole('heading', { name: 'Workspace Setup Required' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'No Workspace Yet' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Change Email' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Create Workspace' })).toBeInTheDocument()
     expect(
-      screen.getByText('Your account is ready, but no workspace has been created for it yet.'),
+      screen.getByText(
+        'This account does not currently belong to a workspace. You can create one now or sign out.',
+      ),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Create Workspace' }))
+    const dialog = screen.getByRole('dialog', { name: 'Create Workspace' })
+    await user.click(within(dialog).getByRole('button', { name: 'Create Workspace' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter a workspace name.')
+    await user.type(screen.getByLabelText('Workspace Name'), 'Radiology')
+    await user.click(within(dialog).getByRole('button', { name: 'Create Workspace' }))
+    expect(await screen.findByRole('heading', { name: 'Consultants' })).toBeInTheDocument()
+  })
+
+  it('offers account creation only when registration is open', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, options: RequestInit = {}) => {
+        const path = input.toString()
+        if (path === '/api/auth/session') return json({ authenticated: false, user: null })
+        if (path === '/api/auth/registration' && !options.method) return json({ mode: 'open' })
+        if (path === '/api/auth/registration' && options.method === 'POST') {
+          expect(JSON.parse(options.body as string)).toEqual({
+            display_name: 'Alex Morgan',
+            email: 'alex@example.org',
+            password: 'password8',
+          })
+          return json({ message: 'Check your email for the next account-creation step.' })
+        }
+        if (path === '/api/health') return json({ status: 'ok' })
+        throw new Error(`Unexpected request: ${options.method ?? 'GET'} ${path}`)
+      }),
+    )
+
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Create Account' }))
+    expect(screen.getByRole('heading', { name: 'Create Account' })).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Name'), 'Alex Morgan')
+    await user.type(screen.getByLabelText('Email'), 'alex@example.org')
+    await user.type(screen.getByLabelText('Password'), 'password8')
+    await user.type(screen.getByLabelText('Confirm Password'), 'password8')
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+    expect(await screen.findByRole('heading', { name: 'Sign In' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Check your email for the next account-creation step.'),
     ).toBeInTheDocument()
   })
 

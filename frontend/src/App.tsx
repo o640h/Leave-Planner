@@ -5,10 +5,16 @@ import {
   AUTHORIZATION_DENIED_EVENT,
   SERVICE_UNAVAILABLE_EVENT,
 } from './api/client'
-import { getSession, logout } from './authentication/api'
+import { getRegistrationConfiguration, getSession, logout } from './authentication/api'
 import { AccountActionScreen, type AccountActionMode } from './authentication/AccountActionScreen'
 import { LoginScreen } from './authentication/LoginScreen'
-import type { AuthenticatedUser, Session, WorkspaceContext } from './authentication/types'
+import { RegistrationScreen } from './authentication/RegistrationScreen'
+import type {
+  AuthenticatedUser,
+  RegistrationMode,
+  Session,
+  WorkspaceContext,
+} from './authentication/types'
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
 import { PlanningPage } from './planning/PlanningPage'
 import { SettingsPage } from './settings/SettingsPage'
@@ -16,6 +22,7 @@ import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
 import { ProductIdentity } from './system/ProductIdentity'
 import { WorkspaceFrame } from './system/WorkspaceFrame'
+import { WorkspaceCreationDialog } from './workspaces/WorkspaceCreationDialog'
 import { WorkspaceSelector } from './workspaces/WorkspaceSelector'
 
 type ApplicationWorkspaceProps = {
@@ -25,6 +32,7 @@ type ApplicationWorkspaceProps = {
   workspace?: WorkspaceContext
   onWorkspaceSelected?: (context: WorkspaceContext) => void
   onManageAccount?: () => void
+  onCreateWorkspace?: () => void
 }
 
 export function ApplicationWorkspace({
@@ -34,6 +42,7 @@ export function ApplicationWorkspace({
   workspace,
   onWorkspaceSelected,
   onManageAccount,
+  onCreateWorkspace,
 }: ApplicationWorkspaceProps) {
   const [page, setPage] = useState<'consultants' | 'planning' | 'settings'>('consultants')
 
@@ -116,7 +125,9 @@ export function ApplicationWorkspace({
           ) : null}
           {page === 'consultants' && <ConsultantDirectory />}
           {page === 'planning' && <PlanningPage />}
-          {page === 'settings' && <SettingsPage />}
+          {page === 'settings' && (
+            <SettingsPage workspace={workspace} onCreateWorkspace={onCreateWorkspace} />
+          )}
         </main>
       </div>
     </WorkspaceFrame>
@@ -129,6 +140,7 @@ type ApplicationStatusProps = {
   onRetry?: () => void
   onSignOut?: () => void
   onManageAccount?: () => void
+  onCreateWorkspace?: () => void
 }
 
 function ApplicationStatus({
@@ -137,19 +149,20 @@ function ApplicationStatus({
   onRetry,
   onSignOut,
   onManageAccount,
+  onCreateWorkspace,
 }: ApplicationStatusProps) {
   const unavailable = kind === 'unavailable'
   const title = unavailable
     ? 'Server Unavailable'
     : kind === 'onboarding'
-      ? 'Workspace Setup Required'
+      ? 'No Workspace Yet'
       : kind === 'member'
         ? 'Member Workspace'
         : 'Workspace Access Unavailable'
   const message = unavailable
     ? 'Leave Planner could not reach the server. Check the connection and try again.'
     : kind === 'onboarding'
-      ? 'Your account is ready, but no workspace has been created for it yet.'
+      ? 'This account does not currently belong to a workspace. You can create one now or sign out.'
       : kind === 'member'
         ? 'Your membership is active. The read-only consultant workspace will be enabled separately.'
         : 'Your account is signed in but does not currently have access to the selected workspace.'
@@ -168,6 +181,15 @@ function ApplicationStatus({
             <h1 id="application-status-title">{title}</h1>
             <p>{message}</p>
             <div className="application-status-actions">
+              {onCreateWorkspace ? (
+                <button
+                  className="button button--primary"
+                  type="button"
+                  onClick={onCreateWorkspace}
+                >
+                  Create Workspace
+                </button>
+              ) : null}
               {onRetry ? (
                 <button
                   className="button button--primary button--with-icon"
@@ -199,6 +221,9 @@ function ApplicationStatus({
 
 export function App() {
   const [session, setSession] = useState<Session | null>(null)
+  const [registrationMode, setRegistrationMode] = useState<RegistrationMode>('invitation_only')
+  const [registrationOpen, setRegistrationOpen] = useState(false)
+  const [workspaceCreationOpen, setWorkspaceCreationOpen] = useState(false)
   const [applicationState, setApplicationState] = useState<
     'ready' | 'access-denied' | 'unavailable'
   >('ready')
@@ -218,18 +243,20 @@ export function App() {
 
   useEffect(() => {
     let active = true
-    getSession()
-      .then((nextSession) => {
-        if (active) {
-          setSession(nextSession)
-          setApplicationState('ready')
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setApplicationState('unavailable')
-        }
-      })
+    Promise.allSettled([getSession(), getRegistrationConfiguration()]).then((results) => {
+      const [sessionResult, registrationResult] = results
+      if (!active) return
+      if (registrationResult.status === 'fulfilled') {
+        setRegistrationMode(registrationResult.value.mode)
+      }
+      if (sessionResult.status === 'fulfilled') {
+        const nextSession = sessionResult.value
+        setSession(nextSession)
+        setApplicationState('ready')
+      } else {
+        setApplicationState('unavailable')
+      }
+    })
 
     const requireAuthentication = () => {
       setApplicationState('ready')
@@ -252,8 +279,15 @@ export function App() {
   async function retryConnection() {
     setRetrying(true)
     try {
-      const nextSession = await getSession()
-      setSession(nextSession)
+      const [sessionResult, registrationResult] = await Promise.allSettled([
+        getSession(),
+        getRegistrationConfiguration(),
+      ])
+      if (sessionResult.status === 'rejected') throw sessionResult.reason
+      setSession(sessionResult.value)
+      if (registrationResult.status === 'fulfilled') {
+        setRegistrationMode(registrationResult.value.mode)
+      }
       setApplicationState('ready')
     } catch {
       setApplicationState('unavailable')
@@ -285,6 +319,11 @@ export function App() {
     }
   }
 
+  function workspaceCreated(context: WorkspaceContext) {
+    setSession((current) => (current ? { ...current, workspace: context } : current))
+    setWorkspaceCreationOpen(false)
+  }
+
   if (accountAction) {
     return (
       <AccountActionScreen
@@ -302,6 +341,17 @@ export function App() {
 
   if (applicationState === 'unavailable') {
     return <ApplicationStatus kind="unavailable" busy={retrying} onRetry={retryConnection} />
+  }
+
+  if (registrationOpen) {
+    return (
+      <RegistrationScreen
+        onBack={(notice) => {
+          setRegistrationOpen(false)
+          if (notice) setLoginNotice(notice)
+        }}
+      />
+    )
   }
 
   if (applicationState === 'access-denied') {
@@ -339,6 +389,7 @@ export function App() {
           setSession(nextSession)
         }}
         onForgotPassword={() => setAccountAction({ mode: 'forgot-password' })}
+        onRegister={registrationMode === 'open' ? () => setRegistrationOpen(true) : undefined}
       />
     )
   }
@@ -346,11 +397,20 @@ export function App() {
   const workspace = session.workspace
   if (!workspace || workspace.state === 'onboarding') {
     return (
-      <ApplicationStatus
-        kind="onboarding"
-        onSignOut={signOut}
-        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
-      />
+      <>
+        <ApplicationStatus
+          kind="onboarding"
+          onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
+          onSignOut={signOut}
+          onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+        />
+        {workspaceCreationOpen ? (
+          <WorkspaceCreationDialog
+            onCancel={() => setWorkspaceCreationOpen(false)}
+            onCreated={workspaceCreated}
+          />
+        ) : null}
+      </>
     )
   }
 
@@ -401,25 +461,43 @@ export function App() {
   }
   if (activeMembership.role === 'member') {
     return (
-      <ApplicationStatus
-        kind="member"
-        onSignOut={signOut}
-        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
-      />
+      <>
+        <ApplicationStatus
+          kind="member"
+          onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
+          onSignOut={signOut}
+          onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+        />
+        {workspaceCreationOpen ? (
+          <WorkspaceCreationDialog
+            onCancel={() => setWorkspaceCreationOpen(false)}
+            onCreated={workspaceCreated}
+          />
+        ) : null}
+      </>
     )
   }
 
   return (
-    <ApplicationWorkspace
-      key={workspace.active_workspace_id}
-      user={session.user ?? undefined}
-      onSignOut={signOut}
-      signOutError={signOutError}
-      workspace={workspace}
-      onWorkspaceSelected={(nextWorkspace) =>
-        setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
-      }
-      onManageAccount={() => setAccountAction({ mode: 'change-email' })}
-    />
+    <>
+      <ApplicationWorkspace
+        key={workspace.active_workspace_id}
+        user={session.user ?? undefined}
+        onSignOut={signOut}
+        signOutError={signOutError}
+        workspace={workspace}
+        onWorkspaceSelected={(nextWorkspace) =>
+          setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
+        }
+        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+        onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
+      />
+      {workspaceCreationOpen ? (
+        <WorkspaceCreationDialog
+          onCancel={() => setWorkspaceCreationOpen(false)}
+          onCreated={workspaceCreated}
+        />
+      ) : null}
+    </>
   )
 }

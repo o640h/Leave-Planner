@@ -7,8 +7,9 @@ workspace. A sole membership opens automatically. Multiple memberships use the l
 selection; if there is no valid previous selection, the browser asks the person to choose before any
 planner request runs. The selector remains visible when more than one workspace is available.
 
-An account without a membership sees the workspace-setup state. This is deliberate preparation for
-the first-Owner and registration slices; it does not create a workspace implicitly. Owner and Admin
+An account without a membership sees the workspace-setup state; signing in never creates a workspace
+implicitly. The server-owner command establishes the first Owner, while an ordinary verified account
+uses an explicit authenticated action to create an empty workspace. Owner and Admin
 memberships can use the existing operator planner. A Member membership is recognised but cannot enter
 that full-access planner. The restricted Member interface and APIs remain owned by the later read-only
 Member slice.
@@ -18,7 +19,7 @@ Member slice.
 `workspace_memberships` accepts exactly `owner`, `admin`, and `member`. A partial unique index permits
 at most one Owner row per workspace. Workspace creation and later ownership transfer must create or
 retain that single Owner in the same transaction. The empty clean-start scaffold is the only temporary
-ownerless state; the first-Owner transition replaces it before production workspace use.
+ownerless state; the explicit first-Owner command removes and replaces it before production use.
 
 A membership may link to one consultant only when its role is Member. The composite foreign key from
 `(workspace_id, linked_consultant_id)` to `(consultants.workspace_id, id)` makes a cross-workspace link
@@ -45,6 +46,11 @@ names, roles, optional own-consultant link, current selection, and one of these 
 session, same-origin, and CSRF checks. The server changes the session only after finding that exact
 account/workspace membership; guessed or foreign IDs return the same not-found response and grant no
 authority.
+
+`POST /api/workspaces` accepts a name only after the account explicitly chooses Create Workspace. It
+creates the empty workspace and its sole Owner membership atomically, selects it for the current
+session, and returns the refreshed context. The PostgreSQL transaction binds the preallocated new ID
+before insertion so the existing workspace write policy remains the enforcement boundary.
 
 Existing planner routers now require the separate operator-workspace dependency. It admits Owner and
 Admin only. The more general membership dependency is retained for future restricted Member routes.

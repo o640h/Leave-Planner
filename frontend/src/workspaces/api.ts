@@ -6,3 +6,9 @@ export const selectWorkspace = (workspaceId: number) =>
     method: 'POST',
     body: JSON.stringify({ workspace_id: workspaceId }),
   })
+
+export const createWorkspace = (name: string) =>
+  apiRequest<WorkspaceContext>('/api/workspaces', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })

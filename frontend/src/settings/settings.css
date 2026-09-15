@@ -89,6 +89,19 @@
   max-width: 760px;
 }
 
+.workspace-settings-panel {
+  max-width: 760px;
+}
+
+.workspace-settings-panel > header {
+  align-items: center;
+}
+
+.workspace-settings-panel > header .button {
+  flex: 0 0 auto;
+  min-height: 34px;
+}
+
 .theme-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

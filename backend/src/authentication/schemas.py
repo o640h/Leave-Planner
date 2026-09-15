@@ -1,5 +1,7 @@
 """Authentication API contracts."""
 
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr, Field
 
 from workspaces.schemas import WorkspaceContextRead
@@ -14,6 +16,16 @@ class LoginRequest(BaseModel):
 
 class EmailActionRequest(BaseModel):
     email: EmailStr
+
+
+class RegistrationRequest(BaseModel):
+    display_name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    password: str = Field(min_length=MINIMUM_PASSWORD_LENGTH, max_length=1024)
+
+
+class RegistrationConfigurationRead(BaseModel):
+    mode: Literal["closed", "invitation_only", "open"]
 
 
 class TokenRequest(BaseModel):

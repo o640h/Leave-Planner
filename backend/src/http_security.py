@@ -73,6 +73,7 @@ class HostedHttpSecurityMiddleware(BaseHTTPMiddleware):
             "/api/auth/password-reset/confirm",
             "/api/auth/email-change/request",
             "/api/auth/email-change/confirm",
+            "/api/auth/registration",
         }
         if request.url.path in account_action_paths and request.method == "POST":
             retry_after = self.retry_after(

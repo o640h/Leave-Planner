@@ -81,13 +81,16 @@ or controls in React is not an authorization control.
 
 ## Registration, Invitations, and Recovery
 
-Production begins in `Invitation Only` mode. The settings model will support `Closed`, `Invitation
-Only`, and `Open`, but `Open` must remain unavailable until the complete Phase 7 security and capacity
-gate passes.
+Production begins in `Open` mode so anyone can create and verify a global account. Registration never
+grants access to an existing workspace: joining one still requires an invitation from that
+workspace. `Invitation Only` remains available for a private rollout and `Closed` for an operational
+shutdown. The later security and capacity gate hardens and verifies the open surface rather than
+enabling it for the first time.
 
 An account may initially create no more than three workspaces it owns. This is a deployment setting,
 not a commercial domain rule. Memberships in workspaces owned by somebody else do not count. Raising
-the limit is an explicit NAS capacity decision.
+the limit is an explicit NAS capacity decision. This per-account limit is not a defence against an
+attacker registering many accounts; rate limits and the later abuse controls remain necessary.
 
 Invitation tokens expire seven calendar days after issue. Password-reset tokens expire one hour
 after issue. Both are cryptographically random, stored only as hashes, single use, and revoked when

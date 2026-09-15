@@ -6,9 +6,10 @@ Leave Planner now authenticates named people with an email address and password.
 need to be unique. The browser and API expose an opaque public account ID rather than the database
 primary key.
 
-This task creates identity and authentication only. It does not create the first Owner or attach an
-account to a workspace; that happens in the first-Owner task. A successfully authenticated account
-without a membership therefore receives the existing workspace-unavailable state.
+Identity and authentication remain separate from workspace creation. An account without a membership
+receives the workspace-setup state. The explicit first-Owner command can create or verify the initial
+account and atomically attach it to a new blank workspace; ordinary verified accounts use the
+separate authenticated Create Workspace action.
 
 ## Clean Start
 
@@ -83,10 +84,17 @@ CSRF cookie/header and same-origin validation.
 Password reset increments the password version and revokes every session. Disabling or deleting an
 account also revokes every session. A pending or disabled account cannot create or continue a session.
 
+## Account Interface
+
+The bottom-rail profile control will open a global Account page during the post-membership desktop UI
+pass. That page will show the signed-in display name and email and expose the existing Change Email
+flow as an explicit account action. It remains separate from Workspace Settings because membership,
+role, invitation, and ownership controls are scoped to one workspace rather than the global identity.
+
 ## Temporary Server Administration
 
-Until verification email and Owner onboarding are implemented, the deployment operator may create a
-verified named account interactively:
+The deployment operator may create a verified named account interactively for recovery or controlled
+bootstrap operation:
 
 ```powershell
 $env:VIRTUAL_ENV = (Resolve-Path "..\.venv").Path
@@ -94,8 +102,9 @@ $env:PYTHONPATH = (Resolve-Path "src").Path
 uv run --active --no-sync python -m authentication.account_admin create
 ```
 
-The command prompts for display name, email, and password; the password is requested twice without
-echo and is never accepted as a command argument. It can also run `reset-password`, `disable`, and
+The `create` command prompts for display name, email, and password; the password is requested twice
+without echo and is never accepted as a command argument. Account tooling can also run
+`create-owner`, `reset-password`, `disable`, and
 `enable` with an interactively entered email. Creating the account does not create a workspace or
 membership.
 
@@ -106,7 +115,7 @@ Login addresses belong to the people using Leave Planner. Merydio does not creat
 
 Transactional mail will later be sent from a dedicated authenticated sender such as
 
-otifications@merydio.co.uk`. That address need not receive mail. If human replies are required, a
+`notifications@merydio.co.uk`. That address need not receive mail. If human replies are required, a
 separately configured and monitored support inbox can be supplied as Reply-To. In-app request
 notifications remain authoritative; Task 4 adds delivery, while later request work may optionally
 email each Owner or Admin at their registered address.

@@ -19,7 +19,7 @@ from database_transfer import import_sqlite_database
 from main import create_app
 from migrations import upgrade_database
 from settings import Settings
-from workspaces.service import ensure_initial_membership
+from workspaces.models import ADMIN_ROLE, Workspace, WorkspaceMembership
 
 POSTGRES_TEST_URL = os.environ.get("LEAVE_PLANNER_TEST_POSTGRES_URL")
 
@@ -251,7 +251,16 @@ def _prepare_target(url: str) -> None:
                 password="ImportTestPassword!",
                 verified_at=datetime.now(UTC),
             )
-            ensure_initial_membership(session, account)
+            workspace = session.get(Workspace, 1)
+            assert workspace is not None
+            session.add(
+                WorkspaceMembership(
+                    workspace_id=workspace.id,
+                    user_id=account.id,
+                    role=ADMIN_ROLE,
+                )
+            )
+            account.last_workspace_id = workspace.id
     finally:
         engine.dispose()
 

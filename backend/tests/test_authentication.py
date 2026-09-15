@@ -31,7 +31,7 @@ from database import create_database_engine, create_session_factory, session_sco
 from main import create_app
 from migrations import alembic_config, upgrade_database
 from settings import Settings
-from workspaces.service import ensure_initial_membership
+from workspaces.models import ADMIN_ROLE, Workspace, WorkspaceMembership
 
 EMAIL = "Operator@Example.org"
 PASSWORD = "individual-account-password"
@@ -51,7 +51,16 @@ def configured_app(data_dir: Path) -> tuple[FastAPI, Settings]:
                 password=PASSWORD,
                 verified_at=datetime.now(UTC),
             )
-            ensure_initial_membership(session, account)
+            workspace = session.scalar(select(Workspace))
+            assert workspace is not None
+            session.add(
+                WorkspaceMembership(
+                    workspace_id=workspace.id,
+                    user_id=account.id,
+                    role=ADMIN_ROLE,
+                )
+            )
+            account.last_workspace_id = workspace.id
     finally:
         engine.dispose()
     return create_app(settings=settings, frontend_dist=data_dir / "missing-frontend"), settings

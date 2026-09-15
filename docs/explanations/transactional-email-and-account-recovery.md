@@ -47,17 +47,16 @@ The default development configuration uses `development_outbox`. It never sends 
 so use any syntactically valid address such as `operator@example.org`; it does not need to be your
 real address.
 
-To create an already verified temporary account, run this in a PowerShell terminal:
+To create the first verified Owner account and its blank workspace, run this in a PowerShell terminal:
 
 ```powershell
 Set-Location "C:\Projects\Leave Planner\backend"
 $env:PYTHONPATH = (Resolve-Path "src").Path
-..\.venv\Scripts\python.exe -m authentication.account_admin create
+..\.venv\Scripts\python.exe -m authentication.account_admin create-owner
 ```
 
-Enter a display name, test email, and password of at least eight characters at the prompts. Sign in at
-`http://localhost:5173`. Until the first-Owner task is implemented, a valid account has no workspace
-and therefore reaches the workspace-onboarding holding screen; this is expected.
+Enter the email, display name, password of at least eight characters, and workspace name at the
+prompts. Sign in at `http://localhost:5173`; the single Owner workspace is selected automatically.
 
 Use **Forgot Password** to test recovery. After requesting the link, open this development-only URL:
 
@@ -75,8 +74,7 @@ Email verification is not a standalone sign-in action. The token-confirmation pa
 the account-creation workflow, which will send the initial message and provide any necessary resend
 action within that workflow.
 
-For quick local testing of the existing planner before first-Owner onboarding exists, FastAPI can be
-started with authentication disabled:
+For narrowly scoped local diagnosis, FastAPI can still be started with authentication disabled:
 
 ```powershell
 $env:LEAVE_PLANNER_AUTHENTICATION_REQUIRED = "false"

@@ -4,12 +4,14 @@ import argparse
 from datetime import UTC, datetime
 from getpass import getpass
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database import create_database_engine, create_session_factory, session_scope
 from migrations import require_database_current, upgrade_database
 from recovery import create_startup_backups
 from settings import Settings
+from workspaces.service import create_initial_owner_workspace
 
 from .models import ACTIVE, DISABLED, User
 from .service import (
@@ -35,11 +37,49 @@ def confirmed_password() -> str:
     return password
 
 
+def entered_workspace_name() -> str:
+    name = input("Workspace name: ").strip()
+    if not name:
+        raise ValueError("Enter a workspace name")
+    return name
+
+
 def require_account(session: Session, email: str) -> User:
     account = account_for_email(session, email)
     if account is None:
         raise ValueError("The account was not found")
     return account
+
+
+def require_owner_setup_connection(session: Session, settings: Settings) -> None:
+    if settings.environment != "production" or session.get_bind().dialect.name != "postgresql":
+        return
+    database_role = session.scalar(text("SELECT current_user"))
+    if database_role != "leave_planner_migrator":
+        raise ValueError(
+            "Production first-Owner setup must run through the migrator database connection"
+        )
+
+
+def create_owner(session: Session, settings: Settings) -> None:
+    require_owner_setup_connection(session, settings)
+    email = entered_email()
+    account = account_for_email(session, email, for_update=True)
+    if account is None:
+        display_name = input("Display name: ").strip()
+        password = confirmed_password()
+    else:
+        display_name = None
+        password = getpass("Current account password: ")
+    result = create_initial_owner_workspace(
+        session,
+        email=email,
+        password=password,
+        workspace_name=entered_workspace_name(),
+        display_name=display_name,
+    )
+    outcome = "created" if result.created else "already configured"
+    print(f"Owner workspace {outcome}: {result.workspace.name}")
 
 
 def run(operation: str, settings: Settings | None = None) -> None:
@@ -53,7 +93,9 @@ def run(operation: str, settings: Settings | None = None) -> None:
     factory = create_session_factory(engine)
     try:
         with session_scope(factory) as session:
-            if operation == "create":
+            if operation == "create-owner":
+                create_owner(session, runtime)
+            elif operation == "create":
                 display_name = input("Display name: ").strip()
                 create_account(
                     session,
@@ -80,7 +122,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Manage Leave Planner email accounts")
     parser.add_argument(
         "operation",
-        choices=("create", "reset-password", "disable", "enable"),
+        choices=("create-owner", "create", "reset-password", "disable", "enable"),
     )
     arguments = parser.parse_args()
     try:
