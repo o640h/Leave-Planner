@@ -74,6 +74,9 @@ esac
     assert bool(list(backups.glob("*.verified.txt"))) is (not failure)
     assert not (backups / ".leave-planner-backup-lock").exists()
     calls = log.read_text(encoding="utf-8")
+    assert "pg_dump -U postgres --role=leave_planner_backup" in calls
+    if failure not in {"pg_dump", "createdb"}:
+        assert "pg_restore -U postgres --role=leave_planner_restore --no-owner" in calls
     drops = [line for line in calls.splitlines() if line.startswith("dropdb")]
     assert bool(drops) is (failure not in {"pg_dump", "createdb"})
     assert all("leave_planner_restore_" in line for line in drops)

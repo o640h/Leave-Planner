@@ -41,6 +41,14 @@ def test_schema_upgrade_is_a_separate_required_service() -> None:
         "service_completed_successfully"
     )
 
+    initialization = (REPOSITORY_ROOT / "deploy/postgres/init-database.sh").read_text(
+        encoding="utf-8"
+    )
+    assert "leave_planner_application" in initialization
+    assert "leave_planner_backup" in initialization
+    assert "leave_planner_restore" in initialization
+    assert "BYPASSRLS" in initialization
+
 
 def test_application_image_runs_as_a_read_only_unprivileged_service() -> None:
     configuration = compose_configuration()

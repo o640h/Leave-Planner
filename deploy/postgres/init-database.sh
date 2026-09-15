@@ -25,8 +25,25 @@ CREATE ROLE leave_planner_application
     NOCREATEROLE
     NOINHERIT;
 
+CREATE ROLE leave_planner_backup
+    NOLOGIN
+    NOSUPERUSER
+    NOCREATEDB
+    NOCREATEROLE
+    NOINHERIT
+    BYPASSRLS;
+
+CREATE ROLE leave_planner_restore
+    NOLOGIN
+    NOSUPERUSER
+    CREATEDB
+    NOCREATEROLE
+    NOINHERIT;
+
 ALTER DATABASE leave_planner OWNER TO leave_planner_migrator;
 GRANT CONNECT ON DATABASE leave_planner TO leave_planner_application;
+GRANT CONNECT ON DATABASE leave_planner TO leave_planner_backup;
+GRANT pg_read_all_data TO leave_planner_backup;
 
 GRANT USAGE ON SCHEMA public TO leave_planner_application;
 ALTER DEFAULT PRIVILEGES FOR ROLE leave_planner_migrator IN SCHEMA public

@@ -61,6 +61,7 @@ tar -xzf "$archive" -C "$release_dir"
 [ -f "$release_dir/deploy/compose.yml" ] || fail 'The release does not contain deploy/compose.yml.'
 [ -f "$release_dir/deploy/compose.cloudflare.yml" ] || fail 'The Cloudflare Compose overlay is missing.'
 [ -f "$release_dir/scripts/PostgresBackup.sh" ] || fail 'The backup helper is missing.'
+[ -f "$release_dir/scripts/ConfigureDatabaseRoles.sh" ] || fail 'The database-role helper is missing.'
 
 ln -s "$root_dir/deploy/.env" "$release_dir/deploy/.env"
 ln -s "$root_dir/deploy/secrets" "$release_dir/deploy/secrets"
@@ -77,6 +78,7 @@ previous_image=$(docker inspect leave-planner-application-1 --format '{{.Config.
 previous_image_id=$(docker inspect leave-planner-application-1 --format '{{.Image}}' 2>/dev/null || true)
 
 printf 'Creating and verifying the pre-release database backup...\n'
+sh "$release_dir/scripts/ConfigureDatabaseRoles.sh"
 sh "$release_dir/scripts/PostgresBackup.sh" backup "$backup_dir"
 
 printf 'Building application image leave-planner:%s...\n' "$version"

@@ -19,6 +19,19 @@ const account = {
   display_email: 'Operator@Example.org',
 }
 
+const activeWorkspace = {
+  state: 'active',
+  active_workspace_id: 1,
+  memberships: [
+    {
+      workspace_id: 1,
+      workspace_name: 'Clinical Services',
+      role: 'owner',
+      linked_consultant_id: null,
+    },
+  ],
+}
+
 describe('email account authentication', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -53,7 +66,7 @@ describe('email account authentication', () => {
             )
           }
           authenticated = true
-          return json({ authenticated: true, user: account })
+          return json({ authenticated: true, user: account, workspace: activeWorkspace })
         }
         if (path === '/api/consultants' && authenticated) return json([])
         throw new Error(`Unexpected request: ${options.method ?? 'GET'} ${path}`)
@@ -96,7 +109,9 @@ describe('email account authentication', () => {
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL, options: RequestInit = {}) => {
       const path = input.toString()
-      if (path === '/api/auth/session') return json({ authenticated: true, user: account })
+      if (path === '/api/auth/session') {
+        return json({ authenticated: true, user: account, workspace: activeWorkspace })
+      }
       if (path === '/api/health') return json({ status: 'ok' })
       if (path === '/api/consultants') return json([])
       if (path === '/api/auth/logout') {
@@ -125,7 +140,9 @@ describe('email account authentication', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const path = input.toString()
-        if (path === '/api/auth/session') return json({ authenticated: true, user: account })
+        if (path === '/api/auth/session') {
+          return json({ authenticated: true, user: account, workspace: activeWorkspace })
+        }
         if (path === '/api/health') return json({ status: 'ok' })
         if (path === '/api/consultants') {
           return json(
@@ -142,12 +159,18 @@ describe('email account authentication', () => {
     expect(screen.getByText('Your session expired. Sign in again to continue.')).toBeInTheDocument()
   })
 
-  it('shows a workspace access state when a signed-in account has no membership', async () => {
+  it('shows onboarding when a signed-in account has no membership', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const path = input.toString()
-        if (path === '/api/auth/session') return json({ authenticated: true, user: account })
+        if (path === '/api/auth/session') {
+          return json({
+            authenticated: true,
+            user: account,
+            workspace: { state: 'onboarding', active_workspace_id: null, memberships: [] },
+          })
+        }
         if (path === '/api/health') return json({ status: 'ok' })
         if (path === '/api/consultants') {
           return json({ error: { code: 'workspace_access_denied', message: 'Access denied' } }, 403)
@@ -158,9 +181,49 @@ describe('email account authentication', () => {
 
     render(<App />)
     expect(
-      await screen.findByRole('heading', { name: 'Workspace Access Unavailable' }),
+      await screen.findByRole('heading', { name: 'Workspace Setup Required' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument()
+  })
+
+  it('requires an explicit workspace choice and opens the selected workspace', async () => {
+    const user = userEvent.setup()
+    const selectionRequired = {
+      state: 'selection_required',
+      active_workspace_id: null,
+      memberships: [
+        ...activeWorkspace.memberships,
+        {
+          workspace_id: 2,
+          workspace_name: 'Second Workspace',
+          role: 'admin',
+          linked_consultant_id: null,
+        },
+      ],
+    }
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, options: RequestInit = {}) => {
+        const path = input.toString()
+        if (path === '/api/auth/session') {
+          return json({ authenticated: true, user: account, workspace: selectionRequired })
+        }
+        if (path === '/api/workspaces/active') {
+          expect(JSON.parse(options.body as string)).toEqual({ workspace_id: 2 })
+          return json({ ...selectionRequired, state: 'active', active_workspace_id: 2 })
+        }
+        if (path === '/api/health') return json({ status: 'ok' })
+        if (path === '/api/consultants') return json([])
+        throw new Error(`Unexpected request: ${options.method ?? 'GET'} ${path}`)
+      }),
+    )
+
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Choose Workspace' })).toBeInTheDocument()
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Choose Workspace' }), '2')
+    expect(await screen.findByRole('heading', { name: 'Consultants' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Workspace')).toHaveValue('2')
   })
 
   it('offers a retry when the server is initially unavailable', async () => {

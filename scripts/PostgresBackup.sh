@@ -41,7 +41,7 @@ stamp=$(date -u +%Y%m%dT%H%M%SZ)
 if [ "$action" = backup ]; then
     archive="$backup_dir/leave-planner-$stamp-$$.dump"
     partial_archive="$archive.partial"
-    database pg_dump -U postgres -d leave_planner --format=custom > "$partial_archive"
+    database pg_dump -U postgres --role=leave_planner_backup -d leave_planner --format=custom > "$partial_archive"
     database pg_restore --list < "$partial_archive" > /dev/null
     mv -- "$partial_archive" "$archive"
     partial_archive=
@@ -53,11 +53,12 @@ else
 fi
 # Cleanup owns only a successfully created, generated database, never an existing target.
 candidate="leave_planner_restore_$(date -u +%Y%m%d%H%M%S)_$$"
-database createdb -U postgres --template=template0 --owner=leave_planner_migrator "$candidate"
+database createdb -U postgres --template=template0 --owner=leave_planner_restore "$candidate"
 restore_db=$candidate
-database pg_restore -U postgres --dbname="$restore_db" --single-transaction < "$archive"
+database pg_restore -U postgres --role=leave_planner_restore --no-owner --dbname="$restore_db" --single-transaction < "$archive"
 partial_report="$archive.verify.partial"
 database psql -X -U postgres -d "$restore_db" -v ON_ERROR_STOP=1 > "$partial_report" <<'SQL'
+SET ROLE leave_planner_restore;
 SELECT version_num AS schema_revision FROM alembic_version;
 SELECT format('SELECT %L AS table_name, count(*) AS restored_rows FROM %I.%I;',
               tablename, schemaname, tablename)

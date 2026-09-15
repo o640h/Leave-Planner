@@ -4,7 +4,21 @@ export type AuthenticatedUser = {
   display_email: string
 }
 
+export type WorkspaceMembership = {
+  workspace_id: number
+  workspace_name: string
+  role: 'owner' | 'admin' | 'member'
+  linked_consultant_id: number | null
+}
+
+export type WorkspaceContext = {
+  state: 'active' | 'selection_required' | 'onboarding'
+  active_workspace_id: number | null
+  memberships: WorkspaceMembership[]
+}
+
 export type Session = {
   authenticated: boolean
   user: AuthenticatedUser | null
+  workspace: WorkspaceContext | null
 }

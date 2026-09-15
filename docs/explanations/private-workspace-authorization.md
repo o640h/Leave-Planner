@@ -1,5 +1,8 @@
 # Private Workspace Authorization
 
+This document records the original single-workspace boundary. The current multi-membership selection
+and PostgreSQL RLS design is documented in `workspace-ownership-selection-isolation.md`.
+
 ## Boundary
 
 Leave Planner currently exposes one private workspace and one full-access role. The fixed `Admin`

@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, Request, Response
 from dependencies import DatabaseSession
 from errors import ApiError
 from settings import Settings
+from workspaces.schemas import context_read
+from workspaces.service import initial_workspace_id, workspace_context
 
 from .dependencies import (
     current_user,
@@ -70,13 +72,23 @@ def user_read(authenticated: AuthenticatedUser) -> AuthenticatedUserRead:
     )
 
 
+def session_read(session: DatabaseSession, authenticated: AuthenticatedUser) -> SessionRead:
+    return SessionRead(
+        authenticated=True,
+        user=user_read(authenticated),
+        workspace=context_read(
+            workspace_context(session, authenticated.id, authenticated.active_workspace_id)
+        ),
+    )
+
+
 @router.get("/session", response_model=SessionRead)
 def session_status(request: Request, response: Response, session: DatabaseSession) -> SessionRead:
     no_store(response)
     authenticated = current_user(request, session)
     if authenticated is None:
         return SessionRead(authenticated=False)
-    return SessionRead(authenticated=True, user=user_read(authenticated))
+    return session_read(session, authenticated)
 
 
 @router.post("/login", response_model=SessionRead)
@@ -107,10 +119,12 @@ def login(
 
     assert user is not None
     clear_failed_logins(user)
+    active_workspace_id = initial_workspace_id(session, user)
     tokens = create_session(
         session,
         user,
         lifetime=timedelta(hours=settings.session_lifetime_hours),
+        active_workspace_id=active_workspace_id,
     )
     set_authentication_cookies(response, settings, tokens.session_token, tokens.csrf_token)
     no_store(response)
@@ -119,9 +133,10 @@ def login(
         public_id=user.public_id,
         display_name=user.display_name,
         display_email=user.display_email,
-        session_id=0,
+        session_id=tokens.session_id,
+        active_workspace_id=tokens.active_workspace_id,
     )
-    return SessionRead(authenticated=True, user=user_read(authenticated))
+    return session_read(session, authenticated)
 
 
 @router.post("/logout", response_model=SessionRead)

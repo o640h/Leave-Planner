@@ -7,7 +7,7 @@ import {
 } from './api/client'
 import { getSession, logout } from './authentication/api'
 import { LoginScreen } from './authentication/LoginScreen'
-import type { AuthenticatedUser, Session } from './authentication/types'
+import type { AuthenticatedUser, Session, WorkspaceContext } from './authentication/types'
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
 import { PlanningPage } from './planning/PlanningPage'
 import { SettingsPage } from './settings/SettingsPage'
@@ -15,14 +15,23 @@ import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
 import { ProductIdentity } from './system/ProductIdentity'
 import { WorkspaceFrame } from './system/WorkspaceFrame'
+import { WorkspaceSelector } from './workspaces/WorkspaceSelector'
 
 type ApplicationWorkspaceProps = {
   user?: AuthenticatedUser
   onSignOut?: () => void
   signOutError?: string | null
+  workspace?: WorkspaceContext
+  onWorkspaceSelected?: (context: WorkspaceContext) => void
 }
 
-export function ApplicationWorkspace({ user, onSignOut, signOutError }: ApplicationWorkspaceProps) {
+export function ApplicationWorkspace({
+  user,
+  onSignOut,
+  signOutError,
+  workspace,
+  onWorkspaceSelected,
+}: ApplicationWorkspaceProps) {
   const [page, setPage] = useState<'consultants' | 'planning' | 'settings'>('consultants')
 
   return (
@@ -89,6 +98,9 @@ export function ApplicationWorkspace({ user, onSignOut, signOutError }: Applicat
         </aside>
 
         <main className="application-content">
+          {workspace && workspace.memberships.length > 1 && onWorkspaceSelected ? (
+            <WorkspaceSelector context={workspace} onSelected={onWorkspaceSelected} />
+          ) : null}
           {signOutError ? (
             <p className="application-notice" role="alert">
               {signOutError}
@@ -104,7 +116,7 @@ export function ApplicationWorkspace({ user, onSignOut, signOutError }: Applicat
 }
 
 type ApplicationStatusProps = {
-  kind: 'access-denied' | 'unavailable'
+  kind: 'access-denied' | 'member' | 'onboarding' | 'unavailable'
   busy?: boolean
   onRetry?: () => void
   onSignOut?: () => void
@@ -112,6 +124,20 @@ type ApplicationStatusProps = {
 
 function ApplicationStatus({ kind, busy = false, onRetry, onSignOut }: ApplicationStatusProps) {
   const unavailable = kind === 'unavailable'
+  const title = unavailable
+    ? 'Server Unavailable'
+    : kind === 'onboarding'
+      ? 'Workspace Setup Required'
+      : kind === 'member'
+        ? 'Member Workspace'
+        : 'Workspace Access Unavailable'
+  const message = unavailable
+    ? 'Leave Planner could not reach the server. Check the connection and try again.'
+    : kind === 'onboarding'
+      ? 'Your account is ready. A workspace can be created during the Owner setup step.'
+      : kind === 'member'
+        ? 'Your membership is active. The read-only consultant workspace will be enabled separately.'
+        : 'Your account is signed in but does not currently have access to the selected workspace.'
   return (
     <div className="application-frame authentication-frame">
       <main className="application-status-page">
@@ -124,14 +150,8 @@ function ApplicationStatus({ kind, busy = false, onRetry, onSignOut }: Applicati
             <div className="application-status-mark" aria-hidden="true">
               <AppIcon name={unavailable ? 'server' : 'profile'} />
             </div>
-            <h1 id="application-status-title">
-              {unavailable ? 'Server Unavailable' : 'Workspace Access Unavailable'}
-            </h1>
-            <p>
-              {unavailable
-                ? 'Leave Planner could not reach the server. Check the connection and try again.'
-                : 'Admin is signed in but does not currently have access to this workspace.'}
-            </p>
+            <h1 id="application-status-title">{title}</h1>
+            <p>{message}</p>
             <div className="application-status-actions">
               {onRetry ? (
                 <button
@@ -184,7 +204,7 @@ export function App() {
     const requireAuthentication = () => {
       setApplicationState('ready')
       setLoginNotice('Your session expired. Sign in again to continue.')
-      setSession({ authenticated: false, user: null })
+      setSession({ authenticated: false, user: null, workspace: null })
     }
     const denyAuthorization = () => setApplicationState('access-denied')
     const reportUnavailable = () => setApplicationState('unavailable')
@@ -218,7 +238,7 @@ export function App() {
       await logout()
       setApplicationState('ready')
       setLoginNotice('You have signed out.')
-      setSession({ authenticated: false, user: null })
+      setSession({ authenticated: false, user: null, workspace: null })
     } catch {
       setSignOutError('Sign out could not be completed. Check the server and try again.')
     }
@@ -266,11 +286,64 @@ export function App() {
     )
   }
 
+  const workspace = session.workspace
+  if (!workspace || workspace.state === 'onboarding') {
+    return <ApplicationStatus kind="onboarding" onSignOut={signOut} />
+  }
+
+  if (workspace.state === 'selection_required') {
+    return (
+      <div className="application-frame authentication-frame">
+        <main className="application-status-page">
+          <section
+            className="authentication-panel application-status-panel"
+            aria-labelledby="workspace-selection-title"
+          >
+            <ProductIdentity />
+            <div className="application-status-content">
+              <h1 id="workspace-selection-title">Choose Workspace</h1>
+              <p>Select the workspace you want to open.</p>
+              <WorkspaceSelector
+                context={workspace}
+                required
+                onSelected={(nextWorkspace) =>
+                  setSession((current) =>
+                    current ? { ...current, workspace: nextWorkspace } : current,
+                  )
+                }
+              />
+              <div className="application-status-actions">
+                <button className="button button--quiet" type="button" onClick={signOut}>
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    )
+  }
+
+  const activeMembership = workspace.memberships.find(
+    (membership) => membership.workspace_id === workspace.active_workspace_id,
+  )
+  if (!activeMembership) {
+    return <ApplicationStatus kind="access-denied" onSignOut={signOut} />
+  }
+  if (activeMembership.role === 'member') {
+    return <ApplicationStatus kind="member" onSignOut={signOut} />
+  }
+
   return (
     <ApplicationWorkspace
+      key={workspace.active_workspace_id}
       user={session.user ?? undefined}
       onSignOut={signOut}
       signOutError={signOutError}
+      workspace={workspace}
+      onWorkspaceSelected={(nextWorkspace) =>
+        setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
+      }
     />
   )
 }

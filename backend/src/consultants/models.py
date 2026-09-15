@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -12,6 +12,9 @@ class Consultant(Base):
     """One consultant maintained in the central directory."""
 
     __tablename__ = "consultants"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id", name="uq_consultants_workspace_id_id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workspace_id: Mapped[int] = mapped_column(

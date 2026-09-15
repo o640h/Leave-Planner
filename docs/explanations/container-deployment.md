@@ -19,6 +19,11 @@ The Compose project has three services:
   loopback interface only, so the selected host-level HTTPS tunnel or proxy can reach it but LAN and
   internet clients cannot bypass HTTPS.
 
+PostgreSQL also contains separate no-login backup and restore roles. The backup role can read through
+RLS so a complete dump cannot silently omit another workspace; the restore role owns only the
+generated verification database. `scripts/ConfigureDatabaseRoles.sh` creates or reconciles these
+roles before each pre-release backup on an existing volume. The application role cannot assume them.
+
 Normal development remains unchanged: Vite runs on `localhost:5173`, FastAPI runs on
 `127.0.0.1:8000`, and the development server upgrades its isolated SQLite schema automatically.
 Production never upgrades implicitly. It exits with a clear error if the migration service was not

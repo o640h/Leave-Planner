@@ -144,7 +144,9 @@ p {
 
 .workspace-frame {
   width: min(1440px, 100vw);
+  max-width: 100vw;
   height: min(900px, 100dvh);
+  max-height: 100dvh;
   grid-template-rows: minmax(0, 1fr) 24px;
   container: workspace / inline-size;
 }
@@ -606,6 +608,45 @@ p {
   min-height: 0;
   overflow: hidden;
   background: var(--canvas);
+}
+
+.workspace-selector {
+  position: absolute;
+  z-index: 4;
+  top: 14px;
+  right: 18px;
+  display: grid;
+  grid-template-columns: auto minmax(150px, 220px);
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-selector label,
+.workspace-choice label {
+  color: var(--muted);
+  font-size: 0.69231rem;
+}
+
+.workspace-selector select,
+.workspace-choice select {
+  min-height: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--corner-control);
+  background: var(--field);
+  color: var(--text);
+  font: inherit;
+}
+
+.workspace-choice {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.workspace-choice .form-error,
+.workspace-selector .form-error {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .directory,
@@ -1144,6 +1185,21 @@ details[open] > :not(summary) {
 
   .workspace-frame .application-content {
     overflow: auto;
+  }
+
+  .workspace-selector {
+    position: relative;
+    top: auto;
+    right: auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--canvas);
+  }
+
+  .workspace-selector select {
+    min-width: 0;
+    width: 100%;
   }
 
   .workspace-sizing {

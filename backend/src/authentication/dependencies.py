@@ -26,6 +26,7 @@ def current_user(request: Request, session: Session) -> AuthenticatedUser | None
             display_name="Test Operator",
             display_email="test@example.invalid",
             session_id=0,
+            active_workspace_id=None,
         )
     return authenticated_user(session, request.cookies.get(settings.session_cookie_name))
 

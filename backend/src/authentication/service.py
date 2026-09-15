@@ -37,6 +37,8 @@ class EmailIdentity:
 class SessionTokens:
     session_token: str
     csrf_token: str
+    session_id: int
+    active_workspace_id: int | None
 
 
 @dataclass(frozen=True)
@@ -46,6 +48,7 @@ class AuthenticatedUser:
     display_name: str
     display_email: str
     session_id: int
+    active_workspace_id: int | None
 
 
 def utc_now() -> datetime:
@@ -178,22 +181,24 @@ def create_session(
     user: User,
     *,
     lifetime: timedelta,
+    active_workspace_id: int | None = None,
     now: datetime | None = None,
 ) -> SessionTokens:
     moment = now or utc_now()
     session_token = secrets.token_urlsafe(32)
     csrf_token = secrets.token_urlsafe(32)
-    session.add(
-        UserSession(
-            user_id=user.id,
-            token_hash=token_hash(session_token),
-            csrf_token_hash=token_hash(csrf_token),
-            password_version=user.password_version,
-            created_at=moment,
-            last_seen_at=moment,
-            expires_at=moment + lifetime,
-        )
+    stored_session = UserSession(
+        user_id=user.id,
+        token_hash=token_hash(session_token),
+        csrf_token_hash=token_hash(csrf_token),
+        password_version=user.password_version,
+        created_at=moment,
+        last_seen_at=moment,
+        expires_at=moment + lifetime,
+        active_workspace_id=active_workspace_id,
     )
+    session.add(stored_session)
+    session.flush()
     record_security_event(
         session,
         "login_succeeded",
@@ -201,7 +206,12 @@ def create_session(
         actor_label=user.display_name,
         details={"source": "http"},
     )
-    return SessionTokens(session_token=session_token, csrf_token=csrf_token)
+    return SessionTokens(
+        session_token=session_token,
+        csrf_token=csrf_token,
+        session_id=stored_session.id,
+        active_workspace_id=active_workspace_id,
+    )
 
 
 def authenticated_user(
@@ -238,6 +248,7 @@ def authenticated_user(
         display_name=user.display_name,
         display_email=user.display_email,
         session_id=stored_session.id,
+        active_workspace_id=stored_session.active_workspace_id,
     )
 
 

@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, EmailStr, Field
 
+from workspaces.schemas import WorkspaceContextRead
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -17,3 +19,4 @@ class AuthenticatedUserRead(BaseModel):
 class SessionRead(BaseModel):
     authenticated: bool
     user: AuthenticatedUserRead | None = None
+    workspace: WorkspaceContextRead | None = None

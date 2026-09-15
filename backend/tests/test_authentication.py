@@ -74,6 +74,7 @@ def test_email_login_protects_application_and_logout_revokes_session(tmp_path: P
         assert client.get("/api/auth/session").json() == {
             "authenticated": False,
             "user": None,
+            "workspace": None,
         }
 
         rejected = client.post("/api/auth/login", json=credentials(password="incorrect-password"))

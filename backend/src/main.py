@@ -29,7 +29,8 @@ from public_holidays.router import year_router as holiday_year_router
 from recovery import create_startup_backups
 from recovery import router as recovery_router
 from settings import Settings
-from workspaces.dependencies import require_workspace_request
+from workspaces.dependencies import require_operator_workspace_request
+from workspaces.router import router as workspace_router
 
 
 def create_app(
@@ -94,7 +95,8 @@ def create_app(
         )
 
     app.include_router(authentication_router)
-    protected = [Depends(require_workspace_request)]
+    app.include_router(workspace_router)
+    protected = [Depends(require_operator_workspace_request)]
     if runtime.uses_sqlite:
         app.include_router(recovery_router, dependencies=protected)
     app.include_router(consultant_router, dependencies=protected)
