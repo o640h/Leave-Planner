@@ -8,9 +8,10 @@ import { registerAccount } from './api'
 
 type RegistrationScreenProps = {
   onBack: (notice?: string) => void
+  invitationToken?: string
 }
 
-export function RegistrationScreen({ onBack }: RegistrationScreenProps) {
+export function RegistrationScreen({ onBack, invitationToken }: RegistrationScreenProps) {
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -44,7 +45,12 @@ export function RegistrationScreen({ onBack }: RegistrationScreenProps) {
     submissionInProgress.current = true
     setSubmitting(true)
     try {
-      const result = await registerAccount(displayName.trim(), email.trim(), password)
+      const result = await registerAccount(
+        displayName.trim(),
+        email.trim(),
+        password,
+        invitationToken,
+      )
       setPassword('')
       setConfirmation('')
       onBack(result.message)
@@ -68,7 +74,9 @@ export function RegistrationScreen({ onBack }: RegistrationScreenProps) {
               <div>
                 <h1 id="registration-title">Create Account</h1>
                 <p>
-                  Create your account first. You can join or create a workspace after signing in.
+                  {invitationToken
+                    ? 'Create and verify your account to accept this workspace invitation.'
+                    : 'Create your account first. You can join or create a workspace after signing in.'}
                 </p>
               </div>
               <span className="authentication-account">

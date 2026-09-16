@@ -15,8 +15,9 @@ The implemented flows are:
 - a reset changes the password and revokes every existing session and unused account-action token;
 - a signed-in account can confirm its password, request a change to a new address, confirm the new
   address, and receive a notification at the old address; confirmation revokes every session;
-- invitation tokens use the same seven-day, single-use storage model, ready for the membership slice,
-  but invitation delivery and acceptance are not exposed before that workflow exists.
+- workspace invitations use the same seven-day, single-use storage model; resending revokes the old
+  link, a signed-in recipient must match its canonical email, and a new recipient receives membership
+  only after completing account email verification.
 
 Verification and email-change links last 24 hours. Password-reset links last one hour. A newly issued
 link of the same type revokes the older unused link. Responses to public request endpoints are generic,

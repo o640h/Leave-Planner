@@ -140,7 +140,7 @@ describe('consultant directory', () => {
     render(<ApplicationWorkspace />)
     await user.click(screen.getByRole('button', { name: 'Settings' }))
 
-    expect(screen.getByRole('heading', { name: 'Workspace' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Appearance' }))
     expect(screen.getByRole('heading', { name: 'Appearance' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Appearance' })).toHaveAttribute(

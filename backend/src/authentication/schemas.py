@@ -22,6 +22,7 @@ class RegistrationRequest(BaseModel):
     display_name: str = Field(min_length=1, max_length=100)
     email: EmailStr
     password: str = Field(min_length=MINIMUM_PASSWORD_LENGTH, max_length=1024)
+    invitation_token: str | None = Field(default=None, min_length=32, max_length=512)
 
 
 class RegistrationConfigurationRead(BaseModel):

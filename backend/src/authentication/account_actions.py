@@ -219,6 +219,18 @@ def email_changed_notice(email: str) -> EmailMessage:
     )
 
 
+def invitation_message(email: str, workspace_name: str, role: str, link: str) -> EmailMessage:
+    return EmailMessage(
+        recipient=email,
+        subject=f"Join {workspace_name} In Leave Planner",
+        text=(
+            f"You have been invited to join {workspace_name} as a {role.title()}.\n\n"
+            f"{link}\n\nThis link expires in seven days and can be used once. "
+            "Use the email address that received this message."
+        ),
+    )
+
+
 __all__ = [
     "EMAIL_CHANGE",
     "EMAIL_CHANGE_LIFETIME",
@@ -234,6 +246,7 @@ __all__ = [
     "deliver_message",
     "email_change_message",
     "email_changed_notice",
+    "invitation_message",
     "issue_action",
     "password_reset_message",
     "revoke_user_actions",

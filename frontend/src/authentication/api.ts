@@ -14,10 +14,20 @@ export const logout = () => apiRequest<Session>('/api/auth/logout', { method: 'P
 export const getRegistrationConfiguration = () =>
   apiRequest<RegistrationConfiguration>('/api/auth/registration')
 
-export const registerAccount = (displayName: string, email: string, password: string) =>
+export const registerAccount = (
+  displayName: string,
+  email: string,
+  password: string,
+  invitationToken?: string,
+) =>
   apiRequest<{ message: string }>('/api/auth/registration', {
     method: 'POST',
-    body: JSON.stringify({ display_name: displayName, email, password }),
+    body: JSON.stringify({
+      display_name: displayName,
+      email,
+      password,
+      invitation_token: invitationToken,
+    }),
   })
 
 export const confirmEmailVerification = (token: string) =>

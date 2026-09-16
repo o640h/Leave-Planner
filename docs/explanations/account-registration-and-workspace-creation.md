@@ -16,8 +16,8 @@ Workspace** for an account that intentionally needs another workspace.
 `LEAVE_PLANNER_REGISTRATION_MODE` accepts:
 
 - `closed`: no public account-creation action or route;
-- `invitation_only`: no general account creation; the invitation-bound flow is added with membership
-  invitations; or
+- `invitation_only`: no general account creation, but a valid workspace invitation can start the
+  bound account-creation and verification flow; or
 - `open`: the sign-in page exposes **Create Account**.
 
 The default is `open` for local development and production. Invitation Only remains available for a
@@ -57,8 +57,8 @@ LEAVE_PLANNER_OWNED_WORKSPACE_LIMIT=3
 With the development outbox provider, submit **Create Account**, then read the verification URL from
 `http://localhost:5173/api/auth/development/email-outbox`. With Resend configured, use the link in
 the delivered message instead. After confirmation and sign-in, create the first workspace from
-onboarding. Open **Settings > Workspace** to create a second workspace and confirm the workspace
-selector can switch between them.
+onboarding. Open **Settings > Workspace** to create a second workspace, manage People and
+invitations, and confirm the global workspace selector can switch between active workspaces.
 
 The NAS deployment uses:
 

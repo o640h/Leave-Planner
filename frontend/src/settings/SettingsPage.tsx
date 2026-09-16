@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { WorkspaceContext } from '../authentication/types'
 import { HolidaySettingsPage } from '../publicHolidays/HolidaySettingsPage'
 import { AppIcon } from '../system/AppIcon'
+import { WorkspaceManagement } from '../workspaces/WorkspaceManagement'
 import { getThemePreference, saveThemePreference } from './theme'
 import type { ThemePreference } from './theme'
 import './settings.css'
@@ -18,39 +19,7 @@ const sections = [
 type SettingsPageProps = {
   workspace?: WorkspaceContext
   onCreateWorkspace?: () => void
-}
-
-function WorkspaceSettings({ workspace, onCreateWorkspace }: SettingsPageProps) {
-  const activeMembership = workspace?.memberships.find(
-    (membership) => membership.workspace_id === workspace.active_workspace_id,
-  )
-
-  return (
-    <section className="settings-section" aria-labelledby="workspace-settings-title">
-      <header className="settings-content-heading">
-        <span className="section-label">Account Access</span>
-        <h2 id="workspace-settings-title">Workspace</h2>
-      </header>
-
-      <section className="settings-panel workspace-settings-panel">
-        <header>
-          <div>
-            <h3>{activeMembership?.workspace_name ?? 'Current Workspace'}</h3>
-            <p>
-              {activeMembership
-                ? `Your role is ${activeMembership.role}.`
-                : 'Workspace details are unavailable.'}
-            </p>
-          </div>
-          {onCreateWorkspace ? (
-            <button className="button button--primary" type="button" onClick={onCreateWorkspace}>
-              Create Workspace
-            </button>
-          ) : null}
-        </header>
-      </section>
-    </section>
-  )
+  onWorkspaceContextChanged?: (context: WorkspaceContext) => void
 }
 
 function AppearanceSettings() {
@@ -130,7 +99,11 @@ function AppearanceSettings() {
   )
 }
 
-export function SettingsPage({ workspace, onCreateWorkspace }: SettingsPageProps) {
+export function SettingsPage({
+  workspace,
+  onCreateWorkspace,
+  onWorkspaceContextChanged,
+}: SettingsPageProps) {
   const [activeSection, setActiveSection] = useState<SettingsSection>('workspace')
 
   return (
@@ -160,7 +133,20 @@ export function SettingsPage({ workspace, onCreateWorkspace }: SettingsPageProps
 
       <div className="settings-content">
         {activeSection === 'workspace' ? (
-          <WorkspaceSettings workspace={workspace} onCreateWorkspace={onCreateWorkspace} />
+          onCreateWorkspace && onWorkspaceContextChanged ? (
+            <WorkspaceManagement
+              activeWorkspaceId={workspace?.active_workspace_id ?? null}
+              onCreateWorkspace={onCreateWorkspace}
+              onWorkspaceContextChanged={onWorkspaceContextChanged}
+            />
+          ) : (
+            <section className="settings-section" aria-labelledby="workspace-settings-title">
+              <header className="settings-content-heading">
+                <span className="section-label">Account Access</span>
+                <h2 id="workspace-settings-title">Workspaces</h2>
+              </header>
+            </section>
+          )
         ) : null}
         {activeSection === 'appearance' ? <AppearanceSettings /> : null}
         {activeSection === 'public-holidays' ? <HolidaySettingsPage /> : null}

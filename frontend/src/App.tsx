@@ -23,6 +23,7 @@ import { HealthStatus } from './system/HealthStatus'
 import { ProductIdentity } from './system/ProductIdentity'
 import { WorkspaceFrame } from './system/WorkspaceFrame'
 import { WorkspaceCreationDialog } from './workspaces/WorkspaceCreationDialog'
+import { acceptWorkspaceInvitation } from './workspaces/api'
 import { WorkspaceSelector } from './workspaces/WorkspaceSelector'
 
 type ApplicationWorkspaceProps = {
@@ -126,7 +127,11 @@ export function ApplicationWorkspace({
           {page === 'consultants' && <ConsultantDirectory />}
           {page === 'planning' && <PlanningPage />}
           {page === 'settings' && (
-            <SettingsPage workspace={workspace} onCreateWorkspace={onCreateWorkspace} />
+            <SettingsPage
+              workspace={workspace}
+              onCreateWorkspace={onCreateWorkspace}
+              onWorkspaceContextChanged={onWorkspaceSelected}
+            />
           )}
         </main>
       </div>
@@ -232,6 +237,11 @@ export function App() {
   const [retrying, setRetrying] = useState(false)
   const initialParameters = new URLSearchParams(window.location.search)
   const initialAction = initialParameters.get('action') as AccountActionMode | null
+  const [invitationToken, setInvitationToken] = useState<string | null>(
+    initialParameters.get('action') === 'accept-invitation'
+      ? (initialParameters.get('token') ?? '')
+      : null,
+  )
   const [accountAction, setAccountAction] = useState<{
     mode: AccountActionMode
     token?: string
@@ -275,6 +285,30 @@ export function App() {
       window.removeEventListener(SERVICE_UNAVAILABLE_EVENT, reportUnavailable)
     }
   }, [])
+
+  useEffect(() => {
+    if (!invitationToken || !session?.authenticated) return
+    let active = true
+    acceptWorkspaceInvitation(invitationToken)
+      .then((workspace) => {
+        if (!active) return
+        window.history.replaceState({}, '', window.location.pathname)
+        setInvitationToken(null)
+        setLoginNotice('Workspace invitation accepted.')
+        setSession((current) => (current ? { ...current, workspace } : current))
+      })
+      .catch((requestError) => {
+        if (!active) return
+        setLoginNotice(
+          requestError instanceof Error
+            ? requestError.message
+            : 'The workspace invitation could not be accepted.',
+        )
+      })
+    return () => {
+      active = false
+    }
+  }, [invitationToken, session?.authenticated])
 
   async function retryConnection() {
     setRetrying(true)
@@ -346,6 +380,7 @@ export function App() {
   if (registrationOpen) {
     return (
       <RegistrationScreen
+        invitationToken={invitationToken ?? undefined}
         onBack={(notice) => {
           setRegistrationOpen(false)
           if (notice) setLoginNotice(notice)
@@ -382,14 +417,22 @@ export function App() {
   if (!session.authenticated) {
     return (
       <LoginScreen
-        notice={loginNotice}
         onAuthenticated={(nextSession) => {
           setApplicationState('ready')
           setLoginNotice(null)
           setSession(nextSession)
         }}
         onForgotPassword={() => setAccountAction({ mode: 'forgot-password' })}
-        onRegister={registrationMode === 'open' ? () => setRegistrationOpen(true) : undefined}
+        onRegister={
+          registrationMode === 'open' || invitationToken
+            ? () => setRegistrationOpen(true)
+            : undefined
+        }
+        notice={
+          invitationToken
+            ? 'Sign in with the invited email address, or create an account to continue.'
+            : loginNotice
+        }
       />
     )
   }

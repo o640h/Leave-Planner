@@ -16,6 +16,7 @@ from authentication.service import (
 )
 
 from .models import (
+    ACTIVE_WORKSPACE,
     OWNER_ROLE,
     Workspace,
     WorkspaceMembership,
@@ -231,6 +232,7 @@ def memberships_for_user(session: Session, user_id: int) -> tuple[AvailableWorks
         select(WorkspaceMembership, Workspace)
         .join(Workspace, Workspace.id == WorkspaceMembership.workspace_id)
         .where(WorkspaceMembership.user_id == user_id)
+        .where(Workspace.status == ACTIVE_WORKSPACE)
         .order_by(Workspace.name, Workspace.id)
     )
     return tuple(
@@ -279,9 +281,12 @@ def membership_for_user(
 ) -> WorkspaceMembership | None:
     bind_account(session, user_id)
     return session.scalar(
-        select(WorkspaceMembership).where(
+        select(WorkspaceMembership)
+        .join(Workspace, Workspace.id == WorkspaceMembership.workspace_id)
+        .where(
             WorkspaceMembership.user_id == user_id,
             WorkspaceMembership.workspace_id == workspace_id,
+            Workspace.status == ACTIVE_WORKSPACE,
         )
     )
 

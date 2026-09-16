@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from dependencies import DatabaseSession
 from errors import ApiError
+from workspaces.management import accept_claimed_invitations, claim_invitation_for_registration
 
 from .account_actions import (
     EMAIL_CHANGE,
@@ -114,7 +115,7 @@ def register_account(
     session: DatabaseSession,
 ) -> MessageRead:
     validate_request_origin(request)
-    if runtime_settings(request).registration_mode != "open":
+    if runtime_settings(request).registration_mode != "open" and details.invitation_token is None:
         raise ApiError(
             status_code=403,
             code="registration_unavailable",
@@ -132,6 +133,20 @@ def register_account(
             password=details.password,
             actor_label="Self Registration",
         )
+
+    if details.invitation_token is not None and account.security_state == PENDING_VERIFICATION:
+        try:
+            claim_invitation_for_registration(
+                session,
+                raw_token=details.invitation_token,
+                account=account,
+            )
+        except ValueError as error:
+            raise ApiError(
+                status_code=400,
+                code="invalid_invitation",
+                message=str(error),
+            ) from error
 
     if account.security_state == PENDING_VERIFICATION and (created or matches):
         issued = issue_action(
@@ -177,6 +192,7 @@ def confirm_verification(
     account.email_verified_at = moment
     account.security_state = ACTIVE
     consume_action(action, now=moment)
+    accept_claimed_invitations(session, account)
     record_security_event(
         session,
         "email_verified",
