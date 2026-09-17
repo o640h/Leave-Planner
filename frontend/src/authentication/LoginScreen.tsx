@@ -2,7 +2,6 @@ import { FormEvent, useRef, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
 import { AppIcon } from '../system/AppIcon'
-import { HealthStatus } from '../system/HealthStatus'
 import { ProductIdentity } from '../system/ProductIdentity'
 import { login } from './api'
 import type { Session } from './types'
@@ -59,15 +58,15 @@ export function LoginScreen({
   return (
     <div className="application-frame authentication-frame">
       <main className="authentication-page">
-        <section className="authentication-panel" aria-labelledby="sign-in-title">
+        <section
+          className="authentication-panel authentication-panel--account authentication-panel--sign-in"
+          aria-labelledby="sign-in-title"
+        >
           <ProductIdentity />
 
           <div className="authentication-form-area">
             <header className="authentication-heading">
-              <div>
-                <h1 id="sign-in-title">Sign In</h1>
-                <p>Use the email address for your Leave Planner account.</p>
-              </div>
+              <h1 id="sign-in-title">Sign In</h1>
               <span className="authentication-account">
                 <AppIcon name="profile" />
                 Secure Account
@@ -80,39 +79,53 @@ export function LoginScreen({
               </p>
             ) : null}
 
-            <form noValidate onSubmit={submit}>
-              <label htmlFor="account-email">Email</label>
-              <input
-                id="account-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                autoFocus
-                value={email}
-                aria-invalid={error ? 'true' : undefined}
-                aria-describedby={errorRelationship}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-              <label htmlFor="account-password">Password</label>
-              <div className="authentication-password-control">
-                <input
-                  id="account-password"
-                  name="password"
-                  type={passwordVisible ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={password}
-                  aria-invalid={error ? 'true' : undefined}
-                  aria-describedby={errorRelationship}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-                <button
-                  className="authentication-password-toggle"
-                  type="button"
-                  aria-pressed={passwordVisible}
-                  onClick={() => setPasswordVisible((visible) => !visible)}
-                >
-                  {passwordVisible ? 'Hide' : 'Show'}
-                </button>
+            <form className="authentication-sign-in-form" noValidate onSubmit={submit}>
+              <div className="authentication-field">
+                <label htmlFor="account-email">
+                  <AppIcon name="email" />
+                  <span>Email</span>
+                </label>
+                <div className="authentication-input-control">
+                  <input
+                    id="account-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder=" "
+                    autoFocus
+                    value={email}
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={errorRelationship}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="authentication-field">
+                <label htmlFor="account-password">
+                  <AppIcon name="lock" />
+                  <span>Password</span>
+                </label>
+                <div className="authentication-input-control authentication-password-control">
+                  <input
+                    id="account-password"
+                    name="password"
+                    type={passwordVisible ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder=" "
+                    value={password}
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={errorRelationship}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                  <button
+                    className="authentication-password-toggle"
+                    type="button"
+                    aria-pressed={passwordVisible}
+                    onClick={() => setPasswordVisible((visible) => !visible)}
+                  >
+                    {passwordVisible ? 'Hide' : 'Show'}
+                  </button>
+                </div>
               </div>
               {error ? (
                 <p className="authentication-error" id="sign-in-error" role="alert">
@@ -134,8 +147,6 @@ export function LoginScreen({
                 </button>
               ) : null}
             </div>
-
-            <HealthStatus />
           </div>
         </section>
       </main>

@@ -335,7 +335,7 @@ export function ConsultantDirectory() {
         <ModalLayer onClose={cancelEditing}>
           <div className="modal-backdrop">
             <section
-              className="record-modal"
+              className="record-modal record-modal--lined"
               role="dialog"
               aria-modal="true"
               aria-labelledby="consultant-form-title"

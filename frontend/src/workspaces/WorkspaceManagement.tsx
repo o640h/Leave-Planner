@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
 import type { WorkspaceContext } from '../authentication/types'
+import { ModalLayer } from '../system/ModalLayer'
+import { SelectMenu } from '../system/SelectMenu'
 import {
   acceptOwnershipTransfer,
   closeWorkspace,
@@ -64,38 +66,44 @@ function PersonControls({
 
   return (
     <li className="workspace-person-row">
-      <div>
+      <div className="workspace-person-identity">
         <strong>{person.display_name}</strong>
         <span>{person.display_email}</span>
       </div>
-      <span className={`workspace-role workspace-role--${person.role}`}>{person.role}</span>
+      <div className="workspace-person-access">
+        <span className={`workspace-role workspace-role--${person.role}`}>{person.role}</span>
+        {!currentUserCanChange ? (
+          person.linked_consultant_name ? (
+            <span className="workspace-person-link">{person.linked_consultant_name}</span>
+          ) : null
+        ) : null}
+      </div>
       {currentUserCanChange ? (
-        <>
+        <div className="workspace-person-controls">
           {management.current_role === 'owner' ? (
-            <select
-              aria-label={`Role For ${person.display_name}`}
+            <SelectMenu
+              ariaLabel={`Role For ${person.display_name}`}
               value={role}
               disabled={busy}
-              onChange={(event) => setRole(event.target.value as 'admin' | 'member')}
-            >
-              <option value="admin">Admin</option>
-              <option value="member">Member</option>
-            </select>
+              options={[
+                { value: 'admin', label: 'Admin' },
+                { value: 'member', label: 'Member' },
+              ]}
+              onChange={(nextRole) => setRole(nextRole as 'admin' | 'member')}
+            />
           ) : null}
           {role === 'member' ? (
-            <select
-              aria-label={`Consultant For ${person.display_name}`}
+            <SelectMenu
+              ariaLabel={`Consultant For ${person.display_name}`}
               value={consultantId}
               disabled={busy}
-              onChange={(event) => setConsultantId(event.target.value)}
-            >
-              <option value="">Choose Consultant</option>
-              {management.consultants.map((consultant) => (
-                <option key={consultant.consultant_id} value={consultant.consultant_id}>
-                  {consultant.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Choose Consultant"
+              options={management.consultants.map((consultant) => ({
+                value: consultant.consultant_id.toString(),
+                label: consultant.name,
+              }))}
+              onChange={setConsultantId}
+            />
           ) : null}
           <button
             className="button button--quiet"
@@ -123,13 +131,76 @@ function PersonControls({
               Transfer Ownership
             </button>
           ) : null}
-        </>
-      ) : (
-        <span className="workspace-person-link">
-          {person.linked_consultant_name ?? 'Full Workspace Access'}
-        </span>
-      )}
+        </div>
+      ) : null}
     </li>
+  )
+}
+
+function MemberRemovalDialog({
+  person,
+  workspaceName,
+  busy,
+  onConfirm,
+  onCancel,
+}: {
+  person: WorkspacePerson
+  workspaceName: string
+  busy: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  const close = () => {
+    if (!busy) onCancel()
+  }
+
+  return (
+    <ModalLayer onClose={close}>
+      <div className="modal-backdrop">
+        <section
+          className="record-modal removal-modal member-removal-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="member-removal-title"
+          tabIndex={-1}
+        >
+          <button
+            className="modal-close"
+            type="button"
+            aria-label="Close Member Removal"
+            disabled={busy}
+            onClick={close}
+          >
+            x
+          </button>
+          <header>
+            <h2 id="member-removal-title">Remove Workspace Member</h2>
+            <p>{workspaceName}</p>
+          </header>
+          <div className="member-removal-summary">
+            <strong>{person.display_name}</strong>
+            <span>{person.display_email}</span>
+          </div>
+          <p className="member-removal-warning">
+            This person will immediately lose access to this workspace. Their linked consultant
+            record and leave data will not be deleted.
+          </p>
+          <footer className="form-actions">
+            <button className="button button--quiet" type="button" disabled={busy} onClick={close}>
+              Cancel
+            </button>
+            <button
+              className="button button--danger"
+              type="button"
+              disabled={busy}
+              onClick={onConfirm}
+            >
+              {busy ? 'Removing...' : 'Remove Member'}
+            </button>
+          </footer>
+        </section>
+      </div>
+    </ModalLayer>
   )
 }
 
@@ -149,6 +220,7 @@ export function WorkspaceManagement({
   const [confirmation, setConfirmation] = useState('')
   const [password, setPassword] = useState('')
   const [dangerOpen, setDangerOpen] = useState(false)
+  const [memberPendingRemoval, setMemberPendingRemoval] = useState<WorkspacePerson | null>(null)
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -199,6 +271,7 @@ export function WorkspaceManagement({
     setError(null)
     setNotice(null)
     setDangerOpen(false)
+    setMemberPendingRemoval(null)
     setImpact(null)
     try {
       const details = await getWorkspaceManagement(workspaceId)
@@ -222,11 +295,23 @@ export function WorkspaceManagement({
       setNotice(message)
       const items = await listManagedWorkspaces()
       setWorkspaces(items)
+      return true
     } catch (requestError) {
       setError(operatorErrorMessage(requestError))
+      return false
     } finally {
       setBusy(false)
     }
+  }
+
+  async function confirmMemberRemoval() {
+    if (!management || !memberPendingRemoval) return
+    const person = memberPendingRemoval
+    const removed = await runMutation(
+      () => removeWorkspaceMember(management.workspace_id, person.membership_id),
+      `${person.display_name} removed.`,
+    )
+    if (removed) setMemberPendingRemoval(null)
   }
 
   async function submitRename(event: FormEvent<HTMLFormElement>) {
@@ -334,6 +419,10 @@ export function WorkspaceManagement({
 
       <div className="workspace-management-layout">
         <aside className="workspace-list" aria-label="Your Workspaces">
+          <div className="workspace-list-heading">
+            <span>Managed Workspaces</span>
+            <strong>{workspaces.length}</strong>
+          </div>
           {workspaces.map((workspace) => (
             <button
               key={workspace.workspace_id}
@@ -371,13 +460,15 @@ export function WorkspaceManagement({
                 </header>
                 {management.status === 'active' && management.current_role === 'owner' ? (
                   <form className="workspace-inline-form" noValidate onSubmit={submitRename}>
-                    <label htmlFor="workspace-name">Workspace Name</label>
-                    <input
-                      id="workspace-name"
-                      value={name}
-                      maxLength={160}
-                      onChange={(event) => setName(event.target.value)}
-                    />
+                    <div className="workspace-form-field">
+                      <label htmlFor="workspace-name">Workspace Name</label>
+                      <input
+                        id="workspace-name"
+                        value={name}
+                        maxLength={160}
+                        onChange={(event) => setName(event.target.value)}
+                      />
+                    </div>
                     <button
                       className="button button--quiet"
                       type="submit"
@@ -443,16 +534,7 @@ export function WorkspaceManagement({
                               `${target.display_name} updated.`,
                             )
                           }
-                          onRemoved={(target) =>
-                            runMutation(
-                              () =>
-                                removeWorkspaceMember(
-                                  management.workspace_id,
-                                  target.membership_id,
-                                ),
-                              `${target.display_name} removed.`,
-                            )
-                          }
+                          onRemoved={setMemberPendingRemoval}
                           onTransfer={(target) =>
                             runMutation(
                               () =>
@@ -476,45 +558,43 @@ export function WorkspaceManagement({
                       </div>
                     </header>
                     <form className="workspace-invite-form" noValidate onSubmit={submitInvitation}>
-                      <label htmlFor="workspace-invite-email">Email</label>
-                      <input
-                        id="workspace-invite-email"
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(event) => setInviteEmail(event.target.value)}
-                      />
-                      <label htmlFor="workspace-invite-role">Role</label>
-                      <select
-                        id="workspace-invite-role"
-                        value={inviteRole}
-                        onChange={(event) =>
-                          setInviteRole(event.target.value as 'admin' | 'member')
-                        }
-                      >
-                        {management.current_role === 'owner' ? (
-                          <option value="admin">Admin</option>
-                        ) : null}
-                        <option value="member">Member</option>
-                      </select>
+                      <div className="workspace-form-field workspace-form-field--email">
+                        <label htmlFor="workspace-invite-email">Email</label>
+                        <input
+                          id="workspace-invite-email"
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(event) => setInviteEmail(event.target.value)}
+                        />
+                      </div>
+                      <div className="workspace-form-field">
+                        <label htmlFor="workspace-invite-role">Role</label>
+                        <SelectMenu
+                          id="workspace-invite-role"
+                          value={inviteRole}
+                          options={[
+                            ...(management.current_role === 'owner'
+                              ? [{ value: 'admin', label: 'Admin' }]
+                              : []),
+                            { value: 'member', label: 'Member' },
+                          ]}
+                          onChange={(nextRole) => setInviteRole(nextRole as 'admin' | 'member')}
+                        />
+                      </div>
                       {inviteRole === 'member' ? (
-                        <>
+                        <div className="workspace-form-field">
                           <label htmlFor="workspace-invite-consultant">Consultant</label>
-                          <select
+                          <SelectMenu
                             id="workspace-invite-consultant"
                             value={inviteConsultantId}
-                            onChange={(event) => setInviteConsultantId(event.target.value)}
-                          >
-                            <option value="">Choose Consultant</option>
-                            {management.consultants.map((consultant) => (
-                              <option
-                                key={consultant.consultant_id}
-                                value={consultant.consultant_id}
-                              >
-                                {consultant.name}
-                              </option>
-                            ))}
-                          </select>
-                        </>
+                            placeholder="Choose Consultant"
+                            options={management.consultants.map((consultant) => ({
+                              value: consultant.consultant_id.toString(),
+                              label: consultant.name,
+                            }))}
+                            onChange={setInviteConsultantId}
+                          />
+                        </div>
                       ) : null}
                       <button
                         className="button button--primary"
@@ -532,47 +612,49 @@ export function WorkspaceManagement({
                       <ul className="workspace-invitation-list">
                         {management.invitations.map((invitation) => (
                           <li key={invitation.invitation_id}>
-                            <div>
+                            <div className="workspace-invitation-identity">
                               <strong>{invitation.display_email}</strong>
                               <span>
                                 {invitation.role} · Expires{' '}
                                 {new Date(invitation.expires_at).toLocaleDateString()}
                               </span>
                             </div>
-                            <button
-                              className="button button--quiet"
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                runMutation(
-                                  () =>
-                                    resendWorkspaceInvitation(
-                                      management.workspace_id,
-                                      invitation.invitation_id,
-                                    ),
-                                  'Invitation resent.',
-                                )
-                              }
-                            >
-                              Resend
-                            </button>
-                            <button
-                              className="button button--danger"
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                runMutation(
-                                  () =>
-                                    revokeWorkspaceInvitation(
-                                      management.workspace_id,
-                                      invitation.invitation_id,
-                                    ),
-                                  'Invitation revoked.',
-                                )
-                              }
-                            >
-                              Revoke
-                            </button>
+                            <div className="workspace-invitation-actions">
+                              <button
+                                className="button button--quiet"
+                                type="button"
+                                disabled={busy}
+                                onClick={() =>
+                                  runMutation(
+                                    () =>
+                                      resendWorkspaceInvitation(
+                                        management.workspace_id,
+                                        invitation.invitation_id,
+                                      ),
+                                    'Invitation resent.',
+                                  )
+                                }
+                              >
+                                Resend
+                              </button>
+                              <button
+                                className="button button--danger"
+                                type="button"
+                                disabled={busy}
+                                onClick={() =>
+                                  runMutation(
+                                    () =>
+                                      revokeWorkspaceInvitation(
+                                        management.workspace_id,
+                                        invitation.invitation_id,
+                                      ),
+                                    'Invitation revoked.',
+                                  )
+                                }
+                              >
+                                Revoke
+                              </button>
+                            </div>
                           </li>
                         ))}
                       </ul>
@@ -594,13 +676,15 @@ export function WorkspaceManagement({
                     </div>
                   </header>
                   <div className="workspace-inline-form">
-                    <label htmlFor="workspace-recovery-password">Password</label>
-                    <input
-                      id="workspace-recovery-password"
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
+                    <div className="workspace-form-field">
+                      <label htmlFor="workspace-recovery-password">Password</label>
+                      <input
+                        id="workspace-recovery-password"
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                      />
+                    </div>
                     <button
                       className="button button--primary"
                       type="button"
@@ -629,6 +713,9 @@ export function WorkspaceManagement({
                       </span>
                     </li>
                   ))}
+                  {management.recent_events.length === 0 ? (
+                    <li className="workspace-event-empty">No recent workspace changes.</li>
+                  ) : null}
                 </ol>
               </section>
 
@@ -657,16 +744,18 @@ export function WorkspaceManagement({
                           ? 'This empty workspace will be deleted immediately.'
                           : `This workspace contains ${impact.consultants} consultant record${impact.consultants === 1 ? '' : 's'} and will be closed for 30 days.`}
                       </p>
-                      <label htmlFor="workspace-confirmation">
-                        Type {management.workspace_name} To Confirm
-                      </label>
-                      <input
-                        id="workspace-confirmation"
-                        value={confirmation}
-                        onChange={(event) => setConfirmation(event.target.value)}
-                      />
+                      <div className="workspace-form-field">
+                        <label htmlFor="workspace-confirmation">
+                          Type {management.workspace_name} To Confirm
+                        </label>
+                        <input
+                          id="workspace-confirmation"
+                          value={confirmation}
+                          onChange={(event) => setConfirmation(event.target.value)}
+                        />
+                      </div>
                       {!impact.can_delete_immediately ? (
-                        <>
+                        <div className="workspace-form-field">
                           <label htmlFor="workspace-close-password">Password</label>
                           <input
                             id="workspace-close-password"
@@ -674,7 +763,7 @@ export function WorkspaceManagement({
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
                           />
-                        </>
+                        </div>
                       ) : null}
                       <button
                         className="button button--danger"
@@ -695,6 +784,15 @@ export function WorkspaceManagement({
           ) : null}
         </div>
       </div>
+      {memberPendingRemoval && management ? (
+        <MemberRemovalDialog
+          person={memberPendingRemoval}
+          workspaceName={management.workspace_name}
+          busy={busy}
+          onConfirm={() => void confirmMemberRemoval()}
+          onCancel={() => setMemberPendingRemoval(null)}
+        />
+      ) : null}
     </section>
   )
 }

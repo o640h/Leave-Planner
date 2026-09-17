@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
-import { HealthStatus } from '../system/HealthStatus'
+import { AppIcon } from '../system/AppIcon'
 import { ProductIdentity } from '../system/ProductIdentity'
 import {
   confirmEmailChange,
@@ -21,26 +21,21 @@ type AccountActionScreenProps = {
   onBack: (notice?: string) => void
 }
 
-const modeCopy: Record<AccountActionMode, { title: string; description: string }> = {
+const modeCopy: Record<AccountActionMode, { title: string }> = {
   'forgot-password': {
     title: 'Reset Password',
-    description: 'Enter your account email and we will send the next step.',
   },
   'reset-password': {
     title: 'Choose New Password',
-    description: 'Use the secure link from your password-reset email.',
   },
   'verify-email': {
     title: 'Confirm Email',
-    description: 'Complete verification for your Leave Planner account.',
   },
   'confirm-email': {
     title: 'Confirm New Email',
-    description: 'Complete the requested change to your sign-in email.',
   },
   'change-email': {
     title: 'Change Email',
-    description: 'Confirm your password and enter the new sign-in address.',
   },
 }
 
@@ -113,14 +108,18 @@ export function AccountActionScreen({
   return (
     <div className="application-frame authentication-frame">
       <main className="authentication-page">
-        <section className="authentication-panel" aria-labelledby="account-action-title">
+        <section
+          className="authentication-panel authentication-panel--account authentication-panel--account-action"
+          aria-labelledby="account-action-title"
+        >
           <ProductIdentity />
           <div className="authentication-form-area">
             <header className="authentication-heading">
-              <div>
-                <h1 id="account-action-title">{copy.title}</h1>
-                <p>{copy.description}</p>
-              </div>
+              <h1 id="account-action-title">{copy.title}</h1>
+              <span className="authentication-account">
+                <AppIcon name="profile" />
+                Secure Account
+              </span>
             </header>
 
             {currentEmail ? (
@@ -133,46 +132,62 @@ export function AccountActionScreen({
             ) : null}
 
             {!completedAccountChange ? (
-              <form noValidate onSubmit={submit}>
+              <form className="authentication-account-form" noValidate onSubmit={submit}>
                 {requestsEmail || changesEmail ? (
-                  <>
-                    <label htmlFor="action-email">{changesEmail ? 'New Email' : 'Email'}</label>
-                    <input
-                      id="action-email"
-                      type="email"
-                      autoComplete="email"
-                      autoFocus
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                    />
-                  </>
+                  <div className="authentication-field">
+                    <label htmlFor="action-email">
+                      <AppIcon name="email" />
+                      <span>{changesEmail ? 'New Email' : 'Email'}</span>
+                    </label>
+                    <div className="authentication-input-control">
+                      <input
+                        id="action-email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder=" "
+                        autoFocus
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                      />
+                    </div>
+                  </div>
                 ) : null}
                 {changesEmail || resetsPassword ? (
-                  <>
+                  <div className="authentication-field">
                     <label htmlFor="action-password">
-                      {resetsPassword ? 'New Password' : 'Current Password'}
+                      <AppIcon name="lock" />
+                      <span>{resetsPassword ? 'New Password' : 'Current Password'}</span>
                     </label>
-                    <input
-                      id="action-password"
-                      type="password"
-                      autoComplete={resetsPassword ? 'new-password' : 'current-password'}
-                      autoFocus={!requestsEmail && !changesEmail}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
-                  </>
+                    <div className="authentication-input-control">
+                      <input
+                        id="action-password"
+                        type="password"
+                        autoComplete={resetsPassword ? 'new-password' : 'current-password'}
+                        placeholder=" "
+                        autoFocus={!requestsEmail && !changesEmail}
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                      />
+                    </div>
+                  </div>
                 ) : null}
                 {resetsPassword ? (
-                  <>
-                    <label htmlFor="action-password-confirmation">Confirm New Password</label>
-                    <input
-                      id="action-password-confirmation"
-                      type="password"
-                      autoComplete="new-password"
-                      value={confirmation}
-                      onChange={(event) => setConfirmation(event.target.value)}
-                    />
-                  </>
+                  <div className="authentication-field">
+                    <label htmlFor="action-password-confirmation">
+                      <AppIcon name="lock" />
+                      <span>Confirm New Password</span>
+                    </label>
+                    <div className="authentication-input-control">
+                      <input
+                        id="action-password-confirmation"
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder=" "
+                        value={confirmation}
+                        onChange={(event) => setConfirmation(event.target.value)}
+                      />
+                    </div>
+                  </div>
                 ) : null}
                 {error ? (
                   <p className="authentication-error" role="alert">
@@ -198,7 +213,6 @@ export function AccountActionScreen({
                 {currentEmail && !completedAccountChange ? 'Back To Account' : 'Back To Sign In'}
               </button>
             </div>
-            <HealthStatus />
           </div>
         </section>
       </main>

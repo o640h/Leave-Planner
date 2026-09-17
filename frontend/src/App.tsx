@@ -5,6 +5,7 @@ import {
   AUTHORIZATION_DENIED_EVENT,
   SERVICE_UNAVAILABLE_EVENT,
 } from './api/client'
+import { AccountDialog } from './account/AccountPage'
 import { getRegistrationConfiguration, getSession, logout } from './authentication/api'
 import { AccountActionScreen, type AccountActionMode } from './authentication/AccountActionScreen'
 import { LoginScreen } from './authentication/LoginScreen'
@@ -17,14 +18,17 @@ import type {
 } from './authentication/types'
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
 import { PlanningPage } from './planning/PlanningPage'
-import { SettingsPage } from './settings/SettingsPage'
+import { SettingsPage, type SettingsSection } from './settings/SettingsPage'
 import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
 import { ProductIdentity } from './system/ProductIdentity'
 import { WorkspaceFrame } from './system/WorkspaceFrame'
 import { WorkspaceCreationDialog } from './workspaces/WorkspaceCreationDialog'
+import { WorkspaceSelectionDialog } from './workspaces/WorkspaceSelectionDialog'
 import { acceptWorkspaceInvitation } from './workspaces/api'
 import { WorkspaceSelector } from './workspaces/WorkspaceSelector'
+
+const layersIconUrl = '/layers-2.svg'
 
 type ApplicationWorkspaceProps = {
   user?: AuthenticatedUser
@@ -32,9 +36,13 @@ type ApplicationWorkspaceProps = {
   signOutError?: string | null
   workspace?: WorkspaceContext
   onWorkspaceSelected?: (context: WorkspaceContext) => void
-  onManageAccount?: () => void
   onCreateWorkspace?: () => void
+  initialPage?: ApplicationPage
+  initialSettingsSection?: SettingsSection
+  initialAccountOpen?: boolean
 }
+
+export type ApplicationPage = 'consultants' | 'planning' | 'settings'
 
 export function ApplicationWorkspace({
   user,
@@ -42,10 +50,16 @@ export function ApplicationWorkspace({
   signOutError,
   workspace,
   onWorkspaceSelected,
-  onManageAccount,
   onCreateWorkspace,
+  initialPage = 'consultants',
+  initialSettingsSection = 'workspace',
+  initialAccountOpen = false,
 }: ApplicationWorkspaceProps) {
-  const [page, setPage] = useState<'consultants' | 'planning' | 'settings'>('consultants')
+  const [page, setPage] = useState<ApplicationPage>(initialPage)
+  const [accountOpen, setAccountOpen] = useState(initialAccountOpen)
+  const [accountCloseRequested, setAccountCloseRequested] = useState(false)
+  const [workspaceSelectionOpen, setWorkspaceSelectionOpen] = useState(false)
+  const [workspaceSelectionCloseRequested, setWorkspaceSelectionCloseRequested] = useState(false)
 
   return (
     <WorkspaceFrame>
@@ -89,15 +103,49 @@ export function ApplicationWorkspace({
           </nav>
 
           <div className="rail-footer">
+            {workspace && workspace.memberships.length > 1 && onWorkspaceSelected ? (
+              <button
+                className={`navigation-item workspace-switcher-control${
+                  workspaceSelectionOpen ? ' navigation-item--active' : ''
+                }`}
+                type="button"
+                title="Switch Workspace"
+                aria-expanded={workspaceSelectionOpen}
+                onClick={() => {
+                  if (workspaceSelectionOpen) {
+                    setWorkspaceSelectionCloseRequested(true)
+                  } else {
+                    setWorkspaceSelectionCloseRequested(false)
+                    setWorkspaceSelectionOpen(true)
+                  }
+                }}
+              >
+                <img
+                  className="workspace-switcher-symbol"
+                  src={layersIconUrl}
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span className="visually-hidden">Switch Workspace</span>
+              </button>
+            ) : null}
             {user ? (
               <button
-                className="account-indicator"
+                className={`account-indicator${accountOpen ? ' account-indicator--active' : ''}`}
                 type="button"
-                title={`Change Email For ${user.display_name}`}
-                onClick={onManageAccount}
+                title="Account"
+                aria-expanded={accountOpen}
+                onClick={() => {
+                  if (accountOpen) {
+                    setAccountCloseRequested(true)
+                  } else {
+                    setAccountCloseRequested(false)
+                    setAccountOpen(true)
+                  }
+                }}
               >
                 <AppIcon name="profile" />
-                <span className="visually-hidden">Change Email For {user.display_name}</span>
+                <span className="visually-hidden">Account</span>
               </button>
             ) : null}
             {onSignOut ? (
@@ -116,25 +164,46 @@ export function ApplicationWorkspace({
         </aside>
 
         <main className="application-content">
-          {workspace && workspace.memberships.length > 1 && onWorkspaceSelected ? (
-            <WorkspaceSelector context={workspace} onSelected={onWorkspaceSelected} />
-          ) : null}
           {signOutError ? (
             <p className="application-notice" role="alert">
               {signOutError}
             </p>
           ) : null}
-          {page === 'consultants' && <ConsultantDirectory />}
-          {page === 'planning' && <PlanningPage />}
-          {page === 'settings' && (
-            <SettingsPage
-              workspace={workspace}
-              onCreateWorkspace={onCreateWorkspace}
-              onWorkspaceContextChanged={onWorkspaceSelected}
-            />
-          )}
+          <div className="application-view">
+            {page === 'consultants' && <ConsultantDirectory />}
+            {page === 'planning' && <PlanningPage />}
+            {page === 'settings' && (
+              <SettingsPage
+                workspace={workspace}
+                onCreateWorkspace={onCreateWorkspace}
+                onWorkspaceContextChanged={onWorkspaceSelected}
+                initialSection={initialSettingsSection}
+              />
+            )}
+          </div>
         </main>
       </div>
+      {accountOpen && user ? (
+        <AccountDialog
+          user={user}
+          closeRequested={accountCloseRequested}
+          onClose={() => {
+            setAccountOpen(false)
+            setAccountCloseRequested(false)
+          }}
+        />
+      ) : null}
+      {workspaceSelectionOpen && workspace && onWorkspaceSelected ? (
+        <WorkspaceSelectionDialog
+          context={workspace}
+          closeRequested={workspaceSelectionCloseRequested}
+          onClose={() => {
+            setWorkspaceSelectionOpen(false)
+            setWorkspaceSelectionCloseRequested(false)
+          }}
+          onSelected={onWorkspaceSelected}
+        />
+      ) : null}
     </WorkspaceFrame>
   )
 }
@@ -148,7 +217,7 @@ type ApplicationStatusProps = {
   onCreateWorkspace?: () => void
 }
 
-function ApplicationStatus({
+export function ApplicationStatus({
   kind,
   busy = false,
   onRetry,
@@ -162,20 +231,20 @@ function ApplicationStatus({
     : kind === 'onboarding'
       ? 'No Workspace Yet'
       : kind === 'member'
-        ? 'Member Workspace'
+        ? 'Workspace Joined'
         : 'Workspace Access Unavailable'
   const message = unavailable
     ? 'Leave Planner could not reach the server. Check the connection and try again.'
     : kind === 'onboarding'
       ? 'This account does not currently belong to a workspace. You can create one now or sign out.'
       : kind === 'member'
-        ? 'Your membership is active. The read-only consultant workspace will be enabled separately.'
+        ? 'Your invitation has been accepted. Access to consultant records for Members is not available yet.'
         : 'Your account is signed in but does not currently have access to the selected workspace.'
   return (
     <div className="application-frame authentication-frame">
       <main className="application-status-page">
         <section
-          className="authentication-panel application-status-panel"
+          className="authentication-panel authentication-panel--account application-status-panel"
           aria-labelledby="application-status-title"
         >
           <ProductIdentity />
@@ -216,6 +285,62 @@ function ApplicationStatus({
                   Change Email
                 </button>
               ) : null}
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  )
+}
+
+export function ApplicationLoading() {
+  return (
+    <div className="application-frame authentication-frame">
+      <main className="application-status-page">
+        <section
+          className="authentication-panel authentication-panel--account application-status-panel application-status-panel--loading"
+          aria-labelledby="application-loading-title"
+        >
+          <ProductIdentity />
+          <div className="application-status-content" role="status">
+            <div className="application-status-mark" aria-hidden="true">
+              <AppIcon name="server" />
+            </div>
+            <h1 id="application-loading-title">Connecting</h1>
+          </div>
+        </section>
+      </main>
+    </div>
+  )
+}
+
+type WorkspaceSelectionScreenProps = {
+  workspace: WorkspaceContext
+  onSelected: (context: WorkspaceContext) => void
+  onSignOut: () => void
+}
+
+export function WorkspaceSelectionScreen({
+  workspace,
+  onSelected,
+  onSignOut,
+}: WorkspaceSelectionScreenProps) {
+  return (
+    <div className="application-frame authentication-frame">
+      <main className="application-status-page">
+        <section
+          className="authentication-panel authentication-panel--account application-status-panel"
+          aria-labelledby="workspace-selection-title"
+        >
+          <ProductIdentity />
+          <div className="application-status-content">
+            <h1 id="workspace-selection-title">Choose Workspace</h1>
+            <p>Select the workspace you want to open.</p>
+            <WorkspaceSelector context={workspace} required onSelected={onSelected} />
+            <div className="application-status-actions">
+              <button className="button button--quiet" type="button" onClick={onSignOut}>
+                Sign Out
+              </button>
             </div>
           </div>
         </section>
@@ -394,24 +519,7 @@ export function App() {
   }
 
   if (session === null) {
-    return (
-      <div className="application-frame authentication-frame">
-        <main className="application-status-page">
-          <section
-            className="authentication-panel application-status-panel application-status-panel--loading"
-            aria-labelledby="application-loading-title"
-          >
-            <ProductIdentity />
-            <div className="application-status-content" role="status">
-              <div className="application-status-mark" aria-hidden="true">
-                <AppIcon name="server" />
-              </div>
-              <h1 id="application-loading-title">Connecting</h1>
-            </div>
-          </section>
-        </main>
-      </div>
-    )
+    return <ApplicationLoading />
   }
 
   if (!session.authenticated) {
@@ -459,34 +567,13 @@ export function App() {
 
   if (workspace.state === 'selection_required') {
     return (
-      <div className="application-frame authentication-frame">
-        <main className="application-status-page">
-          <section
-            className="authentication-panel application-status-panel"
-            aria-labelledby="workspace-selection-title"
-          >
-            <ProductIdentity />
-            <div className="application-status-content">
-              <h1 id="workspace-selection-title">Choose Workspace</h1>
-              <p>Select the workspace you want to open.</p>
-              <WorkspaceSelector
-                context={workspace}
-                required
-                onSelected={(nextWorkspace) =>
-                  setSession((current) =>
-                    current ? { ...current, workspace: nextWorkspace } : current,
-                  )
-                }
-              />
-              <div className="application-status-actions">
-                <button className="button button--quiet" type="button" onClick={signOut}>
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
+      <WorkspaceSelectionScreen
+        workspace={workspace}
+        onSelected={(nextWorkspace) =>
+          setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
+        }
+        onSignOut={signOut}
+      />
     )
   }
 
@@ -532,7 +619,6 @@ export function App() {
         onWorkspaceSelected={(nextWorkspace) =>
           setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
         }
-        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
         onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
       />
       {workspaceCreationOpen ? (

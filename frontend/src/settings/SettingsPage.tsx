@@ -1,110 +1,34 @@
 import { useState } from 'react'
 
 import type { WorkspaceContext } from '../authentication/types'
+import { PolicySettingsPage } from '../policies/PolicySettingsPage'
 import { HolidaySettingsPage } from '../publicHolidays/HolidaySettingsPage'
 import { AppIcon } from '../system/AppIcon'
 import { WorkspaceManagement } from '../workspaces/WorkspaceManagement'
-import { getThemePreference, saveThemePreference } from './theme'
-import type { ThemePreference } from './theme'
 import './settings.css'
 
-type SettingsSection = 'workspace' | 'appearance' | 'public-holidays'
+export type SettingsSection = 'workspace' | 'public-holidays' | 'policy'
 
 const sections = [
   { id: 'workspace', label: 'Workspace', icon: 'profile' },
-  { id: 'appearance', label: 'Appearance', icon: 'appearance' },
   { id: 'public-holidays', label: 'Public Holidays', icon: 'calendar' },
+  { id: 'policy', label: 'Policy & Guidance', icon: 'document' },
 ] as const
 
 type SettingsPageProps = {
   workspace?: WorkspaceContext
   onCreateWorkspace?: () => void
   onWorkspaceContextChanged?: (context: WorkspaceContext) => void
-}
-
-function AppearanceSettings() {
-  const [theme, setTheme] = useState<ThemePreference>(getThemePreference)
-
-  function selectTheme(nextTheme: ThemePreference) {
-    setTheme(nextTheme)
-    saveThemePreference(nextTheme)
-  }
-
-  return (
-    <section className="settings-section" aria-labelledby="appearance-title">
-      <header className="settings-content-heading">
-        <span className="section-label">Interface</span>
-        <h2 id="appearance-title">Appearance</h2>
-      </header>
-
-      <section className="settings-panel appearance-panel">
-        <header>
-          <div>
-            <h3>Theme</h3>
-            <p>Choose how Leave Planner is displayed.</p>
-          </div>
-        </header>
-        <div className="theme-options" role="group" aria-label="Theme">
-          <button
-            className={`theme-option${theme === 'dark' ? ' theme-option--selected' : ''}`}
-            type="button"
-            aria-pressed={theme === 'dark'}
-            onClick={() => selectTheme('dark')}
-          >
-            <span className="theme-preview theme-preview--dark" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span>
-              <strong>Dark</strong>
-              <small>{theme === 'dark' ? 'Selected' : ''}</small>
-            </span>
-          </button>
-          <button
-            className={`theme-option${theme === 'light' ? ' theme-option--selected' : ''}`}
-            type="button"
-            aria-pressed={theme === 'light'}
-            onClick={() => selectTheme('light')}
-          >
-            <span className="theme-preview theme-preview--light" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span>
-              <strong>Light</strong>
-              <small>{theme === 'light' ? 'Selected' : ''}</small>
-            </span>
-          </button>
-          <button
-            className={`theme-option${theme === 'system' ? ' theme-option--selected' : ''}`}
-            type="button"
-            aria-pressed={theme === 'system'}
-            onClick={() => selectTheme('system')}
-          >
-            <span className="theme-preview theme-preview--system" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span>
-              <strong>System</strong>
-              <small>{theme === 'system' ? 'Selected' : ''}</small>
-            </span>
-          </button>
-        </div>
-      </section>
-    </section>
-  )
+  initialSection?: SettingsSection
 }
 
 export function SettingsPage({
   workspace,
   onCreateWorkspace,
   onWorkspaceContextChanged,
+  initialSection = 'workspace',
 }: SettingsPageProps) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>('workspace')
+  const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection)
 
   return (
     <section className="settings-workspace" aria-label="Settings">
@@ -148,8 +72,8 @@ export function SettingsPage({
             </section>
           )
         ) : null}
-        {activeSection === 'appearance' ? <AppearanceSettings /> : null}
         {activeSection === 'public-holidays' ? <HolidaySettingsPage /> : null}
+        {activeSection === 'policy' ? <PolicySettingsPage /> : null}
       </div>
     </section>
   )

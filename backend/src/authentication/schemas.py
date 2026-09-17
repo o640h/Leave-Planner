@@ -37,6 +37,12 @@ class PasswordResetRequest(TokenRequest):
     password: str = Field(min_length=MINIMUM_PASSWORD_LENGTH, max_length=1024)
 
 
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=1024)
+    password: str = Field(min_length=MINIMUM_PASSWORD_LENGTH, max_length=1024)
+    password_confirmation: str = Field(min_length=MINIMUM_PASSWORD_LENGTH, max_length=1024)
+
+
 class EmailChangeRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=1024)

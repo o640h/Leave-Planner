@@ -7,13 +7,16 @@ type AppIconProps = {
     | 'plus'
     | 'edit'
     | 'calendar'
-    | 'appearance'
     | 'profile'
     | 'jobPlan'
     | 'database'
     | 'logout'
     | 'retry'
     | 'server'
+    | 'email'
+    | 'lock'
+    | 'document'
+    | 'download'
 }
 
 export function AppIcon({ name }: AppIconProps) {
@@ -60,11 +63,36 @@ export function AppIcon({ name }: AppIconProps) {
     )
   }
 
-  if (name === 'appearance') {
+  if (name === 'email') {
     return (
       <svg {...commonProps}>
-        <path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5A6.5 6.5 0 0 1 12 3.5Z" />
-        <path d="M12 3.5V20.5" />
+        <rect x="3" y="5" width="18" height="14" rx="1" />
+        <path d="m4 7 8 6 8-6" />
+      </svg>
+    )
+  }
+
+  if (name === 'lock') {
+    return (
+      <svg {...commonProps}>
+        <rect x="4" y="10" width="16" height="11" rx="1" />
+        <path d="M7.5 10V7.5a4.5 4.5 0 0 1 9 0V10M12 14v3" />
+      </svg>
+    )
+  }
+
+  if (name === 'document') {
+    return (
+      <svg {...commonProps}>
+        <path d="M6 2.5h8l4 4V21H6zM14 2.5v4h4M9 11h6M9 15h6" />
+      </svg>
+    )
+  }
+
+  if (name === 'download') {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 3v11M7.5 10.5 12 15l4.5-4.5M5 20h14" />
       </svg>
     )
   }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
 import type { WorkspaceContext } from '../authentication/types'
+import { SelectMenu } from '../system/SelectMenu'
 import { selectWorkspace } from './api'
 
 type WorkspaceSelectorProps = {
@@ -38,19 +39,18 @@ export function WorkspaceSelector({
       <label htmlFor={required ? 'required-workspace' : 'active-workspace'}>
         {required ? 'Choose Workspace' : 'Workspace'}
       </label>
-      <select
+      <SelectMenu
         id={required ? 'required-workspace' : 'active-workspace'}
-        value={context.active_workspace_id ?? ''}
+        value={context.active_workspace_id?.toString() ?? ''}
         disabled={busy}
-        onChange={(event) => void choose(Number(event.target.value))}
-      >
-        {required ? <option value="">Select a workspace</option> : null}
-        {context.memberships.map((membership) => (
-          <option key={membership.workspace_id} value={membership.workspace_id}>
-            {membership.workspace_name} · {roleLabels[membership.role]}
-          </option>
-        ))}
-      </select>
+        placeholder="Select a workspace"
+        options={context.memberships.map((membership) => ({
+          value: membership.workspace_id.toString(),
+          label: membership.workspace_name,
+          detail: roleLabels[membership.role],
+        }))}
+        onChange={(workspaceId) => void choose(Number(workspaceId))}
+      />
       {error ? (
         <p className="form-error" role="alert">
           {error}

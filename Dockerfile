@@ -43,6 +43,8 @@ COPY --from=backend-build /build/backend/.venv /app/.venv
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/migrations ./migrations
 COPY backend/src ./src
+COPY docs/reference/HR78_Medical_Dental_Annual_Leave_Policy_v3_2025-07.pdf /app/docs/reference/
+COPY docs/reference/HRS09_Medical_Dental_Annual_Leave_Guidance_v1_2025-07.pdf /app/docs/reference/
 COPY --from=frontend-build /build/frontend/dist /app/frontend/dist
 
 USER 10001:10001

@@ -81,7 +81,7 @@ export function CarryForwardControl({ consultantId, leaveYearId, onSaved }: Prop
         <ModalLayer onClose={() => setOpen(false)}>
           <div className="modal-backdrop">
             <section
-              className="record-modal carry-forward-modal"
+              className="record-modal record-modal--lined carry-forward-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="carry-forward-title"

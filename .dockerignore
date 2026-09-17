@@ -11,7 +11,11 @@
 **/.mypy_cache
 **/.ruff_cache
 backend/tests
-docs
+docs/*
+!docs/reference
+docs/reference/*
+!docs/reference/HR78_Medical_Dental_Annual_Leave_Policy_v3_2025-07.pdf
+!docs/reference/HRS09_Medical_Dental_Annual_Leave_Guidance_v1_2025-07.pdf
 frontend/coverage
 frontend/dist
 frontend/node_modules

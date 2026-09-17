@@ -141,19 +141,8 @@ describe('consultant directory', () => {
     await user.click(screen.getByRole('button', { name: 'Settings' }))
 
     expect(screen.getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Appearance' }))
-    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Appearance' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
+    expect(screen.queryByRole('button', { name: 'Appearance' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Data & Recovery' })).not.toBeInTheDocument()
-
-    expect(screen.getByRole('button', { name: /Light/ })).toHaveAttribute('aria-pressed', 'true')
-
-    await user.click(screen.getByRole('button', { name: 'Dark' }))
-    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
-    expect(window.localStorage.getItem('leave-planner-theme')).toBe('dark')
 
     await user.click(screen.getByRole('button', { name: 'Public Holidays' }))
     expect(await screen.findByRole('heading', { name: 'Public Holidays' })).toBeInTheDocument()

@@ -357,6 +357,41 @@ def reset_account_password(
     record_security_event(session, "password_reset", user_id=account.id, actor_label=actor_label)
 
 
+def change_account_password(
+    session: Session,
+    account: User,
+    password: str,
+    *,
+    current_session_id: int,
+    actor_label: str,
+) -> None:
+    """Change a password while retaining only the authenticated browser session."""
+    moment = utc_now()
+    account.password_hash = hash_password(password)
+    account.password_version += 1
+    account.password_changed_at = moment
+    clear_failed_logins(account)
+    session.execute(
+        update(UserSession)
+        .where(
+            UserSession.user_id == account.id,
+            UserSession.id != current_session_id,
+            UserSession.revoked_at.is_(None),
+        )
+        .values(revoked_at=moment)
+    )
+    current_session = session.get(UserSession, current_session_id)
+    if current_session is not None and current_session.revoked_at is None:
+        current_session.password_version = account.password_version
+        current_session.reauthenticated_at = moment
+    record_security_event(
+        session,
+        "account_password_changed",
+        user_id=account.id,
+        actor_label=actor_label,
+    )
+
+
 def set_account_state(session: Session, account: User, state: str) -> None:
     if state not in {ACTIVE, DISABLED, DELETED}:
         raise ValueError("Unsupported account state")

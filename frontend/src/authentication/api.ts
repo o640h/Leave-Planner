@@ -48,6 +48,20 @@ export const confirmPasswordReset = (token: string, password: string) =>
     body: JSON.stringify({ token, password }),
   })
 
+export const changePassword = (
+  currentPassword: string,
+  password: string,
+  passwordConfirmation: string,
+) =>
+  apiRequest<{ message: string }>('/api/auth/password-change', {
+    method: 'POST',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      password,
+      password_confirmation: passwordConfirmation,
+    }),
+  })
+
 export const requestEmailChange = (email: string, password: string) =>
   apiRequest<{ message: string }>('/api/auth/email-change/request', {
     method: 'POST',

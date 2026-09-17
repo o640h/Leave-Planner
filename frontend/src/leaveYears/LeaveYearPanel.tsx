@@ -355,7 +355,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
         <ModalLayer onClose={closeEditor}>
           <div className="modal-backdrop">
             <section
-              className="record-modal"
+              className="record-modal record-modal--lined"
               role="dialog"
               aria-modal="true"
               aria-labelledby="leave-year-form-title"

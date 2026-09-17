@@ -40,6 +40,7 @@ from .schemas import (
     EmailActionRequest,
     EmailChangeRequest,
     MessageRead,
+    PasswordChangeRequest,
     PasswordResetRequest,
     RegistrationConfigurationRead,
     RegistrationRequest,
@@ -48,6 +49,7 @@ from .schemas import (
 from .service import (
     AuthenticatedUser,
     account_for_email,
+    change_account_password,
     create_account,
     normalise_email,
     password_matches,
@@ -123,6 +125,12 @@ def register_account(
         )
 
     account = account_for_email(session, str(details.email), for_update=True)
+    if account is not None and account.security_state == ACTIVE:
+        raise ApiError(
+            status_code=409,
+            code="account_already_registered",
+            message="An account with this email address is already registered.",
+        )
     matches = password_matches(account, details.password)
     created = account is None
     if account is None:
@@ -262,6 +270,57 @@ def confirm_password_reset(
     revoke_user_actions(session, account.id)
     session.commit()
     return MessageRead(message="Password changed. Sign in with your new password.")
+
+
+@router.post("/password-change", response_model=MessageRead)
+def change_password(
+    details: PasswordChangeRequest,
+    session: DatabaseSession,
+    authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
+) -> MessageRead:
+    if details.password != details.password_confirmation:
+        raise ApiError(
+            status_code=400,
+            code="password_confirmation_mismatch",
+            message="The new passwords do not match.",
+        )
+    if not reauthenticate_session(session, authenticated, details.current_password):
+        record_security_event(
+            session,
+            "reauthentication_failed",
+            user_id=authenticated.id,
+            actor_label=authenticated.display_name,
+            details={"source": "password_change"},
+        )
+        session.commit()
+        raise ApiError(
+            status_code=400,
+            code="reauthentication_failed",
+            message="Your current password could not be confirmed.",
+        )
+
+    account = session.get(User, authenticated.id)
+    if account is None:
+        raise ApiError(
+            status_code=401, code="authentication_required", message="Sign in to continue"
+        )
+    if password_matches(account, details.password):
+        raise ApiError(
+            status_code=409,
+            code="password_unchanged",
+            message="Choose a password different from your current password.",
+        )
+
+    change_account_password(
+        session,
+        account,
+        details.password,
+        current_session_id=authenticated.session_id,
+        actor_label=authenticated.display_name,
+    )
+    revoke_user_actions(session, account.id)
+    session.commit()
+    return MessageRead(message="Password changed successfully.")
 
 
 @router.post("/email-change/request", response_model=MessageRead)

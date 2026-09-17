@@ -101,7 +101,13 @@ describe('email account authentication', () => {
     await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByRole('heading', { name: 'Consultants' })).toBeInTheDocument()
-    expect(screen.getByText('Change Email For Primary Operator')).toBeInTheDocument()
+    const accountButton = screen.getByRole('button', { name: 'Account' })
+    await user.click(accountButton)
+    expect(screen.getByRole('dialog', { name: 'Account' })).toBeInTheDocument()
+    await user.click(accountButton)
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Account' })).not.toBeInTheDocument(),
+    )
   })
 
   it('sends the readable CSRF cookie on sign out and returns to sign in', async () => {
@@ -279,9 +285,18 @@ describe('email account authentication', () => {
 
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Choose Workspace' })).toBeInTheDocument()
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Choose Workspace' }), '2')
+    await user.click(screen.getByRole('combobox', { name: 'Choose Workspace' }))
+    await user.click(screen.getByRole('option', { name: /Second Workspace/ }))
     expect(await screen.findByRole('heading', { name: 'Consultants' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Workspace')).toHaveValue('2')
+    await user.click(screen.getByRole('button', { name: 'Switch Workspace' }))
+    expect(screen.getByRole('button', { name: /Second Workspace.*Open/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await user.click(screen.getByRole('button', { name: 'Switch Workspace' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Choose Workspace' })).not.toBeInTheDocument(),
+    )
   })
 
   it('offers a retry when the server is initially unavailable', async () => {

@@ -59,6 +59,7 @@ def test_application_image_runs_as_a_read_only_unprivileged_service() -> None:
     configuration = compose_configuration()
     application = configuration["services"]["application"]
     dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8")
+    dockerignore = (REPOSITORY_ROOT / ".dockerignore").read_text(encoding="utf-8")
 
     assert application["read_only"] is True
     assert application["cap_drop"] == ["ALL"]
@@ -75,5 +76,14 @@ def test_application_image_runs_as_a_read_only_unprivileged_service() -> None:
     assert 'CMD ["python", "-m", "uvicorn"' in dockerfile
     assert "npm ci" in dockerfile
     assert "uv sync --locked --no-group dev" in dockerfile
+    assert "HR78_Medical_Dental_Annual_Leave_Policy_v3_2025-07.pdf" in dockerfile
+    assert "HRS09_Medical_Dental_Annual_Leave_Guidance_v1_2025-07.pdf" in dockerfile
+    assert "Leave_Template_v0.5_2025-08_to_2026-08.xlsx" not in dockerfile
+    assert "!docs/reference/HR78_Medical_Dental_Annual_Leave_Policy_v3_2025-07.pdf" in dockerignore
+    assert (
+        "!docs/reference/HRS09_Medical_Dental_Annual_Leave_Guidance_v1_2025-07.pdf"
+        in dockerignore
+    )
+    assert "!docs/reference/Leave_Template_v0.5_2025-08_to_2026-08.xlsx" not in dockerignore
     assert "pywebview" not in dockerfile.lower()
     assert "pyinstaller" not in dockerfile.lower()

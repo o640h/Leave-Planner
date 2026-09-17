@@ -4,6 +4,7 @@
  * Keep light-mode design decisions here. Feature styles define layout; this
  * file defines the material, hierarchy, and shared interaction language.
  */
+:root,
 :root[data-theme='light'] {
   /* Canvas */
   --light-base: #edf1f3;
@@ -34,10 +35,12 @@
   --control: var(--glass-inset);
   --root-surround: #e9eef0;
   --rail: rgb(253 254 254 / 0.92);
+  --authentication-identity-surface: #fafcfc;
   --field: rgb(255 255 255 / 0.9);
   --field-action: rgb(246 249 250 / 0.84);
   --interactive-hover: rgb(40 80 118 / 0.075);
   --surface-subtle: rgb(246 249 250 / 0.56);
+  --setup-notice-background: #e8f0f4;
   --overlay: rgb(30 49 68 / 0.25);
 
   /* Structure */
@@ -404,6 +407,68 @@
   border-color: rgb(var(--focus-rgb) / 0.58);
   outline: 0;
   box-shadow: 0 0 0 3px rgb(var(--focus-rgb) / 0.085);
+}
+
+/* Setup pop-outs use flat underline controls rather than inset white boxes. */
+:root[data-theme='light']
+  .record-modal--lined
+  :is(
+    .field > input,
+    .field > select,
+    .field > .number-input,
+    .field > .date-input,
+    .field > .calculated-field
+  ) {
+  border: 0;
+  border-bottom: 1px solid rgb(30 55 76 / 0.16);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-theme='light']
+  .record-modal--lined
+  :is(.field > input, .field > select):hover:not(:disabled),
+:root[data-theme='light']
+  .record-modal--lined
+  :is(.field > .number-input, .field > .date-input):hover:not(:has(input:disabled)) {
+  border-bottom-color: rgb(var(--focus-rgb) / 0.34);
+}
+
+:root[data-theme='light'] .record-modal--lined :is(.field > input, .field > select):focus,
+:root[data-theme='light']
+  .record-modal--lined
+  :is(.field > .number-input, .field > .date-input):focus-within {
+  border-color: transparent;
+  border-bottom-color: rgb(var(--focus-rgb) / 0.62);
+  outline: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='light']
+  .record-modal--lined
+  :is(.field > input, .field > select, .field > .calculated-field) {
+  min-height: 44px;
+  padding-inline: 0;
+}
+
+:root[data-theme='light'] .record-modal--lined :is(.field > .number-input, .field > .date-input) {
+  min-height: 44px;
+}
+
+:root[data-theme='light']
+  .record-modal--lined
+  :is(.field > .number-input, .field > .date-input)
+  input {
+  padding-left: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-theme='light']
+  .record-modal--lined
+  :is(.number-input-controls button, .date-input button) {
+  background: transparent;
 }
 
 :root[data-theme='light'] :is(.number-input-controls button, .date-input button) {

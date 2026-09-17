@@ -2,7 +2,6 @@ import { FormEvent, useRef, useState } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
 import { AppIcon } from '../system/AppIcon'
-import { HealthStatus } from '../system/HealthStatus'
 import { ProductIdentity } from '../system/ProductIdentity'
 import { registerAccount } from './api'
 
@@ -67,70 +66,98 @@ export function RegistrationScreen({ onBack, invitationToken }: RegistrationScre
   return (
     <div className="application-frame authentication-frame">
       <main className="authentication-page">
-        <section className="authentication-panel" aria-labelledby="registration-title">
+        <section
+          className="authentication-panel authentication-panel--account authentication-panel--registration"
+          aria-labelledby="registration-title"
+        >
           <ProductIdentity />
           <div className="authentication-form-area">
             <header className="authentication-heading">
-              <div>
-                <h1 id="registration-title">Create Account</h1>
-                <p>
-                  {invitationToken
-                    ? 'Create and verify your account to accept this workspace invitation.'
-                    : 'Create your account first. You can join or create a workspace after signing in.'}
-                </p>
-              </div>
+              <h1 id="registration-title">Create Account</h1>
               <span className="authentication-account">
                 <AppIcon name="profile" />
                 Secure Account
               </span>
             </header>
 
-            <form noValidate onSubmit={submit}>
-              <label htmlFor="registration-name">Name</label>
-              <input
-                id="registration-name"
-                name="name"
-                autoComplete="name"
-                autoFocus
-                maxLength={100}
-                value={displayName}
-                aria-invalid={error ? 'true' : undefined}
-                aria-describedby={errorRelationship}
-                onChange={(event) => setDisplayName(event.target.value)}
-              />
-              <label htmlFor="registration-email">Email</label>
-              <input
-                id="registration-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                aria-invalid={error ? 'true' : undefined}
-                aria-describedby={errorRelationship}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-              <label htmlFor="registration-password">Password</label>
-              <input
-                id="registration-password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                aria-invalid={error ? 'true' : undefined}
-                aria-describedby={errorRelationship}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-              <label htmlFor="registration-confirmation">Confirm Password</label>
-              <input
-                id="registration-confirmation"
-                name="password_confirmation"
-                type="password"
-                autoComplete="new-password"
-                value={confirmation}
-                aria-invalid={error ? 'true' : undefined}
-                aria-describedby={errorRelationship}
-                onChange={(event) => setConfirmation(event.target.value)}
-              />
+            <form className="authentication-account-form" noValidate onSubmit={submit}>
+              <div className="authentication-field">
+                <label htmlFor="registration-name">
+                  <AppIcon name="profile" />
+                  <span>Name</span>
+                </label>
+                <div className="authentication-input-control">
+                  <input
+                    id="registration-name"
+                    name="name"
+                    autoComplete="name"
+                    placeholder=" "
+                    autoFocus
+                    maxLength={100}
+                    value={displayName}
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={errorRelationship}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="authentication-field">
+                <label htmlFor="registration-email">
+                  <AppIcon name="email" />
+                  <span>Email</span>
+                </label>
+                <div className="authentication-input-control">
+                  <input
+                    id="registration-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder=" "
+                    value={email}
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={errorRelationship}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="authentication-field">
+                <label htmlFor="registration-password">
+                  <AppIcon name="lock" />
+                  <span>Password</span>
+                </label>
+                <div className="authentication-input-control">
+                  <input
+                    id="registration-password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder=" "
+                    value={password}
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={errorRelationship}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="authentication-field">
+                <label htmlFor="registration-confirmation">
+                  <AppIcon name="lock" />
+                  <span>Confirm Password</span>
+                </label>
+                <div className="authentication-input-control">
+                  <input
+                    id="registration-confirmation"
+                    name="password_confirmation"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder=" "
+                    value={confirmation}
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={errorRelationship}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                  />
+                </div>
+              </div>
               {error ? (
                 <p className="authentication-error" id="registration-error" role="alert">
                   {error}
@@ -146,7 +173,6 @@ export function RegistrationScreen({ onBack, invitationToken }: RegistrationScre
                 Back To Sign In
               </button>
             </div>
-            <HealthStatus />
           </div>
         </section>
       </main>

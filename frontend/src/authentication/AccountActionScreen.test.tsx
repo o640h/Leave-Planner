@@ -97,13 +97,21 @@ describe('account recovery screens', () => {
             authenticated: true,
             user: account,
             workspace: {
-              state: 'onboarding',
-              active_workspace_id: null,
-              memberships: [],
+              state: 'active',
+              active_workspace_id: 1,
+              memberships: [
+                {
+                  workspace_id: 1,
+                  workspace_name: 'Radiology',
+                  role: 'owner',
+                  linked_consultant_id: null,
+                },
+              ],
             },
           })
         }
         if (path === '/api/health') return json({ status: 'ok' })
+        if (path === '/api/consultants') return json([])
         if (path === '/api/auth/email-change/request') {
           expect(new Headers(options.headers).get('X-CSRF-Token')).toBe('csrf-value')
           expect(JSON.parse(options.body as string)).toEqual({
@@ -117,7 +125,10 @@ describe('account recovery screens', () => {
     )
 
     render(<App />)
-    await user.click(await screen.findByRole('button', { name: 'Change Email' }))
+    await user.click(await screen.findByRole('button', { name: 'Account' }))
+    expect(screen.getByRole('heading', { name: 'Account' })).toBeInTheDocument()
+    expect(screen.getByText('Primary Operator')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Change Email' }))
     expect(screen.getByText('Current email: operator@example.org')).toBeInTheDocument()
     await user.type(screen.getByLabelText('New Email'), 'new@example.org')
     await user.type(screen.getByLabelText('Current Password'), 'current-password')

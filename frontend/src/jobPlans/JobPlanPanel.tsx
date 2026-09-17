@@ -331,7 +331,7 @@ export function JobPlanPanel({
         <ModalLayer onClose={closeEditor}>
           <div className="modal-backdrop">
             <section
-              className="record-modal job-plan-modal"
+              className="record-modal record-modal--lined job-plan-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="job-plan-form-title"

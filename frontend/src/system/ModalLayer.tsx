@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 type ModalLayerProps = {
@@ -32,6 +32,7 @@ export function ModalLayer({ children, onClose }: ModalLayerProps) {
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Escape') {
       event.preventDefault()
+      event.stopPropagation()
       onClose()
       return
     }
@@ -57,9 +58,21 @@ export function ModalLayer({ children, onClose }: ModalLayerProps) {
     }
   }
 
+  function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
+    if (event.target instanceof Element && !event.target.closest('[role="dialog"]')) {
+      event.stopPropagation()
+      onClose()
+    }
+  }
+
   const applicationContent = document.querySelector('.application-content')
   const layer = (
-    <div className="modal-layer" ref={layerRef} onKeyDown={handleKeyDown}>
+    <div
+      className="modal-layer"
+      ref={layerRef}
+      onKeyDown={handleKeyDown}
+      onMouseDown={handleMouseDown}
+    >
       {children}
     </div>
   )

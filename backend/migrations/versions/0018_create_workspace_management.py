@@ -22,7 +22,10 @@ def _enable_postgresql_isolation() -> None:
         return
 
     application_role_exists = connection.scalar(
-        sa.text("SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'leave_planner_application')")
+        sa.text(
+            "SELECT EXISTS "
+            "(SELECT 1 FROM pg_roles WHERE rolname = 'leave_planner_application')"
+        )
     )
     tables = (
         "workspace_invitations",

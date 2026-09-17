@@ -113,4 +113,66 @@ describe('workspace management', () => {
     )
     expect(screen.getByRole('button', { name: 'Delete Workspace' })).toBeDisabled()
   })
+
+  it('requires confirmation before removing a workspace member', async () => {
+    const member = {
+      membership_id: 2,
+      user_id: 2,
+      public_id: 'member-public-id',
+      display_name: 'Workspace Member',
+      display_email: 'member@example.org',
+      role: 'member',
+      linked_consultant_id: 7,
+      linked_consultant_name: 'Dr Member',
+    }
+    const detailWithMember = { ...detail, people: [...detail.people, member] }
+    const detailAfterRemoval = { ...detail, people: detail.people }
+    const fetchMock = vi.fn((input: RequestInfo | URL, options?: RequestInit) => {
+      const path = input.toString()
+      if (path === '/api/workspaces/managed') return Promise.resolve(json(managed))
+      if (path === '/api/workspaces/1/management') {
+        return Promise.resolve(json(detailWithMember))
+      }
+      if (path === '/api/workspaces/1/members/2' && options?.method === 'DELETE') {
+        return Promise.resolve(json(detailAfterRemoval))
+      }
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(
+      <WorkspaceManagement
+        activeWorkspaceId={1}
+        onCreateWorkspace={vi.fn()}
+        onWorkspaceContextChanged={vi.fn()}
+      />,
+    )
+
+    await user.click(await screen.findByRole('button', { name: 'Remove' }))
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/workspaces/1/members/2',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+    const dialog = screen.getByRole('dialog', { name: 'Remove Workspace Member' })
+    expect(dialog).toHaveTextContent('Workspace Member')
+    expect(dialog).toHaveTextContent('member@example.org')
+    expect(dialog).toHaveTextContent('linked consultant record and leave data will not be deleted')
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(
+      screen.queryByRole('dialog', { name: 'Remove Workspace Member' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
+    await user.click(screen.getByRole('button', { name: 'Remove Member' }))
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/workspaces/1/members/2',
+        expect.objectContaining({ method: 'DELETE' }),
+      ),
+    )
+  })
 })

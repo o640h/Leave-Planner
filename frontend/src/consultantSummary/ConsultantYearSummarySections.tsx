@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { AppIcon } from '../system/AppIcon'
 import { formatDecimal } from '../system/decimal'
 import type {
   AuditEvent,
@@ -171,10 +172,15 @@ export function ConsultantYearSummarySections({ summary }: { summary: Consultant
 
       {warnings.length ? (
         <section className="summary-warnings" aria-labelledby="summary-warnings-title">
-          <h4 id="summary-warnings-title">Needs Attention</h4>
-          {warnings.map((warning) => (
-            <p key={warning.code}>{warning.message}</p>
-          ))}
+          <span className="summary-warnings-icon" aria-hidden="true">
+            <AppIcon name="jobPlan" />
+          </span>
+          <div>
+            <h4 id="summary-warnings-title">Review Leave Setup</h4>
+            {warnings.map((warning) => (
+              <p key={warning.code}>{warning.message}</p>
+            ))}
+          </div>
         </section>
       ) : null}
 

@@ -3,15 +3,26 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/montserrat'
 
 import { App } from './App'
-import { initialiseTheme } from './settings/theme'
-import './themes/dark.css'
 import './styles.css'
 import './themes/light.css'
 
-initialiseTheme()
+const root = createRoot(document.getElementById('root')!)
+const developmentCatalogueRequested =
+  import.meta.env.DEV &&
+  (window.location.pathname === '/ui' || window.location.pathname.startsWith('/ui/'))
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+if (developmentCatalogueRequested) {
+  void import('./development/UiCatalogue').then(({ UiCatalogue }) => {
+    root.render(
+      <StrictMode>
+        <UiCatalogue />
+      </StrictMode>,
+    )
+  })
+} else {
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+}

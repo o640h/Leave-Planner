@@ -39,7 +39,7 @@ export function HolidayTreatmentDialog({ occurrence, onSave, onClose }: Props) {
     <ModalLayer onClose={() => !saving && onClose()}>
       <div className="modal-backdrop">
         <section
-          className="record-modal adjustment-modal"
+          className="record-modal record-modal--lined adjustment-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="holiday-treatment-title"

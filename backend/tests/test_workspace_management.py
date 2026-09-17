@@ -3,12 +3,15 @@
 import gc
 import re
 import warnings
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import Engine, select
+from sqlalchemy.orm import Session, sessionmaker
 
 from authentication.models import User, UserSession
 from authentication.service import create_account
@@ -27,7 +30,7 @@ PASSWORD = "workspace-password"
 
 
 @pytest.fixture(autouse=True)
-def collect_disposed_sqlite_wrappers():
+def collect_disposed_sqlite_wrappers() -> Iterator[None]:
     """Finalize disposed SQLAlchemy wrappers before Python 3.14 reports them later."""
 
     yield
@@ -36,7 +39,11 @@ def collect_disposed_sqlite_wrappers():
         gc.collect()
 
 
-def workspace_app(tmp_path: Path, *, with_consultant: bool = True):
+def workspace_app(
+    tmp_path: Path,
+    *,
+    with_consultant: bool = True,
+) -> tuple[FastAPI, Engine, sessionmaker[Session], dict[str, int], int | None]:
     settings = Settings(environment="test", data_dir=tmp_path, registration_mode="open")
     upgrade_database(settings.resolved_database_url)
     engine = create_database_engine(settings.resolved_database_url)

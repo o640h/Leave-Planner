@@ -236,7 +236,7 @@ export function HolidaySettingsPage() {
         <ModalLayer onClose={() => setOpen(false)}>
           <div className="modal-backdrop">
             <section
-              className="record-modal adjustment-modal"
+              className="record-modal record-modal--lined adjustment-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="holiday-correction-title"

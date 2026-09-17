@@ -38,7 +38,7 @@ export function WorkspaceCreationDialog({ onCancel, onCreated }: WorkspaceCreati
     <ModalLayer onClose={() => !saving && onCancel()}>
       <div className="modal-backdrop">
         <section
-          className="record-modal workspace-creation-modal"
+          className="record-modal record-modal--lined workspace-creation-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="workspace-creation-title"

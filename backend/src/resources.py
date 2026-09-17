@@ -15,6 +15,12 @@ def frontend_distribution() -> Path:
     return resource_root().parent / "frontend" / "dist"
 
 
+def policy_reference_directory() -> Path:
+    """Return the private directory containing the bundled policy PDFs."""
+
+    return resource_root().parent / "docs" / "reference"
+
+
 def alembic_configuration() -> Path:
     """Return the Alembic configuration file."""
 

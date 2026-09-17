@@ -113,8 +113,12 @@ def test_verified_account_explicitly_creates_empty_workspaces_up_to_the_limit(
             headers={"Origin": ORIGIN},
             json={"display_name": "Different Name", "email": EMAIL, "password": PASSWORD},
         )
-        assert active_repeat.status_code == 200
-        assert active_repeat.json() == registered.json()
+        assert active_repeat.status_code == 409
+        assert active_repeat.json()["error"] == {
+            "code": "account_already_registered",
+            "message": "An account with this email address is already registered.",
+            "details": None,
+        }
         assert len(client.get("/api/auth/development/email-outbox").json()) == 1
         signed_in = client.post(
             "/api/auth/login",

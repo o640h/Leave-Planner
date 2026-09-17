@@ -4,7 +4,7 @@
   "description": "Consultant annual leave planning.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#101010",
+  "background_color": "#e9eef0",
   "theme_color": "#587f95",
   "icons": [
     {
