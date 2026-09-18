@@ -22,6 +22,7 @@ from database import create_database_engine, create_session_factory
 from errors import install_error_handlers
 from http_security import HostedHttpSecurityMiddleware
 from job_plans.router import router as job_plan_router
+from leave_bookings.router import request_router as leave_request_router
 from leave_bookings.router import router as leave_booking_router
 from leave_years import router as leave_year_router
 from logging_config import configure_logging
@@ -111,6 +112,7 @@ def create_app(
     app.include_router(leave_year_router, dependencies=protected)
     app.include_router(job_plan_router, dependencies=protected)
     app.include_router(leave_booking_router, dependencies=protected)
+    app.include_router(leave_request_router, dependencies=protected)
     app.include_router(entitlement_router, dependencies=protected)
     app.include_router(carry_forward_router, dependencies=protected)
     app.include_router(consultant_year_summary_router, dependencies=protected)

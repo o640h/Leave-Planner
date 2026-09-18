@@ -102,10 +102,12 @@ export type MemberYearSummary = {
     spa_deduction_hours: string
   }>
   bookings: Array<{
+    id: number
     start_date: string
     end_date: string
     state: string
     note: string | null
+    cancellation_requested_at: string | null
     days: Array<{
       leave_date: string
       deduction: ActivityHours

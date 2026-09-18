@@ -21,7 +21,7 @@ type Props = {
   onSelectHoliday: (row: PlanningRow, holiday: HolidayOccurrence) => void
 }
 
-const stateLetter = { requested: 'R', approved: 'A', cancelled: 'C' }
+const stateSymbol = { requested: 'R', approved: 'A', cancelled: '×' }
 
 function isoDate(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -159,7 +159,7 @@ export function PlanningCalendar({
                           : onSelectDate(row, date)
                     }
                   >
-                    {holiday ? 'PH' : booking ? stateLetter[booking.state] : ''}
+                    {holiday ? 'PH' : booking ? stateSymbol[booking.state] : ''}
                   </button>
                 )
               })}

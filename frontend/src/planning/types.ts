@@ -61,9 +61,46 @@ export type LeaveBooking = {
   end_date: string
   state: LeaveState
   note: string | null
+  cancellation_requested_at: string | null
   days: LeaveDay[]
   created_at: string
   updated_at: string
+}
+
+export type LeaveRequestQueueItem = {
+  kind: 'leave_request' | 'cancellation_request'
+  booking_id: number
+  consultant_id: number
+  consultant_name: string
+  leave_year_id: number
+  start_date: string
+  end_date: string
+  note: string | null
+  requested_at: string
+}
+
+export type LeaveRequestActivity = {
+  id: number
+  event_type: 'leave_request_submitted' | 'leave_request_cancelled' | 'leave_cancellation_requested'
+  actor_label: string
+  consultant_name: string
+  start_date: string
+  end_date: string
+  recorded_at: string
+}
+
+export type LeaveRequestQueue = {
+  requests: LeaveRequestQueueItem[]
+  recent_activity: LeaveRequestActivity[]
+}
+
+export type LeaveRequestReview = {
+  kind: LeaveRequestQueueItem['kind']
+  booking: LeaveBooking
+  current_approved: Balance | null
+  resulting_approved: Balance | null
+  days: LeaveDay[]
+  warnings: LeaveWarning[]
 }
 
 export type PlanningWorkspace = {

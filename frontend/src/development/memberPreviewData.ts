@@ -107,10 +107,12 @@ export const memberPreviewData: MemberWorkspaceData = {
     holidays: [],
     bookings: [
       {
+        id: 1,
         start_date: '2026-09-21',
         end_date: '2026-09-23',
         state: 'approved',
         note: null,
+        cancellation_requested_at: null,
         days: [
           {
             leave_date: '2026-09-21',

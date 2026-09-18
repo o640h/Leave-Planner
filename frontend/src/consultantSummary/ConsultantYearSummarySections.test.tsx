@@ -72,6 +72,7 @@ const summary = {
         end_date: '2025-10-20',
         state: 'approved',
         note: 'Workbook reference',
+        cancellation_requested_at: null,
         days: [
           {
             leave_date: '2025-10-20',

@@ -253,3 +253,132 @@ def test_operator_cannot_use_member_only_contract(tmp_path: Path) -> None:
 
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "workspace_role_denied"
+
+
+def test_member_leave_requests_and_reviewed_approved_cancellation(tmp_path: Path) -> None:
+    app = app_for(tmp_path)
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        linked_id, year_id = configure_team(owner_client, owner_headers)
+
+    with TestClient(app) as member_client:
+        member_headers = login(member_client, "member@example.org")
+        request = {
+            "start_date": "2026-09-28",
+            "end_date": "2026-09-29",
+            "note": "Member conference request",
+        }
+        preview = member_client.post(
+            f"/api/member/leave-years/{year_id}/requests/preview",
+            json=request,
+            headers=member_headers,
+        )
+        submitted = member_client.post(
+            f"/api/member/leave-years/{year_id}/requests",
+            json=request,
+            headers=member_headers,
+        )
+
+    assert preview.status_code == 200
+    assert preview.json()["requested"] is not None
+    assert submitted.status_code == 201
+    submitted_booking = next(
+        item
+        for item in submitted.json()["selected_year"]["bookings"]
+        if item["note"] == "Member conference request"
+    )
+    assert submitted_booking["state"] == "requested"
+    booking_id = int(submitted_booking["id"])
+
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        queue = owner_client.get("/api/leave-requests")
+        review = owner_client.get(
+            f"/api/consultants/{linked_id}/leave-years/{year_id}/bookings/{booking_id}/review"
+        )
+        approved = owner_client.post(
+            f"/api/consultants/{linked_id}/leave-years/{year_id}/bookings/{booking_id}/approve",
+            headers=owner_headers,
+        )
+
+    assert queue.status_code == 200
+    queued = next(item for item in queue.json()["requests"] if item["booking_id"] == booking_id)
+    assert queued["kind"] == "leave_request"
+    assert review.status_code == 200
+    assert review.json()["kind"] == "leave_request"
+    assert review.json()["current_approved"] != review.json()["resulting_approved"]
+    assert approved.status_code == 200
+    assert next(item for item in approved.json()["bookings"] if item["id"] == booking_id)[
+        "state"
+    ] == "approved"
+
+    with TestClient(app) as member_client:
+        member_headers = login(member_client, "member@example.org")
+        cancellation = member_client.post(
+            f"/api/member/leave-years/{year_id}/bookings/{booking_id}/request-cancellation",
+            headers=member_headers,
+        )
+
+    assert cancellation.status_code == 200
+    pending = next(
+        item
+        for item in cancellation.json()["selected_year"]["bookings"]
+        if item["id"] == booking_id
+    )
+    assert pending["state"] == "approved"
+    assert pending["cancellation_requested_at"] is not None
+
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        review = owner_client.get(
+            f"/api/consultants/{linked_id}/leave-years/{year_id}/bookings/{booking_id}/review"
+        )
+        cancelled = owner_client.post(
+            f"/api/consultants/{linked_id}/leave-years/{year_id}/bookings/{booking_id}/approve-cancellation",
+            headers=owner_headers,
+        )
+
+    assert review.status_code == 200
+    assert review.json()["kind"] == "cancellation_request"
+    assert review.json()["current_approved"] != review.json()["resulting_approved"]
+    cancelled_booking = next(
+        item for item in cancelled.json()["bookings"] if item["id"] == booking_id
+    )
+    assert cancelled_booking["state"] == "cancelled"
+    assert cancelled_booking["cancellation_requested_at"] is None
+
+
+def test_member_can_cancel_only_a_pending_request(tmp_path: Path) -> None:
+    app = app_for(tmp_path)
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        _, year_id = configure_team(owner_client, owner_headers)
+
+    with TestClient(app) as member_client:
+        member_headers = login(member_client, "member@example.org")
+        submitted = member_client.post(
+            f"/api/member/leave-years/{year_id}/requests",
+            json={
+                "start_date": "2026-10-05",
+                "end_date": "2026-10-05",
+                "note": None,
+            },
+            headers=member_headers,
+        )
+        booking = next(
+            item
+            for item in submitted.json()["selected_year"]["bookings"]
+            if item["start_date"] == "2026-10-05"
+        )
+        cancelled = member_client.post(
+            f"/api/member/leave-years/{year_id}/bookings/{booking['id']}/cancel",
+            headers=member_headers,
+        )
+
+    assert cancelled.status_code == 200
+    cancelled_booking = next(
+        item
+        for item in cancelled.json()["selected_year"]["bookings"]
+        if item["id"] == booking["id"]
+    )
+    assert cancelled_booking["state"] == "cancelled"

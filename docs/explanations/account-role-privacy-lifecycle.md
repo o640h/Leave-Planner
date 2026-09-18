@@ -82,17 +82,19 @@ React is not an authorization control.
 The implemented Member surface uses a separate `/api/member` router guarded by an exact Member-role
 dependency. It derives the consultant identifier from the revalidated membership rather than from a
 client parameter. Its read-only workspace contract removes consultant, job-plan, booking,
-recommendation, application, carry-forward, and audit identifiers before serialization. The shared
+recommendation, application, carry-forward, and audit identifiers before serialization. It exposes
+only the Member's own booking identifier where required to withdraw a Requested booking or request
+cancellation; colleague wallchart records never expose identifiers. The shared
 wallchart does not reuse the operator planning response: its database query selects only workspace
 consultant names and overlapping non-cancelled booking dates and states, then returns those restrained
 status blocks plus the resolved public-holiday calendar. The same-workspace consultant link remains protected by
 the composite database foreign key and every query is constrained to the transaction-bound
 workspace. The existing operator routers continue to reject Member sessions.
 
-Task 8 includes the Member's own authoritative bookings. Task 9 will allow the Member to create a
-Requested booking for their linked consultant; review changes that same record to Approved or
-Cancelled rather than creating a second request record. Until that slice exists, the Member workspace
-contains no controls that can create, change, cancel, or export planner records.
+The Member can create a Requested booking for their linked consultant. Owner/Admin review changes
+that same record to Approved or Cancelled rather than creating a second request record. A Requested
+booking can be withdrawn directly. An Approved booking remains Approved, and continues affecting the
+Approved balance, while a cancellation request awaits review.
 
 ## Registration, Invitations, and Recovery
 
@@ -203,12 +205,14 @@ operator workflows. Calculated entitlement remains an explained recommendation, 
 entitlement remains separately persisted, and booking approval must continue through the established
 preview, daily-deduction snapshot, ledger, warning, and audit flow.
 
-A Member request is not a booking and cannot affect a balance. Only a later authorised Owner/Admin
-approval may atomically create the authoritative booking or apply a requested cancellation through
-the established cancellation flow. Submission and withdrawal create durable, workspace-scoped
-notifications for Owners/Admins; WebSocket updates may later prompt an immediate refetch but never
-replace the stored request or notification. No role may bypass Decimal serialization, effective-dated
-job plans, public-holiday treatment, applied entitlement, or retrospective-change controls.
+A Member request is the same booking record in the Requested state. It affects the Requested balance
+but not the Approved balance. Approval changes that record to Approved; rejection or Member
+withdrawal changes it to Cancelled. A cancellation request is a marker on an Approved booking rather
+than a fourth lifecycle state, so its deduction remains in both balance views until an authorised
+Owner/Admin accepts cancellation. Submission, withdrawal, and cancellation requests create durable,
+workspace-scoped activity for Owners/Admins; WebSocket updates may later prompt an immediate refetch
+but never replace stored state. No role may bypass Decimal serialization, effective-dated job plans,
+public-holiday treatment, applied entitlement, or retrospective-change controls.
 
 ## Implementation Route
 

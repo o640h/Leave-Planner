@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -35,6 +35,24 @@ class LeaveBookingWrite(BaseModel):
     state: LeaveState
     note: str | None = Field(default=None, max_length=500)
     overrides: tuple[DailyOverrideWrite, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_period(self) -> Self:
+        if self.end_date < self.start_date:
+            raise ValueError("End Date cannot be before Start Date")
+        if self.note == "":
+            self.note = None
+        return self
+
+
+class LeaveRequestWrite(BaseModel):
+    """Member-entered facts for a Requested booking."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    start_date: date
+    end_date: date
+    note: str | None = Field(default=None, max_length=500)
 
     @model_validator(mode="after")
     def validate_period(self) -> Self:
@@ -92,6 +110,7 @@ class LeaveBookingRead(BaseModel):
     end_date: date
     state: LeaveState
     note: str | None
+    cancellation_requested_at: datetime | None
     days: tuple[LeaveDayRead, ...]
     created_at: datetime
     updated_at: datetime
@@ -105,4 +124,44 @@ class PlanningRead(BaseModel):
     bookings: tuple[LeaveBookingRead, ...]
     requested: BalanceRead | None
     approved: BalanceRead | None
+    warnings: tuple[LeaveWarningRead, ...]
+
+
+class LeaveRequestQueueItemRead(BaseModel):
+    kind: Literal["leave_request", "cancellation_request"]
+    booking_id: int
+    consultant_id: int
+    consultant_name: str
+    leave_year_id: int
+    start_date: date
+    end_date: date
+    note: str | None
+    requested_at: datetime
+
+
+class LeaveRequestActivityRead(BaseModel):
+    id: int
+    event_type: Literal[
+        "leave_request_submitted",
+        "leave_request_cancelled",
+        "leave_cancellation_requested",
+    ]
+    actor_label: str
+    consultant_name: str
+    start_date: date
+    end_date: date
+    recorded_at: datetime
+
+
+class LeaveRequestQueueRead(BaseModel):
+    requests: tuple[LeaveRequestQueueItemRead, ...]
+    recent_activity: tuple[LeaveRequestActivityRead, ...]
+
+
+class LeaveRequestReviewRead(BaseModel):
+    kind: Literal["leave_request", "cancellation_request"]
+    booking: LeaveBookingRead
+    current_approved: BalanceRead | None
+    resulting_approved: BalanceRead | None
+    days: tuple[LeaveDayRead, ...]
     warnings: tuple[LeaveWarningRead, ...]

@@ -10,10 +10,25 @@ import { HolidayTreatmentDialog } from '../publicHolidays/HolidayTreatmentDialog
 import type { Holiday, HolidayOccurrence, HolidayTreatmentInput } from '../publicHolidays/types'
 import { AppIcon } from '../system/AppIcon'
 import { BookingDrawer } from './BookingDrawer'
-import { getPlanning, previewBooking, removeBooking, saveBooking } from './api'
+import {
+  decideLeaveRequest,
+  getLeaveRequests,
+  getPlanning,
+  previewBooking,
+  removeBooking,
+  saveBooking,
+  type LeaveRequestDecision,
+} from './api'
+import { LeaveRequestDialog } from './LeaveRequestDialog'
 import { PlanningCalendar } from './PlanningCalendar'
 import type { PlanningRow } from './PlanningCalendar'
-import type { LeaveBooking, LeaveBookingInput, LeavePreview } from './types'
+import type {
+  LeaveBooking,
+  LeaveBookingInput,
+  LeavePreview,
+  LeaveRequestQueue,
+  LeaveRequestQueueItem,
+} from './types'
 import './planning.css'
 
 type ConsultantYears = { consultant: Consultant; leaveYears: LeaveYear[] }
@@ -58,14 +73,21 @@ export function PlanningPage() {
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [requestQueue, setRequestQueue] = useState<LeaveRequestQueue>({
+    requests: [],
+    recent_activity: [],
+  })
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false)
+  const [initialRequest, setInitialRequest] = useState<LeaveRequestQueueItem | null>(null)
 
   useEffect(() => {
     let active = true
     async function loadCatalogue() {
       try {
-        const [consultants, holidaySettings] = await Promise.all([
+        const [consultants, holidaySettings, requests] = await Promise.all([
           listConsultants(),
           getHolidaySettings(),
+          getLeaveRequests(),
         ])
         const result = await Promise.all(
           consultants.map(async (consultant) => ({
@@ -76,6 +98,7 @@ export function PlanningPage() {
         if (!active) return
         setCatalogue(result)
         setHolidays(holidaySettings.holidays)
+        setRequestQueue(requests)
         setLoading(result.length > 0)
       } catch (caught) {
         if (active) {
@@ -135,6 +158,14 @@ export function PlanningPage() {
 
   function openBooking(row: PlanningRow, booking: LeaveBooking) {
     setHolidayContext(null)
+    if (booking.state === 'requested' || booking.cancellation_requested_at) {
+      const request = requestQueue.requests.find((item) => item.booking_id === booking.id)
+      if (request) {
+        setInitialRequest(request)
+        setRequestDialogOpen(true)
+        return
+      }
+    }
     setContext({ row, booking, initialDate: null })
   }
 
@@ -193,6 +224,31 @@ export function PlanningPage() {
     replaceWorkspace(row.consultant.id, await getPlanning(row.consultant.id, leaveYear.id))
   }
 
+  async function handleRequestDecision(
+    request: LeaveRequestQueueItem,
+    decision: LeaveRequestDecision,
+  ) {
+    setBusy(true)
+    try {
+      replaceWorkspace(
+        request.consultant_id,
+        await decideLeaveRequest(
+          request.consultant_id,
+          request.leave_year_id,
+          request.booking_id,
+          decision,
+        ),
+      )
+      setRequestQueue(await getLeaveRequests())
+      setRequestDialogOpen(false)
+      setInitialRequest(null)
+    } catch (caught) {
+      setError(operatorErrorMessage(caught))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <section className="planning-page" aria-labelledby="planning-title">
       <header className="planning-toolbar">
@@ -227,10 +283,23 @@ export function PlanningPage() {
             </button>
           </div>
         )}
-        <div className="calendar-legend" aria-label="Calendar legend">
-          <span className="legend-requested">Requested</span>
-          <span className="legend-approved">Approved</span>
-          <span className="legend-holiday">Public Holiday</span>
+        <div className="planning-toolbar-actions">
+          <button
+            className="button planning-requests-button"
+            type="button"
+            onClick={() => {
+              setInitialRequest(null)
+              setRequestDialogOpen(true)
+            }}
+          >
+            Requests
+            {requestQueue.requests.length ? <span>{requestQueue.requests.length}</span> : null}
+          </button>
+          <div className="calendar-legend" aria-label="Calendar legend">
+            <span className="legend-requested">Requested</span>
+            <span className="legend-approved">Approved</span>
+            <span className="legend-holiday">Public Holiday</span>
+          </div>
         </div>
       </header>
 
@@ -273,6 +342,18 @@ export function PlanningPage() {
           occurrence={holidayContext.holiday}
           onSave={handleHolidaySave}
           onClose={() => setHolidayContext(null)}
+        />
+      ) : null}
+      {requestDialogOpen ? (
+        <LeaveRequestDialog
+          queue={requestQueue}
+          initialRequest={initialRequest}
+          busy={busy}
+          onDecide={handleRequestDecision}
+          onClose={() => {
+            setRequestDialogOpen(false)
+            setInitialRequest(null)
+          }}
         />
       ) : null}
     </section>

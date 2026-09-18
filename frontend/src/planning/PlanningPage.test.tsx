@@ -6,6 +6,9 @@ import { BookingDrawer } from './BookingDrawer'
 
 const mocks = vi.hoisted(() => ({
   getPlanning: vi.fn(),
+  getLeaveRequests: vi.fn(),
+  getLeaveRequestReview: vi.fn(),
+  decideLeaveRequest: vi.fn(),
   getHolidaySettings: vi.fn(),
   listConsultants: vi.fn(),
   listLeaveYears: vi.fn(),
@@ -29,6 +32,9 @@ vi.mock('../publicHolidays/api', () => ({
   saveHolidayTreatment: mocks.saveHolidayTreatment,
 }))
 vi.mock('./api', () => ({
+  decideLeaveRequest: mocks.decideLeaveRequest,
+  getLeaveRequests: mocks.getLeaveRequests,
+  getLeaveRequestReview: mocks.getLeaveRequestReview,
   getPlanning: mocks.getPlanning,
   previewBooking: mocks.previewBooking,
   removeBooking: mocks.removeBooking,
@@ -79,6 +85,7 @@ describe('PlanningPage', () => {
       ]),
     )
     mocks.getPlanning.mockResolvedValue(workspace)
+    mocks.getLeaveRequests.mockResolvedValue({ requests: [], recent_activity: [] })
     mocks.getHolidaySettings.mockResolvedValue({
       source: 'gov_uk',
       source_date: '2026-08-11',
@@ -97,6 +104,55 @@ describe('PlanningPage', () => {
 
     expect(await screen.findAllByTitle('Early May Bank Holiday')).toHaveLength(2)
     expect(screen.getAllByText('---')).toHaveLength(2)
+  })
+
+  it('reviews and approves a pending Member request from Planning', async () => {
+    const request = {
+      kind: 'leave_request' as const,
+      booking_id: 31,
+      consultant_id: 7,
+      consultant_name: 'Dr Alex Morgan',
+      leave_year_id: 3,
+      start_date: `${currentIsoMonth}-08`,
+      end_date: `${currentIsoMonth}-09`,
+      note: 'Study leave',
+      requested_at: '2026-09-18T12:00:00',
+    }
+    const booking = {
+      id: 31,
+      leave_year_id: 3,
+      start_date: request.start_date,
+      end_date: request.end_date,
+      state: 'requested' as const,
+      note: request.note,
+      cancellation_requested_at: null,
+      days: [],
+      created_at: request.requested_at,
+      updated_at: request.requested_at,
+    }
+    mocks.getLeaveRequests.mockResolvedValue({ requests: [request], recent_activity: [] })
+    mocks.getLeaveRequestReview.mockResolvedValue({
+      kind: 'leave_request',
+      booking,
+      current_approved: balance,
+      resulting_approved: balance,
+      days: [],
+      warnings: [],
+    })
+    mocks.decideLeaveRequest.mockResolvedValue(workspace)
+
+    render(<PlanningPage />)
+    await screen.findByRole('heading', { name: currentMonthLabel })
+    fireEvent.click(await screen.findByRole('button', { name: /Requests/ }))
+
+    expect(await screen.findByRole('heading', { name: 'Dr Alex Morgan' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'Review Leave' })
+    fireEvent.click(within(dialog).getByRole('button', { name: /Dr Alex Morgan/ }))
+    expect(within(dialog).getByRole('button', { name: 'Approve Request' })).toBeInTheDocument()
+    expect(mocks.getLeaveRequestReview).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByRole('button', { name: 'Approve Request' }))
+
+    await waitFor(() => expect(mocks.decideLeaveRequest).toHaveBeenCalledWith(7, 3, 31, 'approve'))
   })
 
   it('loads every consultant into the monthly wallchart', async () => {
@@ -146,6 +202,7 @@ describe('PlanningPage', () => {
             end_date: holidayDate,
             state: 'requested' as const,
             note: null,
+            cancellation_requested_at: null,
             days: [],
             created_at: '2026-08-18T12:00:00',
             updated_at: '2026-08-18T12:00:00',
@@ -325,6 +382,7 @@ describe('PlanningPage', () => {
       end_date: day.leave_date,
       state: 'approved' as const,
       note: null,
+      cancellation_requested_at: null,
       days: [day],
       created_at: '2026-08-11T12:00:00',
       updated_at: '2026-08-11T12:00:00',
@@ -380,6 +438,7 @@ describe('PlanningPage', () => {
       end_date: '2025-12-31',
       state: 'approved' as const,
       note: null,
+      cancellation_requested_at: null,
       days: [],
       created_at: '2026-08-11T12:00:00',
       updated_at: '2026-08-11T12:00:00',

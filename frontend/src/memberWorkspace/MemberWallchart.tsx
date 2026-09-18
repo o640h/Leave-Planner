@@ -22,9 +22,15 @@ function isoDate(year: number, month: number, day: number): string {
 
 type MemberWallchartProps = {
   initialData?: MemberWallchartData
+  memberName?: string | null
+  onRequestDate?: (date: string) => void
 }
 
-export function MemberWallchart({ initialData }: MemberWallchartProps = {}) {
+export function MemberWallchart({
+  initialData,
+  memberName,
+  onRequestDate,
+}: MemberWallchartProps = {}) {
   const [month, setMonth] = useState(() => initialData?.month.slice(0, 7) ?? currentMonth())
   const [data, setData] = useState<MemberWallchartData | null>(initialData ?? null)
   const [error, setError] = useState<string | null>(null)
@@ -119,6 +125,7 @@ export function MemberWallchart({ initialData }: MemberWallchartProps = {}) {
                 })}
               </div>
               {data.people.map((person) => {
+                const isMember = person.display_name === memberName
                 const leaveByDate = new Map(
                   person.leave_dates.map((entry) => [entry.leave_date, entry.state]),
                 )
@@ -140,18 +147,31 @@ export function MemberWallchart({ initialData }: MemberWallchartProps = {}) {
                         : stateLabel
                           ? `${person.display_name}, ${date}, ${stateLabel}`
                           : `${person.display_name}, ${date}`
-                      return (
+                      const className = [
+                        'member-wallchart-cell',
+                        leaveState ? `member-wallchart-cell--${leaveState}` : '',
+                        holiday ? 'member-wallchart-cell--holiday' : '',
+                        dateValue.getDay() === 0 || dateValue.getDay() === 6
+                          ? 'member-wallchart-day--weekend'
+                          : '',
+                        isMember && !leaveState && !holiday
+                          ? 'member-wallchart-cell--requestable'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')
+                      return isMember && !leaveState && !holiday && onRequestDate ? (
+                        <button
+                          className={className}
+                          type="button"
+                          aria-label={`${label}, Request Leave`}
+                          title="Request Leave"
+                          key={date}
+                          onClick={() => onRequestDate(date)}
+                        />
+                      ) : (
                         <div
-                          className={[
-                            'member-wallchart-cell',
-                            leaveState ? `member-wallchart-cell--${leaveState}` : '',
-                            holiday ? 'member-wallchart-cell--holiday' : '',
-                            dateValue.getDay() === 0 || dateValue.getDay() === 6
-                              ? 'member-wallchart-day--weekend'
-                              : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
+                          className={[className].join(' ')}
                           role="gridcell"
                           aria-label={label}
                           title={holiday?.name ?? stateLabel ?? undefined}

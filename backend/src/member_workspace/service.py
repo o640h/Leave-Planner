@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 from consultant_year_summary.service import get_summary
 from consultants.models import Consultant
 from errors import ApiError
+from leave_bookings import service as leave_booking_service
 from leave_bookings.persistence import LeaveBookingRecord
+from leave_bookings.schemas import LeavePreviewRead, LeaveRequestWrite
 from leave_years import service as leave_year_service
 from leave_years.models import LeaveYear
 from public_holidays import service as holiday_service
@@ -153,10 +155,12 @@ def _selected_year(
         ),
         bookings=tuple(
             MemberBookingRead(
+                id=booking.id,
                 start_date=booking.start_date,
                 end_date=booking.end_date,
                 state=booking.state.value,
                 note=booking.note,
+                cancellation_requested_at=booking.cancellation_requested_at,
                 days=tuple(
                     MemberLeaveDayRead(
                         leave_date=day.leave_date,
@@ -176,6 +180,64 @@ def _selected_year(
         weekday_counts=MemberWeekdayCountsRead.model_validate(summary.weekday_counts.model_dump()),
         warnings=summary.warnings,
     )
+
+
+def _linked_consultant_id(access: WorkspaceAccess) -> int:
+    if access.linked_consultant_id is None:
+        raise ApiError(
+            status_code=403,
+            code="member_link_required",
+            message="A consultant link is required",
+        )
+    return access.linked_consultant_id
+
+
+def preview_leave_request(
+    session: Session,
+    access: WorkspaceAccess,
+    leave_year_id: int,
+    details: LeaveRequestWrite,
+) -> LeavePreviewRead:
+    return leave_booking_service.preview_request(
+        session, _linked_consultant_id(access), leave_year_id, details
+    )
+
+
+def submit_leave_request(
+    session: Session,
+    access: WorkspaceAccess,
+    leave_year_id: int,
+    details: LeaveRequestWrite,
+) -> MemberWorkspaceRead:
+    consultant_id = _linked_consultant_id(access)
+    leave_booking_service.submit_request(session, consultant_id, leave_year_id, details)
+    return workspace(session, access, leave_year_id)
+
+
+def cancel_leave_request(
+    session: Session,
+    access: WorkspaceAccess,
+    leave_year_id: int,
+    booking_id: int,
+) -> MemberWorkspaceRead:
+    consultant_id = _linked_consultant_id(access)
+    leave_booking_service.cancel_member_request(
+        session, consultant_id, leave_year_id, booking_id
+    )
+    return workspace(session, access, leave_year_id)
+
+
+def request_leave_cancellation(
+    session: Session,
+    access: WorkspaceAccess,
+    leave_year_id: int,
+    booking_id: int,
+) -> MemberWorkspaceRead:
+    consultant_id = _linked_consultant_id(access)
+    leave_booking_service.request_approved_cancellation(
+        session, consultant_id, leave_year_id, booking_id
+    )
+    return workspace(session, access, leave_year_id)
 
 
 def workspace(
@@ -217,12 +279,7 @@ def workspace(
 
 
 def wallchart(session: Session, access: WorkspaceAccess, month: date) -> MemberWallchartRead:
-    if access.linked_consultant_id is None:
-        raise ApiError(
-            status_code=403,
-            code="member_link_required",
-            message="A consultant link is required",
-        )
+    _linked_consultant_id(access)
 
     month_start = month.replace(day=1)
     month_end = month_start.replace(day=monthrange(month_start.year, month_start.month)[1])

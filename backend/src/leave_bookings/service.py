@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
+from typing import Literal, cast
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -13,6 +15,7 @@ from annual_entitlement import AppliedEntitlement
 from annual_entitlement import service as entitlement_service
 from audit import record_audit_event
 from carry_forward import service as carry_forward_service
+from consultants.models import Consultant
 from domain import (
     CalculationResult,
     CalculationWarning,
@@ -42,6 +45,9 @@ from leave_years import service as leave_year_service
 from leave_years.models import LeaveYear
 from public_holidays import PublicHolidayRequest, PublicHolidayResult, calculate_public_holidays
 from public_holidays import service as holiday_service
+from workspaces.events import record_workspace_event
+from workspaces.models import WorkspaceEvent
+from workspaces.service import current_access
 
 from .persistence import LeaveBookingDayRecord, LeaveBookingRecord
 from .schemas import (
@@ -52,6 +58,11 @@ from .schemas import (
     LeaveBookingWrite,
     LeaveDayRead,
     LeavePreviewRead,
+    LeaveRequestActivityRead,
+    LeaveRequestQueueItemRead,
+    LeaveRequestQueueRead,
+    LeaveRequestReviewRead,
+    LeaveRequestWrite,
     LeaveWarningRead,
     PlanningRead,
 )
@@ -610,6 +621,8 @@ def _save(
     leave_year_id: int,
     details: LeaveBookingWrite,
     record: LeaveBookingRecord | None = None,
+    *,
+    audit_action: str | None = None,
 ) -> LeaveBookingRecord:
     leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     _validate_period(leave_year, details)
@@ -624,7 +637,7 @@ def _save(
     holidays = _holiday_result(session, leave_year, history)
     days = _generated_days(details, history, holidays, "save")
 
-    action = "updated" if record else "created"
+    action = audit_action or ("updated" if record else "created")
     before = _snapshot(record) if record else None
     if record is None:
         record = LeaveBookingRecord(leave_year_id=leave_year_id)
@@ -654,6 +667,11 @@ def _snapshot(record: LeaveBookingRecord | None) -> dict[str, object] | None:
         "end_date": record.end_date.isoformat(),
         "state": record.state,
         "note": record.note,
+        "cancellation_requested_at": (
+            record.cancellation_requested_at.isoformat()
+            if record.cancellation_requested_at is not None
+            else None
+        ),
         "days": len(record.days),
     }
 
@@ -667,6 +685,7 @@ def _record_read(record: LeaveBookingRecord, holiday_names: dict[date, str]) -> 
         end_date=record.end_date,
         state=state,
         note=record.note,
+        cancellation_requested_at=record.cancellation_requested_at,
         days=tuple(_day_read(_domain_day(day, state), holiday_names) for day in record.days),
         created_at=record.created_at,
         updated_at=record.updated_at,
@@ -680,6 +699,70 @@ def create_booking(
     return planning(session, consultant_id, leave_year_id)
 
 
+def _request_event_details(
+    session: Session,
+    consultant_id: int,
+    record: LeaveBookingRecord,
+) -> dict[str, object]:
+    consultant_name = session.scalar(select(Consultant.name).where(Consultant.id == consultant_id))
+    return {
+        "booking_id": record.id,
+        "consultant_id": consultant_id,
+        "consultant_name": consultant_name or "Consultant",
+        "leave_year_id": record.leave_year_id,
+        "start_date": record.start_date.isoformat(),
+        "end_date": record.end_date.isoformat(),
+    }
+
+
+def submit_request(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    details: LeaveRequestWrite,
+) -> PlanningRead:
+    """Create one Member request without accepting client-controlled calculation fields."""
+
+    record = _save(
+        session,
+        consultant_id,
+        leave_year_id,
+        LeaveBookingWrite(
+            start_date=details.start_date,
+            end_date=details.end_date,
+            state=LeaveState.REQUESTED,
+            note=details.note,
+        ),
+        audit_action="requested",
+    )
+    record_workspace_event(
+        session,
+        event_type="leave_request_submitted",
+        details=_request_event_details(session, consultant_id, record),
+    )
+    session.flush()
+    return planning(session, consultant_id, leave_year_id)
+
+
+def preview_request(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    details: LeaveRequestWrite,
+) -> LeavePreviewRead:
+    return preview_booking(
+        session,
+        consultant_id,
+        leave_year_id,
+        LeaveBookingWrite(
+            start_date=details.start_date,
+            end_date=details.end_date,
+            state=LeaveState.REQUESTED,
+            note=details.note,
+        ),
+    )
+
+
 def update_booking(
     session: Session,
     consultant_id: int,
@@ -689,6 +772,18 @@ def update_booking(
 ) -> PlanningRead:
     leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     record = _record(session, leave_year_id, booking_id)
+    if record.state == LeaveState.REQUESTED.value and details.state != LeaveState.REQUESTED:
+        raise ApiError(
+            status_code=409,
+            code="leave_request_review_required",
+            message="Approve or reject this request through the review workflow.",
+        )
+    if record.cancellation_requested_at is not None:
+        raise ApiError(
+            status_code=409,
+            code="leave_cancellation_review_required",
+            message="Review the pending cancellation request before editing this booking.",
+        )
     _save(session, consultant_id, leave_year_id, details, record)
     return planning(session, consultant_id, leave_year_id)
 
@@ -700,6 +795,8 @@ def cancel_booking(
     record = _record(session, leave_year_id, booking_id)
     before = record.state
     record.state = LeaveState.CANCELLED.value
+    record.cancellation_requested_at = None
+    record.cancellation_requested_by_user_id = None
     session.flush()
     record_audit_event(
         session,
@@ -709,6 +806,74 @@ def cancel_booking(
         action="cancelled",
         details={"before": before, "after": record.state},
     )
+    return planning(session, consultant_id, leave_year_id)
+
+
+def cancel_member_request(
+    session: Session, consultant_id: int, leave_year_id: int, booking_id: int
+) -> PlanningRead:
+    leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    record = _record(session, leave_year_id, booking_id)
+    if record.state != LeaveState.REQUESTED.value:
+        raise ApiError(
+            status_code=409,
+            code="requested_leave_required",
+            message="Only a Requested booking can be cancelled directly.",
+        )
+    record.state = LeaveState.CANCELLED.value
+    session.flush()
+    record_audit_event(
+        session,
+        consultant_id=consultant_id,
+        entity_type="leave_booking",
+        entity_id=record.id,
+        action="request_cancelled",
+        details={"before": LeaveState.REQUESTED.value, "after": LeaveState.CANCELLED.value},
+    )
+    record_workspace_event(
+        session,
+        event_type="leave_request_cancelled",
+        details=_request_event_details(session, consultant_id, record),
+    )
+    session.flush()
+    return planning(session, consultant_id, leave_year_id)
+
+
+def request_approved_cancellation(
+    session: Session, consultant_id: int, leave_year_id: int, booking_id: int
+) -> PlanningRead:
+    leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    record = _record(session, leave_year_id, booking_id)
+    if record.state != LeaveState.APPROVED.value:
+        raise ApiError(
+            status_code=409,
+            code="approved_leave_required",
+            message="Only Approved leave can be submitted for cancellation review.",
+        )
+    if record.cancellation_requested_at is not None:
+        raise ApiError(
+            status_code=409,
+            code="cancellation_already_requested",
+            message="Cancellation has already been requested for this booking.",
+        )
+    access = current_access(session)
+    record.cancellation_requested_at = datetime.now(UTC)
+    record.cancellation_requested_by_user_id = access.user_id or None
+    session.flush()
+    record_audit_event(
+        session,
+        consultant_id=consultant_id,
+        entity_type="leave_booking",
+        entity_id=record.id,
+        action="cancellation_requested",
+        details={"state": record.state},
+    )
+    record_workspace_event(
+        session,
+        event_type="leave_cancellation_requested",
+        details=_request_event_details(session, consultant_id, record),
+    )
+    session.flush()
     return planning(session, consultant_id, leave_year_id)
 
 
@@ -731,6 +896,248 @@ def remove_booking(
         details={"before": before},
     )
     return planning(session, consultant_id, leave_year_id)
+
+
+RequestKind = Literal["leave_request", "cancellation_request"]
+RequestEventType = Literal[
+    "leave_request_submitted",
+    "leave_request_cancelled",
+    "leave_cancellation_requested",
+]
+
+
+def _request_kind(record: LeaveBookingRecord) -> RequestKind:
+    return (
+        "cancellation_request"
+        if record.cancellation_requested_at is not None
+        else "leave_request"
+    )
+
+
+def request_queue(session: Session) -> LeaveRequestQueueRead:
+    """Return actionable requests and durable recent Member request activity."""
+
+    access = current_access(session)
+    rows = session.execute(
+        select(LeaveBookingRecord, LeaveYear.consultant_id, Consultant.name)
+        .join(LeaveYear, LeaveYear.id == LeaveBookingRecord.leave_year_id)
+        .join(Consultant, Consultant.id == LeaveYear.consultant_id)
+        .where(
+            Consultant.workspace_id == access.workspace_id,
+            (
+                (LeaveBookingRecord.state == LeaveState.REQUESTED.value)
+                | (LeaveBookingRecord.cancellation_requested_at.is_not(None))
+            ),
+        )
+        .order_by(LeaveBookingRecord.updated_at.desc(), LeaveBookingRecord.id.desc())
+    )
+    requests = tuple(
+        LeaveRequestQueueItemRead(
+            kind=_request_kind(record),
+            booking_id=record.id,
+            consultant_id=consultant_id,
+            consultant_name=consultant_name,
+            leave_year_id=record.leave_year_id,
+            start_date=record.start_date,
+            end_date=record.end_date,
+            note=record.note,
+            requested_at=record.cancellation_requested_at or record.created_at,
+        )
+        for record, consultant_id, consultant_name in rows
+    )
+
+    event_types = (
+        "leave_request_submitted",
+        "leave_request_cancelled",
+        "leave_cancellation_requested",
+    )
+    events = tuple(
+        session.scalars(
+            select(WorkspaceEvent)
+            .where(
+                WorkspaceEvent.workspace_id == access.workspace_id,
+                WorkspaceEvent.event_type.in_(event_types),
+            )
+            .order_by(WorkspaceEvent.recorded_at.desc(), WorkspaceEvent.id.desc())
+            .limit(12)
+        )
+    )
+    activity = []
+    for event in events:
+        details = json.loads(event.details)
+        activity.append(
+            LeaveRequestActivityRead(
+                id=event.id,
+                event_type=cast(RequestEventType, event.event_type),
+                actor_label=event.actor_label,
+                consultant_name=str(details.get("consultant_name", "Consultant")),
+                start_date=date.fromisoformat(str(details["start_date"])),
+                end_date=date.fromisoformat(str(details["end_date"])),
+                recorded_at=event.recorded_at,
+            )
+        )
+    return LeaveRequestQueueRead(requests=requests, recent_activity=tuple(activity))
+
+
+def _review_details(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    record: LeaveBookingRecord,
+    state: LeaveState,
+) -> LeaveBookingWrite:
+    leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    plans = job_plan_service.list_job_plans(session, consultant_id, leave_year_id)
+    history = job_plan_service.calculation_history(plans)
+    holidays = _holiday_result(session, leave_year, history)
+    holiday_dates = {item.holiday.holiday_date for item in holidays.occurrences}
+    return _booking_write(record, holiday_dates).model_copy(update={"state": state})
+
+
+def review_request(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+) -> LeaveRequestReviewRead:
+    record = _record(session, leave_year_id, booking_id)
+    current = planning(session, consultant_id, leave_year_id)
+    kind = _request_kind(record)
+    if kind == "leave_request" and record.state != LeaveState.REQUESTED.value:
+        raise ApiError(
+            status_code=409, code="request_not_pending", message="This request is closed."
+        )
+    if kind == "cancellation_request" and record.state != LeaveState.APPROVED.value:
+        raise ApiError(
+            status_code=409, code="request_not_pending", message="This request is closed."
+        )
+
+    if kind == "leave_request":
+        resulting = preview_booking(
+            session,
+            consultant_id,
+            leave_year_id,
+            _review_details(
+                session, consultant_id, leave_year_id, record, LeaveState.APPROVED
+            ),
+            excluding_id=booking_id,
+        )
+    else:
+        result, holidays, _, has_entitlement = _calculation(
+            session, consultant_id, leave_year_id, excluding_id=booking_id
+        )
+        resulting = _preview_read(result, holidays, has_entitlement)
+
+    leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    plans = job_plan_service.list_job_plans(session, consultant_id, leave_year_id)
+    holiday_result = _holiday_result(
+        session, leave_year, job_plan_service.calculation_history(plans)
+    )
+    holiday_names = {
+        item.holiday.holiday_date: item.holiday.name for item in holiday_result.occurrences
+    }
+    booking = _record_read(record, holiday_names)
+    return LeaveRequestReviewRead(
+        kind=kind,
+        booking=booking,
+        current_approved=current.approved,
+        resulting_approved=resulting.approved,
+        days=resulting.days if kind == "leave_request" else booking.days,
+        warnings=resulting.warnings,
+    )
+
+
+def _transition_request(
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+    *,
+    expected_state: LeaveState,
+    next_state: LeaveState,
+    action: str,
+    require_cancellation_request: bool = False,
+) -> PlanningRead:
+    leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
+    record = _record(session, leave_year_id, booking_id)
+    if record.state != expected_state.value or (
+        require_cancellation_request and record.cancellation_requested_at is None
+    ):
+        raise ApiError(
+            status_code=409, code="request_not_pending", message="This request is closed."
+        )
+    before = _snapshot(record)
+    record.state = next_state.value
+    record.cancellation_requested_at = None
+    record.cancellation_requested_by_user_id = None
+    session.flush()
+    record_audit_event(
+        session,
+        consultant_id=consultant_id,
+        entity_type="leave_booking",
+        entity_id=record.id,
+        action=action,
+        details={"before": before, "after": _snapshot(record)},
+    )
+    return planning(session, consultant_id, leave_year_id)
+
+
+def approve_request(
+    session: Session, consultant_id: int, leave_year_id: int, booking_id: int
+) -> PlanningRead:
+    return _transition_request(
+        session,
+        consultant_id,
+        leave_year_id,
+        booking_id,
+        expected_state=LeaveState.REQUESTED,
+        next_state=LeaveState.APPROVED,
+        action="approved",
+    )
+
+
+def reject_request(
+    session: Session, consultant_id: int, leave_year_id: int, booking_id: int
+) -> PlanningRead:
+    return _transition_request(
+        session,
+        consultant_id,
+        leave_year_id,
+        booking_id,
+        expected_state=LeaveState.REQUESTED,
+        next_state=LeaveState.CANCELLED,
+        action="rejected",
+    )
+
+
+def approve_cancellation_request(
+    session: Session, consultant_id: int, leave_year_id: int, booking_id: int
+) -> PlanningRead:
+    return _transition_request(
+        session,
+        consultant_id,
+        leave_year_id,
+        booking_id,
+        expected_state=LeaveState.APPROVED,
+        next_state=LeaveState.CANCELLED,
+        action="cancellation_approved",
+        require_cancellation_request=True,
+    )
+
+
+def reject_cancellation_request(
+    session: Session, consultant_id: int, leave_year_id: int, booking_id: int
+) -> PlanningRead:
+    return _transition_request(
+        session,
+        consultant_id,
+        leave_year_id,
+        booking_id,
+        expected_state=LeaveState.APPROVED,
+        next_state=LeaveState.APPROVED,
+        action="cancellation_rejected",
+        require_cancellation_request=True,
+    )
 
 
 def planning(session: Session, consultant_id: int, leave_year_id: int) -> PlanningRead:

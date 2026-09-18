@@ -92,10 +92,12 @@ class MemberLeaveDayRead(BaseModel):
 
 
 class MemberBookingRead(BaseModel):
+    id: int
     start_date: date
     end_date: date
     state: str
     note: str | None
+    cancellation_requested_at: datetime | None
     days: tuple[MemberLeaveDayRead, ...]
 
 

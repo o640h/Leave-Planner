@@ -28,7 +28,7 @@ Public-holiday entitlement and public-holiday deductions are calculated by the h
 
 ## What is saved
 
-SQLite stores one booking record for its date range, lifecycle state, and note. It also stores a
+PostgreSQL stores one booking record for its date range, lifecycle state, and note. It also stores a
 daily snapshot containing the effective job plan, contracted PAs, deduction factor, normal hours,
 entered deduction hours, and any replacement note.
 
@@ -46,6 +46,23 @@ them. No mutable balance total is stored.
 - **Approved** includes Approved bookings, which are treated as taken unless cancelled.
 - **Cancelled** bookings remain visible for history but deduct nothing.
 
+## Member requests and review
+
+A linked Member submits only a start date, end date, and optional note. The server derives the
+workspace, consultant, leave year, Requested state, effective job plans, public holidays, and daily
+deduction snapshots; the browser cannot submit a different consultant, state, or override.
+
+The Planning request queue shows the Owner/Admin the current Approved balance and the resulting
+Approved balance before a decision, together with daily deductions, overlap or balance warnings, and
+the Member's note. Approval changes the same Requested record to Approved. Rejection or Member
+withdrawal changes it to Cancelled.
+
+For Approved leave, a Member may request cancellation. The booking stays Approved and continues to
+deduct from the Approved balance until review. Accepting the cancellation changes it to Cancelled;
+rejecting the cancellation clears the request marker and keeps it Approved. Request submissions,
+withdrawals, and cancellation requests create durable workspace activity, while decisions are also
+captured in the booking audit history.
+
 For each view:
 
 `remaining = applied entitlement + carry-forward - holiday deductions - included booking deductions`
@@ -59,7 +76,7 @@ The preview warns about overlaps and balances that would fall below zero. These 
 ## Main code references
 
 - `backend/src/leave_bookings/service.py` orchestrates previewing, saving, lifecycle changes, balance calculation, and audit events.
-- `backend/src/leave_bookings/persistence.py` defines the SQLite booking and daily-snapshot tables.
+- `backend/src/leave_bookings/persistence.py` defines the booking and daily-snapshot tables.
 - `backend/src/leave_records/calculator.py` contains the pure lifecycle balance calculation used by the service.
 - `frontend/src/planning/PlanningPage.tsx` loads the selected planning workspace and refreshes it after changes.
 - `frontend/src/planning/BookingDrawer.tsx` provides the booking preview and per-day replacement workflow.

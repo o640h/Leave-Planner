@@ -96,9 +96,21 @@ type MemberOverviewProps = {
   data: MemberWorkspaceData
   loadingYear: boolean
   onLeaveYearSelected: (leaveYearId: number) => void
+  onRequestLeave: () => void
+  onCancelRequest: (bookingId: number) => void
+  onRequestCancellation: (bookingId: number) => void
+  requestBusy: boolean
 }
 
-export function MemberOverview({ data, loadingYear, onLeaveYearSelected }: MemberOverviewProps) {
+export function MemberOverview({
+  data,
+  loadingYear,
+  onLeaveYearSelected,
+  onRequestLeave,
+  onCancelRequest,
+  onRequestCancellation,
+  requestBusy,
+}: MemberOverviewProps) {
   const [balanceView, setBalanceView] = useState<'requested' | 'approved'>('approved')
   const summary = data.selected_year
   if (!data.consultant) return null
@@ -310,16 +322,23 @@ export function MemberOverview({ data, loadingYear, onLeaveYearSelected }: Membe
                 <span className="section-kicker">Your Records</span>
                 <h3>Leave Bookings</h3>
               </div>
-              <span>
-                {summary.bookings.length} {summary.bookings.length === 1 ? 'Booking' : 'Bookings'}
-              </span>
+              <div className="member-booking-heading-actions">
+                <span>
+                  {summary.bookings.length} {summary.bookings.length === 1 ? 'Booking' : 'Bookings'}
+                </span>
+                <button className="button button--primary" type="button" onClick={onRequestLeave}>
+                  Request Leave
+                </button>
+              </div>
             </header>
             {summary.bookings.length ? (
               <div className="member-booking-list">
-                {summary.bookings.map((booking, index) => (
-                  <article key={`${booking.start_date}-${booking.end_date}-${index}`}>
+                {summary.bookings.map((booking) => (
+                  <article key={booking.id}>
                     <span className={`member-state member-state--${booking.state}`}>
-                      {booking.state[0].toUpperCase() + booking.state.slice(1)}
+                      {booking.cancellation_requested_at
+                        ? 'Cancellation Requested'
+                        : booking.state[0].toUpperCase() + booking.state.slice(1)}
                     </span>
                     <div>
                       <strong>
@@ -327,7 +346,28 @@ export function MemberOverview({ data, loadingYear, onLeaveYearSelected }: Membe
                       </strong>
                       {booking.note ? <small>{booking.note}</small> : null}
                     </div>
-                    <span>{hours(bookingHours(booking.days))}</span>
+                    <span className="member-booking-hours">
+                      {hours(bookingHours(booking.days))}
+                    </span>
+                    {booking.state === 'requested' ? (
+                      <button
+                        className="button member-booking-action"
+                        type="button"
+                        disabled={requestBusy}
+                        onClick={() => onCancelRequest(booking.id)}
+                      >
+                        Cancel Request
+                      </button>
+                    ) : booking.state === 'approved' && !booking.cancellation_requested_at ? (
+                      <button
+                        className="button member-booking-action"
+                        type="button"
+                        disabled={requestBusy}
+                        onClick={() => onRequestCancellation(booking.id)}
+                      >
+                        Request Cancellation
+                      </button>
+                    ) : null}
                   </article>
                 ))}
               </div>

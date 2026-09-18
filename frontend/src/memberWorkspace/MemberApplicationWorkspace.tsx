@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { AccountDialog } from '../account/AccountPage'
 import { operatorErrorMessage } from '../api/client'
@@ -10,8 +10,16 @@ import { HealthStatus } from '../system/HealthStatus'
 import { WorkspaceFrame } from '../system/WorkspaceFrame'
 import { WorkspaceSelectionDialog } from '../workspaces/WorkspaceSelectionDialog'
 import { MemberOverview } from './MemberOverview'
+import { MemberLeaveRequestDialog } from './MemberLeaveRequestDialog'
 import { MemberWallchart } from './MemberWallchart'
-import { getMemberWorkspace } from './api'
+import {
+  cancelMemberLeaveRequest,
+  getMemberWorkspace,
+  previewMemberLeaveRequest,
+  requestMemberLeaveCancellation,
+  submitMemberLeaveRequest,
+  type MemberLeaveRequestInput,
+} from './api'
 import type { MemberWallchart as MemberWallchartData, MemberWorkspaceData } from './types'
 import './memberWorkspace.css'
 
@@ -49,6 +57,8 @@ export function MemberApplicationWorkspace({
   const [accountCloseRequested, setAccountCloseRequested] = useState(false)
   const [workspaceSelectionOpen, setWorkspaceSelectionOpen] = useState(false)
   const [workspaceSelectionCloseRequested, setWorkspaceSelectionCloseRequested] = useState(false)
+  const [requestDate, setRequestDate] = useState<string | null | undefined>(undefined)
+  const [requestBusy, setRequestBusy] = useState(false)
 
   useEffect(() => {
     if (initialData) return
@@ -74,6 +84,42 @@ export function MemberApplicationWorkspace({
       setError(operatorErrorMessage(reason))
     } finally {
       setLoadingYear(false)
+    }
+  }
+
+  const selectedYearId = data?.selected_year?.leave_year.id
+  const previewRequest = useCallback(
+    (details: MemberLeaveRequestInput) => {
+      if (!selectedYearId) return Promise.reject(new Error('No leave year is selected.'))
+      return previewMemberLeaveRequest(selectedYearId, details)
+    },
+    [selectedYearId],
+  )
+
+  async function submitRequest(details: MemberLeaveRequestInput) {
+    if (!selectedYearId) return
+    setRequestBusy(true)
+    try {
+      setData(await submitMemberLeaveRequest(selectedYearId, details))
+      setRequestDate(undefined)
+    } finally {
+      setRequestBusy(false)
+    }
+  }
+
+  async function runBookingAction(
+    action: (leaveYearId: number, bookingId: number) => Promise<MemberWorkspaceData>,
+    bookingId: number,
+  ) {
+    if (!selectedYearId) return
+    setRequestBusy(true)
+    setError(null)
+    try {
+      setData(await action(selectedYearId, bookingId))
+    } catch (reason) {
+      setError(operatorErrorMessage(reason))
+    } finally {
+      setRequestBusy(false)
     }
   }
 
@@ -188,9 +234,23 @@ export function MemberApplicationWorkspace({
                     data={data}
                     loadingYear={loadingYear}
                     onLeaveYearSelected={(id) => void selectLeaveYear(id)}
+                    onRequestLeave={() => setRequestDate(null)}
+                    onCancelRequest={(bookingId) =>
+                      void runBookingAction(cancelMemberLeaveRequest, bookingId)
+                    }
+                    onRequestCancellation={(bookingId) =>
+                      void runBookingAction(requestMemberLeaveCancellation, bookingId)
+                    }
+                    requestBusy={requestBusy}
                   />
                 ) : null}
-                {page === 'planning' ? <MemberWallchart initialData={initialWallchart} /> : null}
+                {page === 'planning' ? (
+                  <MemberWallchart
+                    initialData={initialWallchart}
+                    memberName={data.consultant?.name ?? null}
+                    onRequestDate={(date) => setRequestDate(date)}
+                  />
+                ) : null}
                 {page === 'settings' ? (
                   <div className="member-settings-page">
                     <SettingsPage
@@ -225,6 +285,15 @@ export function MemberApplicationWorkspace({
           }}
           onSelected={onWorkspaceSelected}
           onCreateWorkspace={onCreateWorkspace}
+        />
+      ) : null}
+      {requestDate !== undefined ? (
+        <MemberLeaveRequestDialog
+          initialDate={requestDate}
+          busy={requestBusy}
+          onPreview={previewRequest}
+          onSubmit={submitRequest}
+          onClose={() => setRequestDate(undefined)}
         />
       ) : null}
     </WorkspaceFrame>

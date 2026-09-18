@@ -270,7 +270,6 @@ export function BookingDrawer({
                     setPreview(null)
                   }}
                 >
-                  <option value="requested">Requested</option>
                   <option value="approved">Approved</option>
                   <option value="cancelled">Cancelled</option>
                 </select>

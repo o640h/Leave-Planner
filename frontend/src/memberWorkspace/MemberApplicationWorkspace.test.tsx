@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -149,6 +149,75 @@ describe('Member application workspace', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Create Workspace' }))
 
     await waitFor(() => expect(onCreateWorkspace).toHaveBeenCalledOnce())
+  })
+
+  it('previews and submits a Member leave request without operator-controlled fields', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const path = input.toString()
+      if (path === '/api/health') return Promise.resolve(json({ status: 'ok' }))
+      if (path === '/api/member/workspace') return Promise.resolve(json(memberData))
+      if (path.endsWith('/requests/preview')) {
+        return Promise.resolve(
+          json({
+            days: [
+              {
+                leave_date: '2026-09-28',
+                deduction: {
+                  dcc_hours: '8',
+                  spa_hours: '0',
+                  other_hours: '0',
+                  total_hours: '8',
+                },
+              },
+            ],
+            requested: null,
+            approved: null,
+            warnings: [],
+          }),
+        )
+      }
+      if (path.endsWith('/requests') && init?.method === 'POST') {
+        return Promise.resolve(json(memberData))
+      }
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <MemberApplicationWorkspace
+        user={{ public_id: 'member', display_name: 'Alex', display_email: 'alex@example.org' }}
+        workspace={workspace}
+        onSignOut={vi.fn()}
+        onWorkspaceSelected={vi.fn()}
+        onCreateWorkspace={vi.fn()}
+      />,
+    )
+    await screen.findByRole('heading', { name: 'Alex Morgan' })
+    await user.click(screen.getByRole('button', { name: 'Request Leave' }))
+    fireEvent.change(document.getElementById('member-request-start') as HTMLInputElement, {
+      target: { value: '2026-09-28' },
+    })
+    fireEvent.change(document.getElementById('member-request-end') as HTMLInputElement, {
+      target: { value: '2026-09-28' },
+    })
+
+    const submit = await screen.findByRole('button', { name: 'Submit Request' })
+    await waitFor(() => expect(submit).toBeEnabled())
+    await user.click(submit)
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/member/leave-years/9/requests',
+        expect.objectContaining({ method: 'POST' }),
+      ),
+    )
+    const requestCall = fetchMock.mock.calls.find(([path]) => path.toString().endsWith('/requests'))
+    expect(JSON.parse(String(requestCall?.[1]?.body))).toEqual({
+      start_date: '2026-09-28',
+      end_date: '2026-09-28',
+      note: null,
+    })
   })
 
   it('renders booking states without private colleague details on the shared wallchart', async () => {

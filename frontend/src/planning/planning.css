@@ -278,7 +278,8 @@
 .wallchart-cell--cancelled {
   background: var(--interactive-hover);
   color: var(--quiet);
-  text-decoration: line-through;
+  font-size: 0.84615rem;
+  font-weight: 420;
 }
 
 .wallchart-loading {
@@ -508,6 +509,204 @@
 
 .form-action-spacer {
   flex: 1;
+}
+
+.planning-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.planning-requests-button {
+  gap: 8px;
+}
+
+.planning-requests-button > span {
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  place-content: center;
+  border-radius: 9px;
+  color: var(--on-accent);
+  background: var(--accent);
+  font-size: 0.61538rem;
+}
+
+.planning-drawer-backdrop.request-review-backdrop {
+  align-items: center;
+  justify-content: center;
+}
+
+.request-review-dialog {
+  width: min(980px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--corner-panel);
+  background: var(--panel);
+  box-shadow: var(--panel-shadow);
+}
+
+.request-review-dialog > header {
+  display: flex;
+  min-height: 76px;
+  padding: 18px 22px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+
+.request-review-dialog h2 {
+  margin: 3px 0 0;
+  font-size: 1.38462rem;
+  font-weight: 450;
+}
+
+.request-review-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: 420px;
+}
+
+.request-queue {
+  border-right: 1px solid var(--line);
+  background: var(--surface-subtle);
+}
+
+.request-queue > p,
+.request-review-empty {
+  margin: 0;
+  padding: 22px;
+  color: var(--muted);
+  font-size: 0.76923rem;
+}
+
+.request-queue-item {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  text-align: left;
+  background: transparent;
+}
+
+.request-queue-item:hover,
+.request-queue-item--active {
+  background: var(--interactive-hover);
+}
+
+.request-queue-item--active {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.request-queue-item strong {
+  font-size: 0.80769rem;
+  font-weight: 470;
+}
+
+.request-queue-item span,
+.request-queue-item small {
+  color: var(--muted);
+  font-size: 0.69231rem;
+}
+
+.request-review-content {
+  min-width: 0;
+  padding: 22px;
+}
+
+.request-review-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.request-review-heading span,
+.request-balance-effect span {
+  color: var(--quiet);
+  font-size: 0.69231rem;
+}
+
+.request-review-heading h3 {
+  margin: 5px 0 3px;
+  font-size: 1.15385rem;
+  font-weight: 460;
+}
+
+.request-review-heading p,
+.request-review-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76923rem;
+}
+
+.request-review-note {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-left: 1px solid var(--accent);
+  background: rgb(var(--focus-rgb) / 0.035);
+}
+
+.request-balance-effect {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 20px 0 14px;
+  border: 1px solid var(--line);
+}
+
+.request-balance-effect > div {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.request-balance-effect > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.request-balance-effect strong {
+  font-size: 1.23077rem;
+  font-weight: 450;
+}
+
+.request-review-content .form-actions {
+  margin-top: 20px;
+  padding: 0;
+}
+
+.request-activity {
+  border-top: 1px solid var(--line);
+}
+
+.request-activity summary {
+  padding: 13px 20px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.76923rem;
+}
+
+.request-activity p {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  margin: 0;
+  padding: 9px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 0.69231rem;
+}
+
+.request-activity span {
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.request-activity small {
+  color: var(--quiet);
 }
 
 @container content (max-width: 900px) {

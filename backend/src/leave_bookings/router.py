@@ -6,12 +6,24 @@ from dependencies import DatabaseSession
 from leave_years import service as leave_year_service
 
 from . import service
-from .schemas import LeaveBookingWrite, LeavePreviewRead, PlanningRead
+from .schemas import (
+    LeaveBookingWrite,
+    LeavePreviewRead,
+    LeaveRequestQueueRead,
+    LeaveRequestReviewRead,
+    PlanningRead,
+)
 
 router = APIRouter(
     prefix="/api/consultants/{consultant_id}/leave-years/{leave_year_id}",
     tags=["leave bookings"],
 )
+request_router = APIRouter(prefix="/api/leave-requests", tags=["leave requests"])
+
+
+@request_router.get("", response_model=LeaveRequestQueueRead)
+def get_request_queue(session: DatabaseSession) -> LeaveRequestQueueRead:
+    return service.request_queue(session)
 
 
 @router.get("/planning", response_model=PlanningRead)
@@ -83,3 +95,57 @@ def remove_booking(
     session: DatabaseSession,
 ) -> PlanningRead:
     return service.remove_booking(session, consultant_id, leave_year_id, booking_id)
+
+
+@router.get("/bookings/{booking_id}/review", response_model=LeaveRequestReviewRead)
+def review_booking_request(
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+    session: DatabaseSession,
+) -> LeaveRequestReviewRead:
+    return service.review_request(session, consultant_id, leave_year_id, booking_id)
+
+
+@router.post("/bookings/{booking_id}/approve", response_model=PlanningRead)
+def approve_booking_request(
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+    session: DatabaseSession,
+) -> PlanningRead:
+    return service.approve_request(session, consultant_id, leave_year_id, booking_id)
+
+
+@router.post("/bookings/{booking_id}/reject", response_model=PlanningRead)
+def reject_booking_request(
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+    session: DatabaseSession,
+) -> PlanningRead:
+    return service.reject_request(session, consultant_id, leave_year_id, booking_id)
+
+
+@router.post("/bookings/{booking_id}/approve-cancellation", response_model=PlanningRead)
+def approve_booking_cancellation(
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+    session: DatabaseSession,
+) -> PlanningRead:
+    return service.approve_cancellation_request(
+        session, consultant_id, leave_year_id, booking_id
+    )
+
+
+@router.post("/bookings/{booking_id}/reject-cancellation", response_model=PlanningRead)
+def reject_booking_cancellation(
+    consultant_id: int,
+    leave_year_id: int,
+    booking_id: int,
+    session: DatabaseSession,
+) -> PlanningRead:
+    return service.reject_cancellation_request(
+        session, consultant_id, leave_year_id, booking_id
+    )
