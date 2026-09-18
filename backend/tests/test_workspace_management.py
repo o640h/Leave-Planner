@@ -186,12 +186,15 @@ def test_invited_new_account_joins_only_after_email_verification(tmp_path: Path)
                     select(User.id).where(User.canonical_email == invited_email)
                 )
                 assert new_account_id is not None
-                assert session.scalar(
-                    select(WorkspaceMembership).where(
-                        WorkspaceMembership.workspace_id == 1,
-                        WorkspaceMembership.user_id == new_account_id,
+                assert (
+                    session.scalar(
+                        select(WorkspaceMembership).where(
+                            WorkspaceMembership.workspace_id == 1,
+                            WorkspaceMembership.user_id == new_account_id,
+                        )
                     )
-                ) is None
+                    is None
+                )
 
             verified = owner_client.post(
                 "/api/auth/verification/confirm",
@@ -245,9 +248,7 @@ def test_admin_can_manage_members_but_cannot_invite_or_change_admins(tmp_path: P
                 person["membership_id"] for person in detail["people"] if person["role"] == "admin"
             )
             member_membership = next(
-                person["membership_id"]
-                for person in detail["people"]
-                if person["role"] == "member"
+                person["membership_id"] for person in detail["people"] if person["role"] == "member"
             )
             denied_change = client.patch(
                 f"/api/workspaces/1/members/{admin_membership}",

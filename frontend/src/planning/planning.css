@@ -46,14 +46,22 @@
 }
 
 .planning-month button {
+  display: grid;
   width: 30px;
   height: 30px;
+  place-items: center;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--corner-control);
   background: transparent;
   color: var(--muted);
-  font-size: 1.53846rem;
+  line-height: 1;
+}
+
+.planning-month button .app-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.6;
 }
 
 .planning-month button:hover {
@@ -78,20 +86,16 @@
   background: currentColor;
 }
 
-.legend-planned {
-  color: var(--accent);
+.legend-requested {
+  color: var(--leave-requested);
 }
 
 .legend-approved {
-  color: var(--nominal);
-}
-
-.legend-taken {
-  color: #898bd4;
+  color: var(--leave-approved);
 }
 
 .legend-holiday {
-  color: var(--warning);
+  color: var(--public-holiday);
 }
 
 .calendar-panel {
@@ -139,6 +143,10 @@
 .wallchart-cell {
   min-width: 0;
   border-right: 1px solid var(--line);
+}
+
+.wallchart-row > :last-child {
+  border-right: 0;
 }
 
 .wallchart-name,
@@ -238,8 +246,8 @@
 }
 
 .wallchart-cell--holiday {
-  background: rgb(199 161 109 / 0.13);
-  color: var(--warning);
+  background: color-mix(in srgb, var(--public-holiday) 18%, transparent);
+  color: var(--public-holiday);
 }
 
 .wallchart-cell--holiday-retained {
@@ -249,7 +257,7 @@
 
 .wallchart-cell--holiday:disabled {
   opacity: 1;
-  background: rgb(199 161 109 / 0.09);
+  background: color-mix(in srgb, var(--public-holiday) 12%, transparent);
 }
 
 .wallchart-balance-empty {
@@ -257,19 +265,14 @@
   letter-spacing: 0.08em;
 }
 
-.wallchart-cell--planned {
-  background: rgb(130 181 194 / 0.22);
-  color: #a7d1db;
+.wallchart-cell--requested {
+  background: color-mix(in srgb, var(--leave-requested) 22%, transparent);
+  color: var(--leave-requested);
 }
 
 .wallchart-cell--approved {
-  background: rgb(138 186 154 / 0.27);
-  color: #afe0bd;
-}
-
-.wallchart-cell--taken {
-  background: rgb(137 139 212 / 0.35);
-  color: #c2c3ff;
+  background: color-mix(in srgb, var(--leave-approved) 24%, transparent);
+  color: var(--leave-approved);
 }
 
 .wallchart-cell--cancelled {

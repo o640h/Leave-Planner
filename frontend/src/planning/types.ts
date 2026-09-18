@@ -1,6 +1,6 @@
 import type { HolidayOccurrence } from '../publicHolidays/types'
 
-export type LeaveState = 'planned' | 'approved' | 'taken' | 'cancelled'
+export type LeaveState = 'requested' | 'approved' | 'cancelled'
 
 export type ActivityHours = {
   dcc_hours: string
@@ -49,9 +49,8 @@ export type LeaveBookingInput = {
 
 export type LeavePreview = {
   days: LeaveDay[]
-  projected: Balance | null
-  confirmed: Balance | null
-  actual: Balance | null
+  requested: Balance | null
+  approved: Balance | null
   warnings: LeaveWarning[]
 }
 
@@ -73,8 +72,7 @@ export type PlanningWorkspace = {
   end_date: string
   holidays: HolidayOccurrence[]
   bookings: LeaveBooking[]
-  projected: Balance | null
-  confirmed: Balance | null
-  actual: Balance | null
+  requested: Balance | null
+  approved: Balance | null
   warnings: LeaveWarning[]
 }

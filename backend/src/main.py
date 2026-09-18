@@ -25,6 +25,7 @@ from job_plans.router import router as job_plan_router
 from leave_bookings.router import router as leave_booking_router
 from leave_years import router as leave_year_router
 from logging_config import configure_logging
+from member_workspace.router import router as member_workspace_router
 from migrations import require_database_current, upgrade_database
 from policy_library.router import router as policy_library_router
 from public_holidays.router import settings_router as holiday_settings_router
@@ -101,6 +102,7 @@ def create_app(
     app.include_router(authentication_router)
     app.include_router(account_action_router)
     app.include_router(workspace_router)
+    app.include_router(member_workspace_router)
     app.include_router(policy_library_router)
     protected = [Depends(require_operator_workspace_request)]
     if runtime.uses_sqlite:

@@ -72,9 +72,8 @@ def _empty_planning(leave_year_id: int, start_date: date, end_date: date) -> Pla
         end_date=end_date,
         holidays=(),
         bookings=(),
-        projected=None,
-        confirmed=None,
-        actual=None,
+        requested=None,
+        approved=None,
         warnings=(
             LeaveWarningRead(
                 code="job-plan.required",
@@ -139,7 +138,7 @@ def _periods(
 def _weekday_counts(planning: PlanningRead) -> WeekdayCountsRead:
     logged_dates = {holiday.holiday_date for holiday in planning.holidays}
     for booking in planning.bookings:
-        if booking.state.value != "taken":
+        if booking.state.value != "approved":
             continue
         logged_dates.update(
             day.leave_date for day in booking.days if day.deduction.total_hours > ZERO
@@ -155,7 +154,11 @@ def _weekday_counts(planning: PlanningRead) -> WeekdayCountsRead:
 
 
 def get_summary(
-    session: Session, consultant_id: int, leave_year_id: int
+    session: Session,
+    consultant_id: int,
+    leave_year_id: int,
+    *,
+    include_audit: bool = True,
 ) -> ConsultantYearSummaryRead:
     consultant = consultant_service.get_consultant(session, consultant_id)
     leave_year = leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
@@ -191,7 +194,7 @@ def get_summary(
         leave_year.end_date,
         leave_year.employment_end or leave_year.end_date,
     )
-    events = list_audit_events(session, consultant_id, limit=50)
+    events = list_audit_events(session, consultant_id, limit=50) if include_audit else ()
 
     return ConsultantYearSummaryRead(
         consultant=ConsultantRead.model_validate(consultant),
@@ -204,9 +207,8 @@ def get_summary(
         planning=planning,
         leave_log=leave_log_entries(planning),
         balances=BalanceViewsRead(
-            projected=_position(planning.projected),
-            confirmed=_position(planning.confirmed),
-            actual=_position(planning.actual),
+            requested=_position(planning.requested),
+            approved=_position(planning.approved),
         ),
         weekday_counts=_weekday_counts(planning),
         warnings=planning.warnings,

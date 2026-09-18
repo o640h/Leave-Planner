@@ -43,7 +43,7 @@ rejected.
 The command compares source and destination table counts and calculates every consultant-year
 summary through the existing application services. The comparison covers job-plan periods,
 recommendation and applied entitlement, DCC/SPA carry-forward, dated public holidays, booking-day
-snapshots, projected/confirmed/actual balances, weekday counts, leave-log rows, PDF row totals,
+snapshots, requested/approved balances, weekday counts, leave-log rows, PDF row totals,
 warnings, and domain audit details. Timestamps are excluded from the summary digest because SQLite
 and PostgreSQL represent timezone metadata differently; their persisted rows and counts are still
 retained.

@@ -4,7 +4,7 @@
 
 The expanded Leave Log can create a clean A4 PDF for the selected consultant and leave year. The
 document includes consultant identity, the inclusive leave-year dates, every on-screen leave-log
-entry, booking state, DCC and SPA deductions, total hours, the Actual Leave Remaining balance, a
+entry, booking state, DCC and SPA deductions, total hours, the Approved Leave Remaining balance, a
 generated timestamp, page numbers, and reconciled totals. Multi-page tables repeat their column
 headings.
 
@@ -30,7 +30,7 @@ and starts a download using the safe filename supplied by the server. The object
 soon as the download starts. The browser controls whether it asks for a destination or uses its
 configured downloads directory.
 
-Leave Remaining uses the Actual balance because the leave-log totals contain Taken leave and
+Leave Remaining uses the Approved balance because the leave-log totals contain Approved leave and
 public-holiday deductions. If annual entitlement has not been applied, the PDF explains that the
 balance is unavailable instead of inventing a value.
 

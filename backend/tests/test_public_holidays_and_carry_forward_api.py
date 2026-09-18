@@ -165,9 +165,9 @@ def test_dcc_and_spa_carry_forward_reach_each_balance_component(tmp_path: Path) 
         planning = client.get(f"{root}/planning")
 
     assert planning.status_code == 200
-    projected = planning.json()["projected"]
-    assert Decimal(projected["carry_forward"]["dcc_hours"]) == Decimal("5.25")
-    assert Decimal(projected["carry_forward"]["spa_hours"]) == Decimal("2.5")
+    requested = planning.json()["requested"]
+    assert Decimal(requested["carry_forward"]["dcc_hours"]) == Decimal("5.25")
+    assert Decimal(requested["carry_forward"]["spa_hours"]) == Decimal("2.5")
 
 
 def test_entitlement_exposes_workbook_policy_components(tmp_path: Path) -> None:

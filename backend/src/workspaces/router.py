@@ -382,9 +382,7 @@ def delete_workspace(
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> WorkspaceContextRead:
     try:
-        delete_empty_workspace(
-            session, authenticated, workspace_id, details.confirmation_name
-        )
+        delete_empty_workspace(session, authenticated, workspace_id, details.confirmation_name)
         session.commit()
         return context_read(workspace_context(session, authenticated.id, None))
     except (ValueError, PermissionError) as error:

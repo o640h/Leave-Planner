@@ -88,7 +88,7 @@ def test_restore_recovers_the_complete_consultant_year(tmp_path: Path) -> None:
                 json={
                     "start_date": "2026-02-02",
                     "end_date": "2026-02-02",
-                    "state": "taken",
+                    "state": "approved",
                     "note": "Recovery reference booking",
                     "overrides": [],
                 },

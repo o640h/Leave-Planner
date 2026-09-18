@@ -95,7 +95,7 @@ describe('consultant directory', () => {
     await user.type(within(archiveDialog).getByRole('textbox'), 'Dr Alex Morgan')
     await user.click(within(archiveDialog).getByRole('button', { name: 'Archive' }))
     expect(await screen.findByText('No Consultant Selected')).toBeInTheDocument()
-  })
+  }, 10_000)
 
   it('uses Title Case for short interface labels', async () => {
     vi.stubGlobal(

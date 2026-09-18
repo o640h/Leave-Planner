@@ -419,16 +419,12 @@
   color: var(--muted);
 }
 
-.ledger-state--planned {
+.ledger-state--requested {
   color: var(--accent);
 }
 
 .ledger-state--approved {
-  color: var(--nominal);
-}
-
-.ledger-state--taken {
-  color: #8984cf;
+  color: #6f7894;
 }
 
 .ledger-state--public_holiday {

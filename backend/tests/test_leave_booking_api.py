@@ -91,7 +91,7 @@ def test_preview_save_reload_and_cancel_booking(tmp_path: Path) -> None:
         booking: dict[str, Any] = {
             "start_date": "2025-10-20",
             "end_date": "2025-10-22",
-            "state": "planned",
+            "state": "requested",
             "note": None,
             "overrides": [],
         }
@@ -104,8 +104,8 @@ def test_preview_save_reload_and_cancel_booking(tmp_path: Path) -> None:
             Decimal("10"),
             Decimal("6"),
         ]
-        assert Decimal(preview.json()["projected"]["bookings"]["dcc_hours"]) == Decimal("20.5")
-        assert Decimal(preview.json()["confirmed"]["bookings"]["total_hours"]) == 0
+        assert Decimal(preview.json()["requested"]["bookings"]["dcc_hours"]) == Decimal("20.5")
+        assert Decimal(preview.json()["approved"]["bookings"]["total_hours"]) == 0
 
         created = client.post(f"{root}/bookings", json=booking)
         assert created.status_code == 201
@@ -122,7 +122,7 @@ def test_preview_save_reload_and_cancel_booking(tmp_path: Path) -> None:
         cancelled = client.post(f"{root}/bookings/{booking_id}/cancel")
         assert cancelled.status_code == 200
         assert cancelled.json()["bookings"][0]["state"] == "cancelled"
-        assert Decimal(cancelled.json()["projected"]["bookings"]["total_hours"]) == 0
+        assert Decimal(cancelled.json()["requested"]["bookings"]["total_hours"]) == 0
 
 
 def test_capped_deduction_details_survive_save_and_restart(tmp_path: Path) -> None:
@@ -135,7 +135,7 @@ def test_capped_deduction_details_survive_save_and_restart(tmp_path: Path) -> No
     booking: dict[str, Any] = {
         "start_date": "2025-10-20",
         "end_date": "2025-10-20",
-        "state": "taken",
+        "state": "approved",
         "note": None,
         "overrides": [],
     }
@@ -160,7 +160,7 @@ def test_capped_deduction_details_survive_save_and_restart(tmp_path: Path) -> No
         assert Decimal(preview_day["calculated_deduction"]["spa_hours"]) == (
             Decimal("0.5") * expected_factor
         )
-        assert Decimal(preview.json()["actual"]["bookings"]["total_hours"]) == (
+        assert Decimal(preview.json()["approved"]["bookings"]["total_hours"]) == (
             Decimal("8.5") * expected_factor
         )
 
@@ -192,7 +192,7 @@ def test_job_plan_edit_previews_and_regenerates_booking_deductions(tmp_path: Pat
     booking: dict[str, object] = {
         "start_date": "2025-10-20",
         "end_date": "2025-10-20",
-        "state": "taken",
+        "state": "approved",
         "note": None,
         "overrides": [],
     }
@@ -239,7 +239,7 @@ def test_job_plan_edit_previews_and_regenerates_booking_deductions(tmp_path: Pat
         assert Decimal(regenerated["calculated_deduction"]["total_hours"]) == (
             Decimal("8.5") * expected_factor
         )
-        assert Decimal(planning["actual"]["bookings"]["total_hours"]) == (
+        assert Decimal(planning["approved"]["bookings"]["total_hours"]) == (
             Decimal("8.5") * expected_factor
         )
 
@@ -283,7 +283,7 @@ def test_daily_override_and_public_holiday_are_not_double_deducted(tmp_path: Pat
             json={
                 "start_date": "2025-12-25",
                 "end_date": "2025-12-25",
-                "state": "planned",
+                "state": "requested",
                 "overrides": [],
             },
         )
@@ -301,7 +301,7 @@ def test_existing_booking_can_be_updated_with_an_optional_override_reason(
         booking = {
             "start_date": "2025-12-31",
             "end_date": "2025-12-31",
-            "state": "taken",
+            "state": "approved",
             "overrides": [],
         }
         created = client.post(f"{root}/bookings", json=booking)
@@ -337,7 +337,7 @@ def test_incorrect_booking_can_be_removed_without_losing_audit_evidence(tmp_path
             json={
                 "start_date": "2025-12-31",
                 "end_date": "2025-12-31",
-                "state": "taken",
+                "state": "approved",
                 "overrides": [],
             },
         )
@@ -347,7 +347,7 @@ def test_incorrect_booking_can_be_removed_without_losing_audit_evidence(tmp_path
 
         assert removed.status_code == 200
         assert removed.json()["bookings"] == []
-        assert Decimal(removed.json()["actual"]["bookings"]["total_hours"]) == 0
+        assert Decimal(removed.json()["approved"]["bookings"]["total_hours"]) == 0
 
     event = row(
         tmp_path,
@@ -358,7 +358,7 @@ def test_incorrect_booking_can_be_removed_without_losing_audit_evidence(tmp_path
     )
     assert event is not None
     assert event[0] == "deleted"
-    assert '"state": "taken"' in event[1]
+    assert '"state": "approved"' in event[1]
 
 
 def test_overlap_warning_and_audit_history(tmp_path: Path) -> None:
@@ -373,7 +373,7 @@ def test_overlap_warning_and_audit_history(tmp_path: Path) -> None:
         assert client.post(f"{root}/bookings", json=first).status_code == 201
         overlap = client.post(
             f"{root}/bookings/preview",
-            json={**first, "start_date": "2026-04-01", "state": "planned"},
+            json={**first, "start_date": "2026-04-01", "state": "requested"},
         )
         assert overlap.status_code == 200
         assert any(

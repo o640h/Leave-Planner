@@ -71,13 +71,28 @@ directly.
 On the shared Planning wallchart a Member may see only:
 
 - each colleague's display name;
-- the dates covered by a generic leave or unavailability block; and
+- the dates covered by a leave booking and its Requested or Approved state; and
 - public-holiday context.
 
-The Member wallchart must not expose another consultant's leave state or category, DCC/SPA split,
-hours, entitlement, balances, job plan, employment information, notes, calculation detail, record
-identifiers, exports, or audit events. The server must shape this restricted response; hiding fields
-or controls in React is not an authorization control.
+The Member wallchart must not expose another consultant's leave category, DCC/SPA split, hours,
+entitlement, balances, job plan, employment information, notes, calculation detail, record identifiers,
+exports, or audit events. The server must shape this restricted response; hiding fields or controls in
+React is not an authorization control.
+
+The implemented Member surface uses a separate `/api/member` router guarded by an exact Member-role
+dependency. It derives the consultant identifier from the revalidated membership rather than from a
+client parameter. Its read-only workspace contract removes consultant, job-plan, booking,
+recommendation, application, carry-forward, and audit identifiers before serialization. The shared
+wallchart does not reuse the operator planning response: its database query selects only workspace
+consultant names and overlapping non-cancelled booking dates and states, then returns those restrained
+status blocks plus the resolved public-holiday calendar. The same-workspace consultant link remains protected by
+the composite database foreign key and every query is constrained to the transaction-bound
+workspace. The existing operator routers continue to reject Member sessions.
+
+Task 8 includes the Member's own authoritative bookings. Task 9 will allow the Member to create a
+Requested booking for their linked consultant; review changes that same record to Approved or
+Cancelled rather than creating a second request record. Until that slice exists, the Member workspace
+contains no controls that can create, change, cancel, or export planner records.
 
 ## Registration, Invitations, and Recovery
 

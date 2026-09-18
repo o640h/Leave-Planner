@@ -83,7 +83,7 @@ def synthetic_job_plan(
     }
 
 
-def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Path) -> None:
+def test_summary_reconciles_the_workbook_periods_and_approved_balance(tmp_path: Path) -> None:
     with TestClient(app_for(tmp_path)) as client:
         consultant = client.post(
             "/api/consultants",
@@ -140,7 +140,7 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
                 json={
                     "start_date": iso_date,
                     "end_date": iso_date,
-                    "state": "taken",
+                    "state": "approved",
                     "note": "Workbook reference",
                     "overrides": [
                         {
@@ -172,11 +172,15 @@ def test_summary_reconciles_the_workbook_periods_and_actual_balance(tmp_path: Pa
     assert sum(
         Decimal(period["gross_entitlement_hours"]) for period in summary["job_plan_periods"]
     ) == Decimal("291.368")
-    actual = summary["balances"]["actual"]
-    assert Decimal(actual["used"]["dcc_hours"]) == Decimal("229.5")
-    assert Decimal(actual["used"]["spa_hours"]) == Decimal("18")
-    assert Decimal(actual["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal("15.054")
-    assert Decimal(actual["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal("70.064")
+    approved = summary["balances"]["approved"]
+    assert Decimal(approved["used"]["dcc_hours"]) == Decimal("229.5")
+    assert Decimal(approved["used"]["spa_hours"]) == Decimal("18")
+    assert Decimal(approved["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal(
+        "15.054"
+    )
+    assert Decimal(approved["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal(
+        "70.064"
+    )
     assert summary["weekday_counts"] == {
         "monday": 14,
         "tuesday": 12,
@@ -229,7 +233,7 @@ def test_summary_remains_available_before_a_job_plan_is_added(tmp_path: Path) ->
 
     assert response.status_code == 200
     assert response.json()["job_plan_periods"] == []
-    assert response.json()["balances"]["actual"] is None
+    assert response.json()["balances"]["approved"] is None
     assert response.json()["warnings"][0]["code"] == "job-plan.required"
 
 
@@ -337,4 +341,4 @@ def test_summary_api_supports_reference_shapes(
         for period in payload["job_plan_periods"]
     )
     assert payload["entitlement"]["recommendation"] is not None
-    assert payload["balances"]["actual"] is not None
+    assert payload["balances"]["approved"] is not None

@@ -114,9 +114,8 @@ def test_date_range_rejects_reverse_ranges_and_datetimes() -> None:
 def test_domain_enums_have_stable_serialized_values() -> None:
     assert [activity.value for activity in ActivityType] == ["dcc", "spa", "other"]
     assert [state.value for state in LeaveState] == [
-        "planned",
+        "requested",
         "approved",
-        "taken",
         "cancelled",
     ]
     assert [severity.value for severity in WarningSeverity] == ["info", "warning"]

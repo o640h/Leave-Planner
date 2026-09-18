@@ -10,6 +10,7 @@ type WorkspaceSelectionDialogProps = {
   closeRequested?: boolean
   onClose: () => void
   onSelected: (context: WorkspaceContext) => void
+  onCreateWorkspace?: () => void
 }
 
 const roleLabels = { owner: 'Owner', admin: 'Admin', member: 'Member' } as const
@@ -19,20 +20,35 @@ export function WorkspaceSelectionDialog({
   closeRequested = false,
   onClose,
   onSelected,
+  onCreateWorkspace,
 }: WorkspaceSelectionDialogProps) {
   const [busyId, setBusyId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [closing, setClosing] = useState(false)
+  const [createAfterClose, setCreateAfterClose] = useState(false)
   const isClosing = closing || (closeRequested && busyId === null)
 
   useEffect(() => {
     if (!isClosing) return
-    const timeout = window.setTimeout(onClose, 220)
+    const timeout = window.setTimeout(() => {
+      onClose()
+      if (createAfterClose) onCreateWorkspace?.()
+    }, 220)
     return () => window.clearTimeout(timeout)
-  }, [isClosing, onClose])
+  }, [createAfterClose, isClosing, onClose, onCreateWorkspace])
 
   function requestClose() {
-    if (busyId === null) setClosing(true)
+    if (busyId === null) {
+      setCreateAfterClose(false)
+      setClosing(true)
+    }
+  }
+
+  function requestCreate() {
+    if (busyId === null && onCreateWorkspace) {
+      setCreateAfterClose(true)
+      setClosing(true)
+    }
   }
 
   async function choose(workspaceId: number) {
@@ -114,6 +130,16 @@ export function WorkspaceSelectionDialog({
             </p>
           ) : null}
           <footer className="form-actions">
+            {onCreateWorkspace ? (
+              <button
+                className="button button--overview-action"
+                type="button"
+                disabled={busyId !== null || isClosing}
+                onClick={requestCreate}
+              >
+                Create Workspace
+              </button>
+            ) : null}
             <button
               className="button button--quiet"
               type="button"

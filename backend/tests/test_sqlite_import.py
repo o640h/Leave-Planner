@@ -224,7 +224,7 @@ def _create_workbook_source(data_dir: Path) -> tuple[Path, int, int]:
                     json={
                         "start_date": iso_date,
                         "end_date": iso_date,
-                        "state": "taken",
+                        "state": "approved",
                         "note": "Workbook reference",
                         "overrides": [{"leave_date": iso_date, "dcc_hours": dcc, "spa_hours": spa}],
                     },
@@ -303,7 +303,7 @@ def test_workbook_database_import_reconciles_and_is_restart_safe(tmp_path: Path)
 
     assert summary_response.status_code == 200
     summary = summary_response.json()
-    actual = summary["balances"]["actual"]
+    approved = summary["balances"]["approved"]
     assert Decimal(summary["entitlement"]["application"]["entitlement"]["dcc_hours"]) == Decimal(
         "203.304"
     )
@@ -312,10 +312,14 @@ def test_workbook_database_import_reconciles_and_is_restart_safe(tmp_path: Path)
     )
     assert Decimal(summary["carry_forward"]["dcc_hours"]) == Decimal("41.25")
     assert Decimal(summary["carry_forward"]["spa_hours"]) == Decimal("0")
-    assert Decimal(actual["used"]["dcc_hours"]) == Decimal("229.5")
-    assert Decimal(actual["used"]["spa_hours"]) == Decimal("18")
-    assert Decimal(actual["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal("15.054")
-    assert Decimal(actual["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal("70.064")
+    assert Decimal(approved["used"]["dcc_hours"]) == Decimal("229.5")
+    assert Decimal(approved["used"]["spa_hours"]) == Decimal("18")
+    assert Decimal(approved["remaining"]["dcc_hours"]).quantize(Decimal("0.001")) == Decimal(
+        "15.054"
+    )
+    assert Decimal(approved["remaining"]["spa_hours"]).quantize(Decimal("0.001")) == Decimal(
+        "70.064"
+    )
     assert pdf_response.status_code == 200
     assert pdf_response.headers["content-type"] == "application/pdf"
     exported_text = "\n".join(

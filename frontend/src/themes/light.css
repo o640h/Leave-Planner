@@ -95,6 +95,9 @@
   --service-ready-rgb: 91 132 139;
   --service-ready: rgb(var(--service-ready-rgb));
   --warning: #796f9d;
+  --leave-requested: #527f97;
+  --leave-approved: #7667a3;
+  --public-holiday: #9a6f82;
   --danger: #a45b59;
   --on-accent: #f8fcff;
   --overview-action-text: #3b708f;

@@ -80,9 +80,8 @@ class LeaveWarningRead(BaseModel):
 
 class LeavePreviewRead(BaseModel):
     days: tuple[LeaveDayRead, ...]
-    projected: BalanceRead | None
-    confirmed: BalanceRead | None
-    actual: BalanceRead | None
+    requested: BalanceRead | None
+    approved: BalanceRead | None
     warnings: tuple[LeaveWarningRead, ...]
 
 
@@ -104,7 +103,6 @@ class PlanningRead(BaseModel):
     end_date: date
     holidays: tuple[HolidayOccurrenceRead, ...]
     bookings: tuple[LeaveBookingRead, ...]
-    projected: BalanceRead | None
-    confirmed: BalanceRead | None
-    actual: BalanceRead | None
+    requested: BalanceRead | None
+    approved: BalanceRead | None
     warnings: tuple[LeaveWarningRead, ...]

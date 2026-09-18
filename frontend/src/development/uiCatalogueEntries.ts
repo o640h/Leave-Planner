@@ -94,10 +94,10 @@ export const uiCatalogueEntries: UiCatalogueEntry[] = [
     group: 'Application States',
   },
   {
-    path: '/ui/member-workspace',
-    title: 'Member Workspace',
-    description: 'Temporary Member holding state.',
-    group: 'Application States',
+    path: '/ui/member',
+    title: 'Member View',
+    description: 'Seeded read-only Member workspace for local interface work.',
+    group: 'Workspace',
   },
   {
     path: '/ui/consultants',

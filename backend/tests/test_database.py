@@ -140,6 +140,46 @@ def test_deduction_migration_backfills_existing_booking_days(tmp_path: Path) -> 
     assert Decimal(deduction_factor) == Decimal("10") / Decimal("12")
 
 
+def test_leave_state_migration_preserves_existing_booking_history(tmp_path: Path) -> None:
+    database_path = tmp_path / "existing-leave-states.sqlite3"
+    config = alembic_config(database_path)
+    command.upgrade(config, "0018")
+
+    with closing(sqlite3.connect(database_path)) as connection, connection:
+        connection.execute(
+            "INSERT INTO consultants (id, workspace_id, name) VALUES (1, 1, 'Consultant')"
+        )
+        connection.execute(
+            """
+            INSERT INTO leave_years (id, consultant_id, start_date, end_date)
+            VALUES (1, 1, '2026-01-01', '2026-12-31')
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO leave_bookings (id, leave_year_id, start_date, end_date, state)
+            VALUES
+                (1, 1, '2026-02-01', '2026-02-01', 'planned'),
+                (2, 1, '2026-03-01', '2026-03-01', 'taken')
+            """
+        )
+
+    command.upgrade(config, "head")
+
+    with closing(sqlite3.connect(database_path)) as connection, connection:
+        states = connection.execute(
+            "SELECT state FROM leave_bookings ORDER BY id"
+        ).fetchall()
+        assert states == [("requested",), ("approved",)]
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                """
+                INSERT INTO leave_bookings (leave_year_id, start_date, end_date, state)
+                VALUES (1, '2026-04-01', '2026-04-01', 'taken')
+                """
+            )
+
+
 def test_session_scope_commits_successful_work(tmp_path: Path) -> None:
     database_path = tmp_path / "sessions.sqlite3"
     upgrade_database(database_path)

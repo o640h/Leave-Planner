@@ -28,7 +28,7 @@ class LeaveBookingRecord(Base):
     __table_args__ = (
         CheckConstraint("end_date >= start_date", name="ck_leave_booking_dates"),
         CheckConstraint(
-            "state IN ('planned', 'approved', 'taken', 'cancelled')",
+            "state IN ('requested', 'approved', 'cancelled')",
             name="ck_leave_booking_state",
         ),
     )

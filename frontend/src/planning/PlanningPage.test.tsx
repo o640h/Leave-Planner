@@ -54,9 +54,8 @@ const workspace = {
   end_date: currentMonthEnd,
   holidays: [],
   bookings: [],
-  projected: balance,
-  confirmed: balance,
-  actual: balance,
+  requested: balance,
+  approved: balance,
   warnings: [],
 }
 
@@ -145,7 +144,7 @@ describe('PlanningPage', () => {
             leave_year_id: 3,
             start_date: holidayDate,
             end_date: holidayDate,
-            state: 'planned' as const,
+            state: 'requested' as const,
             note: null,
             days: [],
             created_at: '2026-08-18T12:00:00',
@@ -256,7 +255,7 @@ describe('PlanningPage', () => {
           public_holiday_name: null,
         },
       ],
-      projected: {
+      requested: {
         ...balance,
         bookings: {
           ...zero,
@@ -265,8 +264,7 @@ describe('PlanningPage', () => {
           total_hours: '7.083334',
         },
       },
-      confirmed: balance,
-      actual: balance,
+      approved: balance,
       warnings: [],
     })
 
@@ -325,7 +323,7 @@ describe('PlanningPage', () => {
       leave_year_id: 3,
       start_date: day.leave_date,
       end_date: day.leave_date,
-      state: 'taken' as const,
+      state: 'approved' as const,
       note: null,
       days: [day],
       created_at: '2026-08-11T12:00:00',
@@ -333,9 +331,8 @@ describe('PlanningPage', () => {
     }
     mocks.previewBooking.mockResolvedValue({
       days: [day],
-      projected: balance,
-      confirmed: balance,
-      actual: balance,
+      requested: balance,
+      approved: balance,
       warnings: [
         {
           code: 'leave-balance.carry-forward',
@@ -381,7 +378,7 @@ describe('PlanningPage', () => {
       leave_year_id: 3,
       start_date: '2025-12-31',
       end_date: '2025-12-31',
-      state: 'taken' as const,
+      state: 'approved' as const,
       note: null,
       days: [],
       created_at: '2026-08-11T12:00:00',
@@ -389,9 +386,8 @@ describe('PlanningPage', () => {
     }
     mocks.previewBooking.mockResolvedValue({
       days: [],
-      projected: balance,
-      confirmed: balance,
-      actual: balance,
+      requested: balance,
+      approved: balance,
       warnings: [],
     })
     const onRemove = vi.fn().mockResolvedValue(undefined)

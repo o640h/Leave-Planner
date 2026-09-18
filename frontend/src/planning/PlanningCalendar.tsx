@@ -21,7 +21,7 @@ type Props = {
   onSelectHoliday: (row: PlanningRow, holiday: HolidayOccurrence) => void
 }
 
-const stateLetter = { planned: 'P', approved: 'A', taken: 'T', cancelled: 'C' }
+const stateLetter = { requested: 'R', approved: 'A', cancelled: 'C' }
 
 function isoDate(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -82,7 +82,7 @@ export function PlanningCalendar({
         </div>
 
         {rows.map((row) => {
-          const balance = row.workspace?.projected?.remaining
+          const balance = row.workspace?.requested?.remaining
           return (
             <div className="wallchart-row" role="row" key={row.consultant.id}>
               <span className="wallchart-name" role="rowheader">

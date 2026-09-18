@@ -232,6 +232,7 @@
   display: grid;
   align-content: center;
   gap: 4px;
+  transform: translateY(-4px);
 }
 
 .consultant-monogram {

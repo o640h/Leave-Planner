@@ -36,4 +36,17 @@ describe('development UI catalogue', () => {
     rerender(<UiCatalogue pathname="/ui/server-unavailable" />)
     expect(screen.getByRole('heading', { name: 'Server Unavailable' })).toBeInTheDocument()
   })
+
+  it('opens the seeded Member workspace without a backend session', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ status: 'ok' }))),
+    )
+
+    render(<UiCatalogue pathname="/ui/member" />)
+
+    expect(screen.getByRole('heading', { name: 'Alex Morgan' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument()
+    expect(screen.queryByText('Leave Setup Status')).not.toBeInTheDocument()
+  })
 })

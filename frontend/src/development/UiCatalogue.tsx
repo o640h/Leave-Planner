@@ -11,8 +11,14 @@ import { AccountActionScreen, type AccountActionMode } from '../authentication/A
 import { LoginScreen } from '../authentication/LoginScreen'
 import { RegistrationScreen } from '../authentication/RegistrationScreen'
 import type { AuthenticatedUser, WorkspaceContext } from '../authentication/types'
+import { MemberApplicationWorkspace } from '../memberWorkspace/MemberApplicationWorkspace'
 import type { SettingsSection } from '../settings/SettingsPage'
 import { WorkspaceCreationDialog } from '../workspaces/WorkspaceCreationDialog'
+import {
+  memberPreviewData,
+  memberPreviewPolicyDocuments,
+  memberPreviewWallchart,
+} from './memberPreviewData'
 import { type CatalogueGroup, uiCatalogueEntries } from './uiCatalogueEntries'
 import './uiCatalogue.css'
 
@@ -44,6 +50,19 @@ const previewWorkspace: WorkspaceContext = {
 const selectionWorkspace: WorkspaceContext = {
   ...previewWorkspace,
   state: 'selection_required',
+}
+
+const previewMemberWorkspace: WorkspaceContext = {
+  state: 'active',
+  active_workspace_id: 1,
+  memberships: [
+    {
+      workspace_id: 1,
+      workspace_name: 'Consultants',
+      role: 'member',
+      linked_consultant_id: 1,
+    },
+  ],
 }
 
 const noop = () => undefined
@@ -210,13 +229,17 @@ export function UiCatalogue({ pathname = window.location.pathname }: { pathname?
       <WorkspaceSelectionScreen workspace={selectionWorkspace} onSelected={noop} onSignOut={noop} />
     )
   }
-  if (route === '/ui/member-workspace') {
+  if (route === '/ui/member') {
     return (
-      <ApplicationStatus
-        kind="member"
-        onCreateWorkspace={noop}
+      <MemberApplicationWorkspace
+        user={{ ...previewUser, display_name: 'Alex Morgan', display_email: 'alex@example.com' }}
+        workspace={previewMemberWorkspace}
+        initialData={memberPreviewData}
+        initialPolicyDocuments={memberPreviewPolicyDocuments}
+        initialWallchart={memberPreviewWallchart}
         onSignOut={noop}
-        onManageAccount={noop}
+        onWorkspaceSelected={noop}
+        onCreateWorkspace={noop}
       />
     )
   }

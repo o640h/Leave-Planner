@@ -49,16 +49,15 @@ hours remains entirely DCC, while an independently approved non-direct-clinical 
 recorded as SPA. A booking never changes entitlement; its saved daily deductions change the used and
 remaining figures.
 
-The three tabs answer different questions:
+The two tabs answer different questions:
 
-- **Projected** includes Planned, Approved, and Taken leave.
-- **Confirmed** includes Approved and Taken leave.
-- **Actual** includes Taken leave only.
+- **Requested** includes Requested and Approved leave.
+- **Approved** includes Approved leave, which is treated as taken unless cancelled.
 - Cancelled leave is retained in history but deducts nothing.
 
 ## Weekday counts
 
-The weekday row counts each applicable public-holiday date and each Taken booking date with a positive deduction once. It does not copy the workbook's overlapping `COUNTA` formulas because those ranges double-count many cells. The corrected reference counts are 14 Mondays, 12 Tuesdays, 12 Wednesdays, 2 Thursdays, and 2 Fridays.
+The weekday row counts each applicable public-holiday date and each Approved booking date with a positive deduction once. It does not copy the workbook's overlapping `COUNTA` formulas because those ranges double-count many cells. The corrected reference counts are 14 Mondays, 12 Tuesdays, 12 Wednesdays, 2 Thursdays, and 2 Fridays.
 
 ## Stored data and operator control
 

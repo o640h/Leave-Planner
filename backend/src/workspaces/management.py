@@ -537,9 +537,7 @@ def _accept_invitation_record(
     )
 
 
-def accept_invitation(
-    session: Session, authenticated: AuthenticatedUser, raw_token: str
-) -> int:
+def accept_invitation(session: Session, authenticated: AuthenticatedUser, raw_token: str) -> int:
     account = session.get(User, authenticated.id)
     action = valid_action(session, purpose=INVITATION, raw_token=raw_token)
     if account is None or action is None or action.workspace_id is None:
@@ -571,9 +569,7 @@ def accept_invitation(
     return invitation.workspace_id
 
 
-def claim_invitation_for_registration(
-    session: Session, *, raw_token: str, account: User
-) -> None:
+def claim_invitation_for_registration(session: Session, *, raw_token: str, account: User) -> None:
     action = valid_action(session, purpose=INVITATION, raw_token=raw_token)
     if (
         action is None
@@ -656,13 +652,16 @@ def update_member(
         raise ValueError("Choose the consultant this Member can view")
     if role == ADMIN_ROLE:
         linked_consultant_id = None
-    elif session.scalar(
-        select(Consultant.id).where(
-            Consultant.workspace_id == workspace_id,
-            Consultant.id == linked_consultant_id,
-            Consultant.archived_at.is_(None),
+    elif (
+        session.scalar(
+            select(Consultant.id).where(
+                Consultant.workspace_id == workspace_id,
+                Consultant.id == linked_consultant_id,
+                Consultant.archived_at.is_(None),
+            )
         )
-    ) is None:
+        is None
+    ):
         raise ValueError("Choose an active consultant in this workspace")
     target.role = role
     target.linked_consultant_id = linked_consultant_id
@@ -996,9 +995,7 @@ def purge_closed_workspace(
     session.execute(delete(AuditEvent).where(AuditEvent.workspace_id == workspace_id))
     session.execute(delete(Consultant).where(Consultant.workspace_id == workspace_id))
     session.execute(
-        delete(HolidayCorrectionRecord).where(
-            HolidayCorrectionRecord.workspace_id == workspace_id
-        )
+        delete(HolidayCorrectionRecord).where(HolidayCorrectionRecord.workspace_id == workspace_id)
     )
     session.delete(workspace)
     return removed_name

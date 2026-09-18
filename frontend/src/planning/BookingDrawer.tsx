@@ -31,7 +31,7 @@ type OverrideDraft = { dcc: string; spa: string; other: string; reason: string }
 const emptyInput = (date: string | null): LeaveBookingInput => ({
   start_date: date ?? '',
   end_date: date ?? '',
-  state: 'planned',
+  state: 'approved',
   note: null,
   overrides: [],
 })
@@ -270,9 +270,8 @@ export function BookingDrawer({
                     setPreview(null)
                   }}
                 >
-                  <option value="planned">Planned</option>
+                  <option value="requested">Requested</option>
                   <option value="approved">Approved</option>
-                  <option value="taken">Taken</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
               </label>

@@ -36,9 +36,8 @@ LINE = colors.HexColor("#d9dee7")
 HEADER = colors.HexColor("#edf1f6")
 ALTERNATE = colors.HexColor("#f8f9fb")
 STATUS_COLOURS = {
-    "planned": colors.HexColor("#377f97"),
+    "requested": colors.HexColor("#377f97"),
     "approved": colors.HexColor("#39775d"),
-    "taken": colors.HexColor("#665d9d"),
     "public_holiday": colors.HexColor("#9a743d"),
     "cancelled": MUTED,
 }

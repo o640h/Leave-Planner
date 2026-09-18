@@ -10,13 +10,13 @@ are under `backend/tests/reference_cases/` so they do not add test data to the i
 
 ### Overlapping active bookings
 
-Planned, Approved, and Taken bookings warn when their date ranges overlap. Cancelled records stay
+Requested and Approved bookings warn when their date ranges overlap. Cancelled records stay
 in history but are ignored by this check. The warning records both booking IDs, both states, and
 the shared dates so the operator can decide whether the records are duplicates.
 
 ### Negative balances
 
-Each of the projected, confirmed, and actual views is checked independently:
+Each of the Requested and Approved views is checked independently:
 
 - an **overdrawn** warning means the combined DCC, SPA, and Other balance is negative;
 - an **activity imbalance** means the total is still non-negative, but at least one activity
@@ -96,12 +96,12 @@ The checked results include `6.667 DCC / 3.333 SPA / 3.333 Other` ordinary booki
 
 ## Property check
 
-The lifecycle property test generates different numbers of Planned, Approved, and Taken bookings
+The lifecycle property test generates different numbers of Requested and Approved bookings
 and confirms this invariant for every generated example:
 
 ```text
-projected deductions >= confirmed deductions >= actual deductions
+requested deductions >= approved deductions
 ```
 
-This protects the meaning of the three balance views across more combinations than a few fixed
+This protects the meaning of the two balance views across more combinations than a few fixed
 examples could cover.

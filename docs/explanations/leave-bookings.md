@@ -10,7 +10,7 @@ For a booking, the operator selects:
 
 - the consultant and leave year;
 - a start and end date;
-- Planned, Approved, Taken, or Cancelled;
+- Requested, Approved, or Cancelled;
 - an optional note.
 
 The preview finds the job plan effective on every date and shows the normal DCC and SPA hours for
@@ -42,9 +42,8 @@ SPA, and Other value by `10 / max(contracted PAs, 10)`. Plans at or below 10 PAs
 The calculated result is exposed separately from the entered hours and is never written back over
 them. No mutable balance total is stored.
 
-- **Projected** includes Planned, Approved, and Taken bookings.
-- **Confirmed** includes Approved and Taken bookings.
-- **Actual** includes Taken bookings only.
+- **Requested** includes Requested and Approved bookings.
+- **Approved** includes Approved bookings, which are treated as taken unless cancelled.
 - **Cancelled** bookings remain visible for history but deduct nothing.
 
 For each view:

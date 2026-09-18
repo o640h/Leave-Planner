@@ -17,6 +17,7 @@ import type {
   WorkspaceContext,
 } from './authentication/types'
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
+import { MemberApplicationWorkspace } from './memberWorkspace/MemberApplicationWorkspace'
 import { PlanningPage } from './planning/PlanningPage'
 import { SettingsPage, type SettingsSection } from './settings/SettingsPage'
 import { AppIcon } from './system/AppIcon'
@@ -103,7 +104,7 @@ export function ApplicationWorkspace({
           </nav>
 
           <div className="rail-footer">
-            {workspace && workspace.memberships.length > 1 && onWorkspaceSelected ? (
+            {workspace && onWorkspaceSelected ? (
               <button
                 className={`navigation-item workspace-switcher-control${
                   workspaceSelectionOpen ? ' navigation-item--active' : ''
@@ -202,6 +203,7 @@ export function ApplicationWorkspace({
             setWorkspaceSelectionCloseRequested(false)
           }}
           onSelected={onWorkspaceSelected}
+          onCreateWorkspace={onCreateWorkspace}
         />
       ) : null}
     </WorkspaceFrame>
@@ -209,7 +211,7 @@ export function ApplicationWorkspace({
 }
 
 type ApplicationStatusProps = {
-  kind: 'access-denied' | 'member' | 'onboarding' | 'unavailable'
+  kind: 'access-denied' | 'onboarding' | 'unavailable'
   busy?: boolean
   onRetry?: () => void
   onSignOut?: () => void
@@ -230,16 +232,12 @@ export function ApplicationStatus({
     ? 'Server Unavailable'
     : kind === 'onboarding'
       ? 'No Workspace Yet'
-      : kind === 'member'
-        ? 'Workspace Joined'
-        : 'Workspace Access Unavailable'
+      : 'Workspace Access Unavailable'
   const message = unavailable
     ? 'Leave Planner could not reach the server. Check the connection and try again.'
     : kind === 'onboarding'
       ? 'This account does not currently belong to a workspace. You can create one now or sign out.'
-      : kind === 'member'
-        ? 'Your invitation has been accepted. Access to consultant records for Members is not available yet.'
-        : 'Your account is signed in but does not currently have access to the selected workspace.'
+      : 'Your account is signed in but does not currently have access to the selected workspace.'
   return (
     <div className="application-frame authentication-frame">
       <main className="application-status-page">
@@ -592,11 +590,16 @@ export function App() {
   if (activeMembership.role === 'member') {
     return (
       <>
-        <ApplicationStatus
-          kind="member"
-          onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
+        <MemberApplicationWorkspace
+          key={workspace.active_workspace_id}
+          user={session.user!}
+          workspace={workspace}
           onSignOut={signOut}
-          onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+          signOutError={signOutError}
+          onWorkspaceSelected={(nextWorkspace) =>
+            setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
+          }
+          onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
         />
         {workspaceCreationOpen ? (
           <WorkspaceCreationDialog

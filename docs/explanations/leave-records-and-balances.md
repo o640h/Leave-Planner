@@ -19,7 +19,7 @@ field meanings remain authoritative where workbook colours are inconsistent.
 The operator supplies:
 
 - a leave date range;
-- its state: Planned, Approved, Taken, or Cancelled;
+- its state: Requested, Approved, or Cancelled;
 - an optional note;
 - any partial-day replacement hours and the reason for changing them; and
 - approved carry-forward from the previous leave year.
@@ -30,7 +30,7 @@ The software calculates:
 - the job-plan version applying on that date;
 - the standard DCC, SPA, and Other hours for that weekday;
 - the final deduction after any override; and
-- projected, confirmed, and actual remaining balances.
+- requested and approved remaining balances.
 
 A calculated balance is never typed in or silently edited. It can always be rebuilt from the
 entitlement, public holidays, leave records, and carry-forward.
@@ -62,15 +62,14 @@ An override must include a reason. This makes differences from the standard job 
 traceable. The warning task will later flag unusual or overlapping records; it will not silently
 change operator-entered values.
 
-## The three balance views
+## The two balance views
 
 | View | Leave states deducted | Meaning |
 | --- | --- | --- |
-| Projected | Planned, Approved, Taken | What remains if all current plans happen? |
-| Confirmed | Approved, Taken | What remains after excluding tentative plans? |
-| Actual | Taken | What has genuinely been consumed so far? |
+| Requested | Requested, Approved | What remains if every open request is approved? |
+| Approved | Approved | What remains after approved leave, which is treated as taken unless cancelled? |
 
-Cancelled leave remains in the history but is excluded from all three deductions.
+Cancelled leave remains in the history but is excluded from both deductions.
 
 Every view uses the same calculation:
 

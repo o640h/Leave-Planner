@@ -13,12 +13,17 @@ function displayEffectiveDate(value: string): string {
   })
 }
 
-export function PolicySettingsPage() {
-  const [documents, setDocuments] = useState<PolicyDocument[] | null>(null)
+type PolicySettingsPageProps = {
+  initialDocuments?: PolicyDocument[]
+}
+
+export function PolicySettingsPage({ initialDocuments }: PolicySettingsPageProps = {}) {
+  const [documents, setDocuments] = useState<PolicyDocument[] | null>(initialDocuments ?? null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (initialDocuments) return
     let active = true
 
     getPolicyDocuments()
@@ -32,7 +37,7 @@ export function PolicySettingsPage() {
     return () => {
       active = false
     }
-  }, [])
+  }, [initialDocuments])
 
   async function download(document: PolicyDocument) {
     setDownloadingId(document.document_id)

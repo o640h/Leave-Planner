@@ -36,7 +36,7 @@ def test_partial_day_override_replaces_only_supplied_activity() -> None:
     booking = LeaveBooking(
         "partial",
         DateRange(leave_date, leave_date),
-        LeaveState.PLANNED,
+        LeaveState.REQUESTED,
         (DailyLeaveOverride(leave_date, "Half day", dcc_hours=hours("4")),),
     )
     day = expand_booking(booking, request.job_plans)[0]
@@ -59,23 +59,21 @@ def test_pa_cap_is_applied_after_daily_hours_are_entered() -> None:
 
 
 @pytest.mark.parametrize(
-    ("state", "projected", "confirmed", "actual"),
+    ("state", "requested", "approved"),
     [
-        (LeaveState.PLANNED, "40", "0", "0"),
-        (LeaveState.APPROVED, "40", "40", "0"),
-        (LeaveState.TAKEN, "40", "40", "40"),
-        (LeaveState.CANCELLED, "0", "0", "0"),
+        (LeaveState.REQUESTED, "40", "0"),
+        (LeaveState.APPROVED, "40", "40"),
+        (LeaveState.CANCELLED, "0", "0"),
     ],
 )
 def test_leave_states_feed_the_expected_balance_views(
-    state: LeaveState, projected: str, confirmed: str, actual: str
+    state: LeaveState, requested: str, approved: str
 ) -> None:
     request = full_time_request()
     booking = replace(request.bookings[0], state=state)
     result = calculate_leave_records(replace(request, bookings=(booking,))).value
-    assert result.projected.booking_deductions.dcc == hours(projected)
-    assert result.confirmed.booking_deductions.dcc == hours(confirmed)
-    assert result.actual.booking_deductions.dcc == hours(actual)
+    assert result.requested.booking_deductions.dcc == hours(requested)
+    assert result.approved.booking_deductions.dcc == hours(approved)
 
 
 def test_carry_forward_changes_all_balance_views() -> None:
@@ -89,9 +87,8 @@ def test_carry_forward_changes_all_balance_views() -> None:
     )
     result = calculate_leave_records(replace(request, carry_forward=carry_forward)).value
     expected = ActivityHours(dcc=hours("8"))
-    assert result.projected.carry_forward == expected
-    assert result.confirmed.carry_forward == expected
-    assert result.actual.carry_forward == expected
+    assert result.requested.carry_forward == expected
+    assert result.approved.carry_forward == expected
 
 
 def test_trace_explains_bookings_carry_forward_and_balances() -> None:
@@ -100,9 +97,8 @@ def test_trace_explains_bookings_carry_forward_and_balances() -> None:
     assert {
         "leave-records.daily-deduction",
         "leave-balance.carry-forward",
-        "leave-balance.projected",
-        "leave-balance.confirmed",
-        "leave-balance.actual",
+        "leave-balance.requested",
+        "leave-balance.approved",
     } <= rule_ids
 
 
@@ -115,13 +111,16 @@ def test_booking_overrides_allow_optional_reasons_and_require_valid_dates() -> N
     override = DailyLeaveOverride(leave_date, "Partial", dcc_hours=hours("4"))
     with pytest.raises(ValueError, match="multiple overrides"):
         LeaveBooking(
-            "duplicate", DateRange(leave_date, leave_date), LeaveState.PLANNED, (override, override)
+            "duplicate",
+            DateRange(leave_date, leave_date),
+            LeaveState.REQUESTED,
+            (override, override),
         )
     with pytest.raises(ValueError, match="inside"):
         LeaveBooking(
             "outside",
             DateRange(date(2026, 6, 2), date(2026, 6, 2)),
-            LeaveState.PLANNED,
+            LeaveState.REQUESTED,
             (override,),
         )
 

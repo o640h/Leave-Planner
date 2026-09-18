@@ -33,7 +33,13 @@ function hours(value: string, precision = 2): string {
   return `${formatDecimal(value, precision)}h`
 }
 
-function BalancePositionView({ position }: { position: BalancePosition | null }) {
+function BalancePositionView({
+  position,
+  view,
+}: {
+  position: BalancePosition | null
+  view: 'requested' | 'approved'
+}) {
   if (!position) return <p className="summary-empty">Apply entitlement to calculate balances.</p>
   return (
     <div className="balance-position">
@@ -46,7 +52,7 @@ function BalancePositionView({ position }: { position: BalancePosition | null })
         </small>
       </div>
       <div>
-        <span>Leave Taken</span>
+        <span>{view === 'requested' ? 'Leave Requested' : 'Leave Approved'}</span>
         <strong>{hours(position.used.total_hours, 0)}</strong>
         <small>
           DCC {formatDecimal(position.used.dcc_hours, 0)} / SPA{' '}
@@ -66,7 +72,7 @@ function BalancePositionView({ position }: { position: BalancePosition | null })
 }
 
 export function LeaveBalanceSummary({ summary }: { summary: ConsultantYearSummary | null }) {
-  const [view, setView] = useState<'actual' | 'confirmed' | 'projected'>('actual')
+  const [view, setView] = useState<'requested' | 'approved'>('approved')
   if (!summary) return <p className="summary-empty">Loading leave position...</p>
 
   return (
@@ -74,7 +80,7 @@ export function LeaveBalanceSummary({ summary }: { summary: ConsultantYearSummar
       <header>
         <h5 id="leave-position-title">Leave Position</h5>
         <div className="balance-tabs" role="group" aria-label="Balance View">
-          {(['actual', 'confirmed', 'projected'] as const).map((item) => (
+          {(['requested', 'approved'] as const).map((item) => (
             <button
               type="button"
               className={view === item ? 'balance-tab balance-tab--active' : 'balance-tab'}
@@ -86,7 +92,7 @@ export function LeaveBalanceSummary({ summary }: { summary: ConsultantYearSummar
           ))}
         </div>
       </header>
-      <BalancePositionView position={summary.balances[view]} />
+      <BalancePositionView position={summary.balances[view]} view={view} />
       <div className="weekday-counts" aria-label="Logged Leave Dates by Weekday">
         {Object.entries(summary.weekday_counts).map(([weekday, count]) => (
           <div key={weekday}>

@@ -106,7 +106,7 @@ def _workbook_bookings() -> tuple[LeaveBooking, ...]:
         LeaveBooking(
             booking_id=f"workbook-{index}",
             period=DateRange(leave_date, leave_date),
-            state=LeaveState.TAKEN,
+            state=LeaveState.APPROVED,
             overrides=(
                 DailyLeaveOverride(
                     leave_date=leave_date,

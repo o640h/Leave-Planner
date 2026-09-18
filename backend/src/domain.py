@@ -139,9 +139,8 @@ class ActivityType(StrEnum):
 class LeaveState(StrEnum):
     """Lifecycle states for a leave booking."""
 
-    PLANNED = "planned"
+    REQUESTED = "requested"
     APPROVED = "approved"
-    TAKEN = "taken"
     CANCELLED = "cancelled"
 
 

@@ -32,7 +32,7 @@ def test_overlapping_active_bookings_warn_but_cancelled_leave_does_not() -> None
                 "first",
                 date(2026, 6, 1),
                 date(2026, 6, 3),
-                LeaveState.PLANNED,
+                LeaveState.REQUESTED,
             ),
             booking(
                 "second",

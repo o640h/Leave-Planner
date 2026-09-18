@@ -538,9 +538,8 @@ def _preview_read(
         )
     return LeavePreviewRead(
         days=tuple(_day_read(day, holiday_names) for day in value.days),
-        projected=_balance_read(value.projected) if has_entitlement else None,
-        confirmed=_balance_read(value.confirmed) if has_entitlement else None,
-        actual=_balance_read(value.actual) if has_entitlement else None,
+        requested=_balance_read(value.requested) if has_entitlement else None,
+        approved=_balance_read(value.approved) if has_entitlement else None,
         warnings=warnings,
     )
 
@@ -748,8 +747,7 @@ def planning(session: Session, consultant_id: int, leave_year_id: int) -> Planni
         end_date=leave_year.end_date,
         holidays=holiday_schema.occurrences,
         bookings=tuple(_record_read(record, holiday_names) for record in records),
-        projected=preview.projected,
-        confirmed=preview.confirmed,
-        actual=preview.actual,
+        requested=preview.requested,
+        approved=preview.approved,
         warnings=preview.warnings,
     )

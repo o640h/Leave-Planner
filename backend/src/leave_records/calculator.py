@@ -23,17 +23,12 @@ from .models import (
 )
 from .warnings import evaluate_leave_warnings
 
-_PROJECTED_STATES = {
-    LeaveState.PLANNED,
+_REQUESTED_STATES = {
+    LeaveState.REQUESTED,
     LeaveState.APPROVED,
-    LeaveState.TAKEN,
 }
-_CONFIRMED_STATES = {
+_APPROVED_STATES = {
     LeaveState.APPROVED,
-    LeaveState.TAKEN,
-}
-_ACTUAL_STATES = {
-    LeaveState.TAKEN,
 }
 
 
@@ -111,43 +106,32 @@ def calculate_leave_records_from_days(
     opening = _opening_entitlement(request)
     holiday_deductions = _public_holiday_deductions(request)
 
-    projected = _balance_view(
-        basis=BalanceBasis.PROJECTED,
+    requested = _balance_view(
+        basis=BalanceBasis.REQUESTED,
         opening_entitlement=opening,
         carry_forward=carry_forward,
         public_holiday_deductions=holiday_deductions,
         booking_deductions=_booking_deductions(
             days,
-            _PROJECTED_STATES,
+            _REQUESTED_STATES,
         ),
     )
-    confirmed = _balance_view(
-        basis=BalanceBasis.CONFIRMED,
+    approved = _balance_view(
+        basis=BalanceBasis.APPROVED,
         opening_entitlement=opening,
         carry_forward=carry_forward,
         public_holiday_deductions=holiday_deductions,
         booking_deductions=_booking_deductions(
             days,
-            _CONFIRMED_STATES,
-        ),
-    )
-    actual = _balance_view(
-        basis=BalanceBasis.ACTUAL,
-        opening_entitlement=opening,
-        carry_forward=carry_forward,
-        public_holiday_deductions=holiday_deductions,
-        booking_deductions=_booking_deductions(
-            days,
-            _ACTUAL_STATES,
+            _APPROVED_STATES,
         ),
     )
 
     result = LeaveRecordsResult(
         days=days,
         carry_forward=request.carry_forward,
-        projected=projected,
-        confirmed=confirmed,
-        actual=actual,
+        requested=requested,
+        approved=approved,
     )
 
     day_trace = tuple(
@@ -210,9 +194,8 @@ def calculate_leave_records_from_days(
             },
         )
         for view in (
-            projected,
-            confirmed,
-            actual,
+            requested,
+            approved,
         )
     )
 

@@ -23,9 +23,8 @@ from .models import (
 
 _ACTIVE_BOOKING_STATES = frozenset(
     {
-        LeaveState.PLANNED,
+        LeaveState.REQUESTED,
         LeaveState.APPROVED,
-        LeaveState.TAKEN,
     }
 )
 
@@ -133,14 +132,13 @@ def _balance_warnings(
     result: LeaveRecordsResult,
     leave_year: DateRange,
 ) -> tuple[CalculationWarning, ...]:
-    """Check projected, confirmed, and actual balances."""
+    """Check requested and approved balances."""
 
     warnings: list[CalculationWarning] = []
 
     for view in (
-        result.projected,
-        result.confirmed,
-        result.actual,
+        result.requested,
+        result.approved,
     ):
         warning = _balance_warning(view, leave_year)
 

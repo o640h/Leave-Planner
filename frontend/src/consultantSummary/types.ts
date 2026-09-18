@@ -27,9 +27,8 @@ export type BalancePosition = {
 }
 
 export type BalanceViews = {
-  projected: BalancePosition | null
-  confirmed: BalancePosition | null
-  actual: BalancePosition | null
+  requested: BalancePosition | null
+  approved: BalancePosition | null
 }
 
 export type WeekdayCounts = {

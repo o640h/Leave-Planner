@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import type { WorkspaceContext } from '../authentication/types'
 import { PolicySettingsPage } from '../policies/PolicySettingsPage'
+import type { PolicyDocument } from '../policies/types'
 import { HolidaySettingsPage } from '../publicHolidays/HolidaySettingsPage'
 import { AppIcon } from '../system/AppIcon'
 import { WorkspaceManagement } from '../workspaces/WorkspaceManagement'
@@ -15,11 +16,15 @@ const sections = [
   { id: 'policy', label: 'Policy & Guidance', icon: 'document' },
 ] as const
 
+const allSectionIds = sections.map((section) => section.id)
+
 type SettingsPageProps = {
   workspace?: WorkspaceContext
   onCreateWorkspace?: () => void
   onWorkspaceContextChanged?: (context: WorkspaceContext) => void
   initialSection?: SettingsSection
+  availableSections?: readonly SettingsSection[]
+  policyDocuments?: PolicyDocument[]
 }
 
 export function SettingsPage({
@@ -27,8 +32,15 @@ export function SettingsPage({
   onCreateWorkspace,
   onWorkspaceContextChanged,
   initialSection = 'workspace',
+  availableSections = allSectionIds,
+  policyDocuments,
 }: SettingsPageProps) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection)
+  const [activeSection, setActiveSection] = useState<SettingsSection>(() =>
+    availableSections.includes(initialSection)
+      ? initialSection
+      : (availableSections[0] ?? 'policy'),
+  )
+  const visibleSections = sections.filter((section) => availableSections.includes(section.id))
 
   return (
     <section className="settings-workspace" aria-label="Settings">
@@ -38,7 +50,7 @@ export function SettingsPage({
           <h2>Settings</h2>
         </header>
         <nav aria-label="Settings Categories">
-          {sections.map((section) => (
+          {visibleSections.map((section) => (
             <button
               className={`settings-category${
                 activeSection === section.id ? ' settings-category--active' : ''
@@ -73,7 +85,9 @@ export function SettingsPage({
           )
         ) : null}
         {activeSection === 'public-holidays' ? <HolidaySettingsPage /> : null}
-        {activeSection === 'policy' ? <PolicySettingsPage /> : null}
+        {activeSection === 'policy' ? (
+          <PolicySettingsPage initialDocuments={policyDocuments} />
+        ) : null}
       </div>
     </section>
   )

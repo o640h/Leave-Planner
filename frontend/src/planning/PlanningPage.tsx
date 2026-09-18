@@ -8,6 +8,7 @@ import type { LeaveYear } from '../leaveYears/types'
 import { getHolidaySettings, saveHolidayTreatment } from '../publicHolidays/api'
 import { HolidayTreatmentDialog } from '../publicHolidays/HolidayTreatmentDialog'
 import type { Holiday, HolidayOccurrence, HolidayTreatmentInput } from '../publicHolidays/types'
+import { AppIcon } from '../system/AppIcon'
 import { BookingDrawer } from './BookingDrawer'
 import { getPlanning, previewBooking, removeBooking, saveBooking } from './api'
 import { PlanningCalendar } from './PlanningCalendar'
@@ -210,7 +211,7 @@ export function PlanningPage() {
                 setMonth(moveMonth(month, -1))
               }}
             >
-              &lt;
+              <AppIcon name="chevronLeft" />
             </button>
             <h3>{monthLabel(month)}</h3>
             <button
@@ -222,14 +223,13 @@ export function PlanningPage() {
                 setMonth(moveMonth(month, 1))
               }}
             >
-              &gt;
+              <AppIcon name="chevronRight" />
             </button>
           </div>
         )}
         <div className="calendar-legend" aria-label="Calendar legend">
-          <span className="legend-planned">Planned</span>
+          <span className="legend-requested">Requested</span>
           <span className="legend-approved">Approved</span>
-          <span className="legend-taken">Taken</span>
           <span className="legend-holiday">Public Holiday</span>
         </div>
       </header>

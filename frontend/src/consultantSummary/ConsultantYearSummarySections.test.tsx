@@ -11,7 +11,7 @@ const hours = (dcc: string, spa: string, total: string) => ({
   total_hours: total,
 })
 
-const actual = {
+const approved = {
   available: hours('244.554', '88.064', '332.618'),
   used: hours('229.5', '18', '247.5'),
   remaining: hours('15.054', '70.064', '85.118'),
@@ -70,7 +70,7 @@ const summary = {
         leave_year_id: 2,
         start_date: '2025-10-20',
         end_date: '2025-10-20',
-        state: 'taken',
+        state: 'approved',
         note: 'Workbook reference',
         days: [
           {
@@ -89,9 +89,8 @@ const summary = {
         updated_at: '2026-08-11T10:00:00',
       },
     ],
-    projected: null,
-    confirmed: null,
-    actual: null,
+    requested: null,
+    approved: null,
     warnings: [],
   },
   leave_log: [
@@ -100,11 +99,11 @@ const summary = {
       start_date: '2025-10-20',
       end_date: '2025-10-20',
       description: 'Workbook reference',
-      state: 'taken',
+      state: 'approved',
       amounts: hours('8', '0.5', '8.5'),
     },
   ],
-  balances: { projected: actual, confirmed: actual, actual },
+  balances: { requested: approved, approved },
   weekday_counts: { monday: 14, tuesday: 12, wednesday: 12, thursday: 2, friday: 2 },
   warnings: [],
   audit_events: [
@@ -138,15 +137,15 @@ describe('consultant year summary', () => {
     expect(screen.getByText(/Admin ·/)).toBeInTheDocument()
   })
 
-  it('switches among actual, confirmed, and projected balances', () => {
+  it('switches between approved and requested balances', () => {
     render(<LeaveBalanceSummary summary={summary} />)
 
     expect(screen.getByText('248h')).toBeInTheDocument()
     expect(screen.getByText('85h')).toBeInTheDocument()
     expect(screen.getByText('14')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Projected' }))
-    expect(screen.getByRole('button', { name: 'Projected' })).toHaveClass('balance-tab--active')
+    fireEvent.click(screen.getByRole('button', { name: 'Requested' }))
+    expect(screen.getByRole('button', { name: 'Requested' })).toHaveClass('balance-tab--active')
   })
 
   it('opens the complete leave log in an identified workspace view', () => {

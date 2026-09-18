@@ -17,6 +17,8 @@ type AppIconProps = {
     | 'lock'
     | 'document'
     | 'download'
+    | 'chevronLeft'
+    | 'chevronRight'
 }
 
 export function AppIcon({ name }: AppIconProps) {
@@ -93,6 +95,22 @@ export function AppIcon({ name }: AppIconProps) {
     return (
       <svg {...commonProps}>
         <path d="M12 3v11M7.5 10.5 12 15l4.5-4.5M5 20h14" />
+      </svg>
+    )
+  }
+
+  if (name === 'chevronLeft') {
+    return (
+      <svg {...commonProps}>
+        <path d="m14.5 6-6 6 6 6" />
+      </svg>
+    )
+  }
+
+  if (name === 'chevronRight') {
+    return (
+      <svg {...commonProps}>
+        <path d="m9.5 6 6 6-6 6" />
       </svg>
     )
   }

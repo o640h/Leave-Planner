@@ -23,9 +23,8 @@ from public_holidays import PublicHolidayResult
 class BalanceBasis(StrEnum):
     """The booking states represented by a balance."""
 
-    PROJECTED = "projected"
-    CONFIRMED = "confirmed"
-    ACTUAL = "actual"
+    REQUESTED = "requested"
+    APPROVED = "approved"
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,10 +227,9 @@ class LeaveRecordsRequest:
 
 @dataclass(frozen=True, slots=True)
 class LeaveRecordsResult:
-    """Expanded leave days and all three balance views."""
+    """Expanded leave days and the requested and approved balance views."""
 
     days: tuple[LeaveDay, ...]
     carry_forward: tuple[CarryForward, ...]
-    projected: BalanceView
-    confirmed: BalanceView
-    actual: BalanceView
+    requested: BalanceView
+    approved: BalanceView

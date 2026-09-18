@@ -98,7 +98,7 @@ def booking(
     booking_id: str,
     start: date,
     end: date | None = None,
-    state: LeaveState = LeaveState.TAKEN,
+    state: LeaveState = LeaveState.APPROVED,
 ) -> LeaveBooking:
     return LeaveBooking(
         booking_id=booking_id,

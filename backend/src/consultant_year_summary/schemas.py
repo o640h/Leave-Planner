@@ -35,9 +35,8 @@ class BalancePositionRead(BaseModel):
 
 
 class BalanceViewsRead(BaseModel):
-    projected: BalancePositionRead | None
-    confirmed: BalancePositionRead | None
-    actual: BalancePositionRead | None
+    requested: BalancePositionRead | None
+    approved: BalancePositionRead | None
 
 
 class WeekdayCountsRead(BaseModel):

@@ -6,7 +6,7 @@ from authentication.dependencies import require_authenticated_request, runtime_s
 from dependencies import DatabaseSession
 from errors import ApiError
 
-from .models import ADMIN_ROLE, INITIAL_WORKSPACE_ID, OWNER_ROLE
+from .models import ADMIN_ROLE, INITIAL_WORKSPACE_ID, MEMBER_ROLE, OWNER_ROLE
 from .service import WorkspaceAccess, bind_workspace, membership_for_user
 
 
@@ -59,5 +59,18 @@ def require_operator_workspace_request(
             status_code=403,
             code="workspace_role_denied",
             message="This workspace role cannot use the operator planner",
+        )
+    return access
+
+
+def require_member_workspace_request(request: Request, session: DatabaseSession) -> WorkspaceAccess:
+    """Require the restricted Member surface for the selected workspace."""
+
+    access = require_workspace_request(request, session)
+    if access.role != MEMBER_ROLE:
+        raise ApiError(
+            status_code=403,
+            code="workspace_role_denied",
+            message="This workspace role cannot use the Member workspace",
         )
     return access
