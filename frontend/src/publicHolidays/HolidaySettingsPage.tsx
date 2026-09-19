@@ -5,6 +5,7 @@ import { operatorErrorMessage } from '../api/client'
 import { AppIcon } from '../system/AppIcon'
 import { DateInput } from '../system/DateInput'
 import { ModalLayer } from '../system/ModalLayer'
+import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import {
   addHolidayCorrection,
   deleteHolidayCorrection,
@@ -46,6 +47,11 @@ export function HolidaySettingsPage() {
   const [name, setName] = useState('')
   const [reason, setReason] = useState('')
   const [selectedYear, setSelectedYear] = useState('')
+  const [reloadRevision, setReloadRevision] = useState(0)
+
+  useWorkspaceInvalidation(['holidays'], () => {
+    setReloadRevision((revision) => revision + 1)
+  })
 
   const groupedYears = settings ? holidayYears(settings) : []
   const currentYear = String(new Date().getFullYear())
@@ -60,7 +66,7 @@ export function HolidaySettingsPage() {
     getHolidaySettings()
       .then(setSettings)
       .catch((e: unknown) => setError(operatorErrorMessage(e)))
-  }, [])
+  }, [reloadRevision])
 
   async function sync() {
     setBusy(true)

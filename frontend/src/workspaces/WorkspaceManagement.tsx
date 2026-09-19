@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { operatorErrorMessage } from '../api/client'
 import type { WorkspaceContext } from '../authentication/types'
 import { ModalLayer } from '../system/ModalLayer'
+import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import { SelectMenu } from '../system/SelectMenu'
 import {
   acceptOwnershipTransfer,
@@ -225,6 +226,10 @@ export function WorkspaceManagement({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  useWorkspaceInvalidation(['workspace-management', 'workspace-context'], () => {
+    void refreshList()
+  })
 
   useEffect(() => {
     let active = true

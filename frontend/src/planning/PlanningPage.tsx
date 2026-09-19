@@ -9,6 +9,7 @@ import { getHolidaySettings, saveHolidayTreatment } from '../publicHolidays/api'
 import { HolidayTreatmentDialog } from '../publicHolidays/HolidayTreatmentDialog'
 import type { Holiday, HolidayOccurrence, HolidayTreatmentInput } from '../publicHolidays/types'
 import { AppIcon } from '../system/AppIcon'
+import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import { BookingDrawer } from './BookingDrawer'
 import {
   decideLeaveRequest,
@@ -79,6 +80,11 @@ export function PlanningPage() {
   })
   const [requestDialogOpen, setRequestDialogOpen] = useState(false)
   const [initialRequest, setInitialRequest] = useState<LeaveRequestQueueItem | null>(null)
+  const [reloadRevision, setReloadRevision] = useState(0)
+
+  useWorkspaceInvalidation(['planning', 'consultants', 'holidays'], () => {
+    setReloadRevision((revision) => revision + 1)
+  })
 
   useEffect(() => {
     let active = true
@@ -111,7 +117,7 @@ export function PlanningPage() {
     return () => {
       active = false
     }
-  }, [])
+  }, [reloadRevision])
 
   useEffect(() => {
     if (!month || catalogue.length === 0) return

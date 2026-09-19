@@ -9,8 +9,25 @@ type ErrorEnvelope = {
 export const AUTHENTICATION_REQUIRED_EVENT = 'leave-planner:authentication-required'
 export const AUTHORIZATION_DENIED_EVENT = 'leave-planner:authorization-denied'
 export const SERVICE_UNAVAILABLE_EVENT = 'leave-planner:service-unavailable'
+export const WORKSPACE_INVALIDATED_EVENT = 'leave-planner:workspace-invalidated'
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+let workspaceRevision: number | null = null
+
+export function rememberWorkspaceRevision(revision: unknown): void {
+  if (typeof revision === 'number' && Number.isInteger(revision) && revision > 0) {
+    workspaceRevision = revision
+  }
+}
+
+function rememberResponseRevision(response: Response, body: unknown): void {
+  const header = response.headers?.get?.('X-Workspace-Revision')
+  if (header) rememberWorkspaceRevision(Number(header))
+  if (typeof body !== 'object' || body === null) return
+  const record = body as { revision?: unknown; workspace?: { revision?: unknown } | null }
+  rememberWorkspaceRevision(record.revision)
+  rememberWorkspaceRevision(record.workspace?.revision)
+}
 
 function cookieValue(name: string): string | null {
   const prefix = `${encodeURIComponent(name)}=`
@@ -78,6 +95,9 @@ export async function apiRequest<ResponseBody>(
   if (unsafeMethods.has(method) && csrfToken && !headers.has('X-CSRF-Token')) {
     headers.set('X-CSRF-Token', csrfToken)
   }
+  if (unsafeMethods.has(method) && workspaceRevision && !headers.has('If-Match')) {
+    headers.set('If-Match', String(workspaceRevision))
+  }
 
   const response = await fetchFromApplication(path, {
     ...options,
@@ -88,10 +108,19 @@ export async function apiRequest<ResponseBody>(
   if (!response.ok) {
     const error = await requestError(response)
     reportApplicationState(response, path, error.code)
+    if (error.code === 'stale_workspace_data') {
+      window.dispatchEvent(
+        new CustomEvent(WORKSPACE_INVALIDATED_EVENT, {
+          detail: { revision: null, scopes: ['all'] },
+        }),
+      )
+    }
     throw error
   }
 
-  return response.json() as Promise<ResponseBody>
+  const body = (await response.json()) as ResponseBody
+  rememberResponseRevision(response, body)
+  return body
 }
 
 export async function apiFileRequest(

@@ -19,6 +19,7 @@ from authentication.service import AuthenticatedUser, normalise_email
 from consultants.models import Consultant
 from public_holidays.persistence import HolidayCorrectionRecord
 
+from .consistency import use_current_workspace_revision
 from .models import (
     ACCEPTED_INVITATION,
     ACCEPTED_TRANSFER,
@@ -169,7 +170,7 @@ def _management_access(
         WorkspaceAccess(
             user_id=authenticated.id,
             actor_label=authenticated.display_name,
-            workspace_id=workspace_id,
+            workspace_id=workspace.id,
             role=membership.role,
             linked_consultant_id=membership.linked_consultant_id,
         ),
@@ -562,6 +563,7 @@ def accept_invitation(session: Session, authenticated: AuthenticatedUser, raw_to
     workspace = session.get(Workspace, action.workspace_id)
     if invitation is None or workspace is None or workspace.status != ACTIVE_WORKSPACE:
         raise ValueError("This invitation is invalid, expired, or has already been used")
+    use_current_workspace_revision(session, workspace)
     moment = _now()
     consume_action(action, now=moment)
     _accept_invitation_record(session, invitation, account, moment=moment)
@@ -611,6 +613,7 @@ def accept_claimed_invitations(session: Session, account: User) -> None:
     for invitation in invitations:
         workspace = session.get(Workspace, invitation.workspace_id)
         if workspace is not None and workspace.status == ACTIVE_WORKSPACE:
+            use_current_workspace_revision(session, workspace)
             bind_workspace(
                 session,
                 WorkspaceAccess(
@@ -622,6 +625,7 @@ def accept_claimed_invitations(session: Session, account: User) -> None:
                 ),
             )
             _accept_invitation_record(session, invitation, account, moment=moment)
+            session.flush()
 
 
 def update_member(

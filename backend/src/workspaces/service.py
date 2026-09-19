@@ -48,6 +48,7 @@ class WorkspaceContext:
     memberships: tuple[AvailableWorkspace, ...]
     active_workspace_id: int | None
     state: str
+    revision: int | None
 
 
 @dataclass(frozen=True)
@@ -269,10 +270,16 @@ def workspace_context(
         state = "selection_required"
     else:
         state = "active"
+    revision = (
+        session.scalar(select(Workspace.revision).where(Workspace.id == active))
+        if active is not None
+        else None
+    )
     return WorkspaceContext(
         memberships=memberships,
         active_workspace_id=active,
         state=state,
+        revision=revision,
     )
 
 

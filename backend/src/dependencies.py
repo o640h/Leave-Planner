@@ -7,6 +7,7 @@ from fastapi import Depends, Request
 from sqlalchemy.orm import Session, sessionmaker
 
 from database import session_scope
+from workspaces.live_updates import take_invalidations
 
 
 def get_database_session(request: Request) -> Iterator[Session]:
@@ -16,6 +17,8 @@ def get_database_session(request: Request) -> Iterator[Session]:
 
     with session_scope(factory) as session:
         yield session
+        invalidations = take_invalidations(session)
+    request.app.state.workspace_update_hub.publish_after_commit(invalidations)
 
 
 # Finish the database transaction before the response is sent. A request-scoped

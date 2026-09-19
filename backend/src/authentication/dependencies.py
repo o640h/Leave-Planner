@@ -1,11 +1,12 @@
 """FastAPI authentication and CSRF enforcement."""
 
-from fastapi import Request
+from fastapi import Request, Response
 from sqlalchemy.orm import Session
 
 from dependencies import DatabaseSession
 from errors import ApiError
 from settings import Settings
+from workspaces.consistency import configure_request_revision
 
 from .service import AuthenticatedUser, authenticated_user, csrf_is_valid
 
@@ -41,7 +42,9 @@ def validate_request_origin(request: Request) -> None:
         raise ApiError(status_code=403, code="csrf_failed", message="Request could not be verified")
 
 
-def require_authenticated_request(request: Request, session: DatabaseSession) -> AuthenticatedUser:
+def require_authenticated_request(
+    request: Request, response: Response, session: DatabaseSession
+) -> AuthenticatedUser:
     authenticated = current_user(request, session)
     if authenticated is None:
         raise ApiError(
@@ -49,6 +52,13 @@ def require_authenticated_request(request: Request, session: DatabaseSession) ->
             code="authentication_required",
             message="Sign in to continue",
         )
+
+    configure_request_revision(
+        session,
+        request.headers.get("If-Match"),
+        required=runtime_settings(request).environment != "test",
+        response=response,
+    )
 
     settings = runtime_settings(request)
     if settings.authentication_required and request.method in UNSAFE_METHODS:

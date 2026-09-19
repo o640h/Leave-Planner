@@ -6,6 +6,7 @@ import {
   AUTHENTICATION_REQUIRED_EVENT,
   AUTHORIZATION_DENIED_EVENT,
   operatorErrorMessage,
+  rememberWorkspaceRevision,
   SERVICE_UNAVAILABLE_EVENT,
 } from './client'
 
@@ -72,4 +73,20 @@ it('reports a server outage when fetch cannot connect', async () => {
 
   await expect(apiRequest('/api/consultants')).rejects.toThrow('Failed to fetch')
   expect(listener).toHaveBeenCalledOnce()
+})
+
+it('sends the last workspace revision with shared writes', async () => {
+  rememberWorkspaceRevision(12)
+  const request = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    headers: new Headers({ 'X-Workspace-Revision': '13' }),
+    json: () => Promise.resolve({}),
+  })
+  vi.stubGlobal('fetch', request)
+
+  await apiRequest('/api/consultants', { method: 'POST', body: '{}' })
+
+  const options = request.mock.calls[0][1] as RequestInit
+  expect(new Headers(options.headers).get('If-Match')).toBe('12')
 })

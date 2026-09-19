@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
 import { AppIcon } from '../system/AppIcon'
+import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import { getMemberWallchart } from './api'
 import type { MemberWallchart as MemberWallchartData } from './types'
 
@@ -34,6 +35,11 @@ export function MemberWallchart({
   const [month, setMonth] = useState(() => initialData?.month.slice(0, 7) ?? currentMonth())
   const [data, setData] = useState<MemberWallchartData | null>(initialData ?? null)
   const [error, setError] = useState<string | null>(null)
+  const [reloadRevision, setReloadRevision] = useState(0)
+
+  useWorkspaceInvalidation(['planning', 'holidays', 'consultants'], () => {
+    setReloadRevision((revision) => revision + 1)
+  })
 
   useEffect(() => {
     if (initialData && month === initialData.month.slice(0, 7)) return
@@ -48,7 +54,7 @@ export function MemberWallchart({
     return () => {
       active = false
     }
-  }, [initialData, month])
+  }, [initialData, month, reloadRevision])
 
   function changeMonth(offset: number) {
     setData(null)

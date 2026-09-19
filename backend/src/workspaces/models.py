@@ -39,6 +39,7 @@ class Workspace(Base):
     __tablename__ = "workspaces"
 
     __table_args__ = (
+        CheckConstraint("revision >= 1", name="ck_workspaces_revision"),
         CheckConstraint("status IN ('active', 'closed')", name="ck_workspaces_status"),
         CheckConstraint(
             "(status = 'active' AND closed_at IS NULL AND purge_after IS NULL) OR "
@@ -49,6 +50,7 @@ class Workspace(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=ACTIVE_WORKSPACE)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     purge_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -8,6 +8,7 @@ import { SettingsPage } from '../settings/SettingsPage'
 import { AppIcon } from '../system/AppIcon'
 import { HealthStatus } from '../system/HealthStatus'
 import { WorkspaceFrame } from '../system/WorkspaceFrame'
+import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import { WorkspaceSelectionDialog } from '../workspaces/WorkspaceSelectionDialog'
 import { MemberOverview } from './MemberOverview'
 import { MemberLeaveRequestDialog } from './MemberLeaveRequestDialog'
@@ -59,6 +60,11 @@ export function MemberApplicationWorkspace({
   const [workspaceSelectionCloseRequested, setWorkspaceSelectionCloseRequested] = useState(false)
   const [requestDate, setRequestDate] = useState<string | null | undefined>(undefined)
   const [requestBusy, setRequestBusy] = useState(false)
+  const [reloadRevision, setReloadRevision] = useState(0)
+
+  useWorkspaceInvalidation(['member-workspace', 'consultants'], () => {
+    setReloadRevision((revision) => revision + 1)
+  })
 
   useEffect(() => {
     if (initialData) return
@@ -73,7 +79,9 @@ export function MemberApplicationWorkspace({
     return () => {
       active = false
     }
-  }, [initialData])
+  }, [initialData, reloadRevision])
+
+  const selectedYearId = data?.selected_year?.leave_year.id
 
   async function selectLeaveYear(leaveYearId: number) {
     setLoadingYear(true)
@@ -87,7 +95,6 @@ export function MemberApplicationWorkspace({
     }
   }
 
-  const selectedYearId = data?.selected_year?.leave_year.id
   const previewRequest = useCallback(
     (details: MemberLeaveRequestInput) => {
       if (!selectedYearId) return Promise.reject(new Error('No leave year is selected.'))

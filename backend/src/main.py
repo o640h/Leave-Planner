@@ -35,6 +35,8 @@ from recovery import create_startup_backups
 from recovery import router as recovery_router
 from settings import Settings
 from workspaces.dependencies import require_operator_workspace_request
+from workspaces.live_router import router as workspace_update_router
+from workspaces.live_updates import WorkspaceUpdateHub
 from workspaces.router import router as workspace_router
 
 
@@ -61,8 +63,11 @@ def create_app(
             upgrade_database(runtime.resolved_database_url)
         engine = create_database_engine(runtime.resolved_database_url)
 
+        import asyncio
+
         app.state.database_engine = engine
         app.state.session_factory = create_session_factory(engine)
+        app.state.workspace_update_hub = WorkspaceUpdateHub(asyncio.get_running_loop())
 
         try:
             yield
@@ -76,6 +81,7 @@ def create_app(
     )
     app.state.settings = runtime
     app.state.email_sender = create_email_sender(runtime)
+    app.state.workspace_update_hub = None
     app.add_middleware(HostedHttpSecurityMiddleware, settings=runtime)
     if runtime.environment == "production":
         assert runtime.public_host is not None
@@ -103,6 +109,7 @@ def create_app(
     app.include_router(authentication_router)
     app.include_router(account_action_router)
     app.include_router(workspace_router)
+    app.include_router(workspace_update_router)
     app.include_router(member_workspace_router)
     app.include_router(policy_library_router)
     protected = [Depends(require_operator_workspace_request)]

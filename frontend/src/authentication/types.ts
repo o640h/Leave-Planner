@@ -15,6 +15,7 @@ export type WorkspaceContext = {
   state: 'active' | 'selection_required' | 'onboarding'
   active_workspace_id: number | null
   memberships: WorkspaceMembership[]
+  revision?: number | null
 }
 
 export type Session = {

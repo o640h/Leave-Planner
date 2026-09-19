@@ -20,6 +20,7 @@ class WorkspaceContextRead(BaseModel):
     state: Literal["active", "selection_required", "onboarding"]
     active_workspace_id: int | None
     memberships: list[WorkspaceMembershipRead]
+    revision: int | None
 
 
 class WorkspaceSelectionRequest(BaseModel):
@@ -97,6 +98,7 @@ class WorkspaceDetailsRead(BaseModel):
     consultants: list[WorkspaceConsultantRead]
     transfer: WorkspaceTransferRead | None
     recent_events: list[WorkspaceEventRead]
+    revision: int
 
 
 class WorkspaceInvitationRequest(BaseModel):
@@ -143,6 +145,7 @@ def context_read(context: WorkspaceContext) -> WorkspaceContextRead:
             )
             for membership in context.memberships
         ],
+        revision=context.revision,
     )
 
 
@@ -215,6 +218,7 @@ def details_read(details: WorkspaceDetails) -> WorkspaceDetailsRead:
             )
             for event in details.events
         ],
+        revision=details.workspace.revision,
     )
 
 

@@ -29,6 +29,7 @@ export type WorkspaceInvitation = {
 
 export type WorkspaceManagement = {
   workspace_id: number
+  revision: number
   workspace_name: string
   status: 'active' | 'closed'
   closed_at: string | null

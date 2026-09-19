@@ -16,6 +16,7 @@ import { LeaveYearPanel } from '../leaveYears/LeaveYearPanel'
 import { AppIcon } from '../system/AppIcon'
 import { ModalLayer } from '../system/ModalLayer'
 import { RemovalDialog } from '../system/RemovalDialog'
+import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import type { RemovalImpact } from '../system/removal'
 
 type EditorTarget = number | 'new' | null
@@ -50,12 +51,20 @@ export function ConsultantDirectory() {
   const [archiveImpact, setArchiveImpact] = useState<RemovalImpact | null>(null)
   const [removing, setRemoving] = useState(false)
 
+  useWorkspaceInvalidation(['consultants'], () => {
+    setLoadAttempt((attempt) => attempt + 1)
+  })
+
   useEffect(() => {
     listConsultants()
       .then((records) => {
         const orderedRecords = sortConsultants(records)
         setConsultants(orderedRecords)
-        setEditorTarget(orderedRecords[0]?.id ?? null)
+        setEditorTarget((current) =>
+          typeof current === 'number' && orderedRecords.some((record) => record.id === current)
+            ? current
+            : (orderedRecords[0]?.id ?? null),
+        )
       })
       .catch((error: unknown) => setLoadError(operatorErrorMessage(error)))
       .finally(() => setLoading(false))
@@ -312,7 +321,10 @@ export function ConsultantDirectory() {
                 </div>
               </header>
 
-              <LeaveYearPanel key={selectedConsultant.id} consultantId={selectedConsultant.id} />
+              <LeaveYearPanel
+                key={`${selectedConsultant.id}:${loadAttempt}`}
+                consultantId={selectedConsultant.id}
+              />
             </div>
           ) : (
             <div className="workspace-empty">
