@@ -1,11 +1,16 @@
 """Consultant-year planning and leave booking routes."""
 
-from fastapi import APIRouter
+from typing import cast
 
+from fastapi import APIRouter, Request
+
+from authentication.dependencies import runtime_settings
+from authentication.email_delivery import EmailSender
 from dependencies import DatabaseSession
 from leave_years import service as leave_year_service
+from workspaces.service import current_access
 
-from . import service
+from . import notifications, service
 from .schemas import (
     LeaveBookingWrite,
     LeavePreviewRead,
@@ -112,9 +117,15 @@ def approve_booking_request(
     consultant_id: int,
     leave_year_id: int,
     booking_id: int,
+    request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
-    return service.approve_request(session, consultant_id, leave_year_id, booking_id)
+    result, requester_user_id = service.approve_request(
+        session, consultant_id, leave_year_id, booking_id
+    )
+    session.commit()
+    _notify_member(request, session, requester_user_id, "approved")
+    return result
 
 
 @router.post("/bookings/{booking_id}/reject", response_model=PlanningRead)
@@ -122,9 +133,15 @@ def reject_booking_request(
     consultant_id: int,
     leave_year_id: int,
     booking_id: int,
+    request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
-    return service.reject_request(session, consultant_id, leave_year_id, booking_id)
+    result, requester_user_id = service.reject_request(
+        session, consultant_id, leave_year_id, booking_id
+    )
+    session.commit()
+    _notify_member(request, session, requester_user_id, "rejected")
+    return result
 
 
 @router.post("/bookings/{booking_id}/approve-cancellation", response_model=PlanningRead)
@@ -132,11 +149,15 @@ def approve_booking_cancellation(
     consultant_id: int,
     leave_year_id: int,
     booking_id: int,
+    request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
-    return service.approve_cancellation_request(
+    result, requester_user_id = service.approve_cancellation_request(
         session, consultant_id, leave_year_id, booking_id
     )
+    session.commit()
+    _notify_member(request, session, requester_user_id, "cancellation_approved")
+    return result
 
 
 @router.post("/bookings/{booking_id}/reject-cancellation", response_model=PlanningRead)
@@ -144,8 +165,30 @@ def reject_booking_cancellation(
     consultant_id: int,
     leave_year_id: int,
     booking_id: int,
+    request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
-    return service.reject_cancellation_request(
+    result, requester_user_id = service.reject_cancellation_request(
         session, consultant_id, leave_year_id, booking_id
     )
+    session.commit()
+    _notify_member(request, session, requester_user_id, "cancellation_rejected")
+    return result
+
+
+def _notify_member(
+    request: Request,
+    session: DatabaseSession,
+    requester_user_id: int | None,
+    decision: notifications.MemberDecision,
+) -> None:
+    access = current_access(session)
+    notifications.notify_member(
+        session,
+        cast(EmailSender, request.app.state.email_sender),
+        workspace_id=access.workspace_id,
+        requester_user_id=requester_user_id,
+        origin=runtime_settings(request).public_origin or str(request.base_url).rstrip("/"),
+        decision=decision,
+    )
+    session.commit()

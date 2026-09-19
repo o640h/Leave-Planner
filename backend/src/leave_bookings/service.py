@@ -735,6 +735,7 @@ def submit_request(
         ),
         audit_action="requested",
     )
+    record.requested_by_user_id = current_access(session).user_id or None
     record_workspace_event(
         session,
         event_type="leave_request_submitted",
@@ -1057,7 +1058,7 @@ def _transition_request(
     next_state: LeaveState,
     action: str,
     require_cancellation_request: bool = False,
-) -> PlanningRead:
+) -> tuple[PlanningRead, int | None]:
     leave_year_service.get_leave_year(session, consultant_id, leave_year_id)
     record = _record(session, leave_year_id, booking_id)
     if record.state != expected_state.value or (
@@ -1067,6 +1068,11 @@ def _transition_request(
             status_code=409, code="request_not_pending", message="This request is closed."
         )
     before = _snapshot(record)
+    requester_user_id = (
+        record.cancellation_requested_by_user_id
+        if require_cancellation_request
+        else record.requested_by_user_id
+    )
     record.state = next_state.value
     record.cancellation_requested_at = None
     record.cancellation_requested_by_user_id = None
@@ -1079,12 +1085,12 @@ def _transition_request(
         action=action,
         details={"before": before, "after": _snapshot(record)},
     )
-    return planning(session, consultant_id, leave_year_id)
+    return planning(session, consultant_id, leave_year_id), requester_user_id
 
 
 def approve_request(
     session: Session, consultant_id: int, leave_year_id: int, booking_id: int
-) -> PlanningRead:
+) -> tuple[PlanningRead, int | None]:
     return _transition_request(
         session,
         consultant_id,
@@ -1098,7 +1104,7 @@ def approve_request(
 
 def reject_request(
     session: Session, consultant_id: int, leave_year_id: int, booking_id: int
-) -> PlanningRead:
+) -> tuple[PlanningRead, int | None]:
     return _transition_request(
         session,
         consultant_id,
@@ -1112,7 +1118,7 @@ def reject_request(
 
 def approve_cancellation_request(
     session: Session, consultant_id: int, leave_year_id: int, booking_id: int
-) -> PlanningRead:
+) -> tuple[PlanningRead, int | None]:
     return _transition_request(
         session,
         consultant_id,
@@ -1127,7 +1133,7 @@ def approve_cancellation_request(
 
 def reject_cancellation_request(
     session: Session, consultant_id: int, leave_year_id: int, booking_id: int
-) -> PlanningRead:
+) -> tuple[PlanningRead, int | None]:
     return _transition_request(
         session,
         consultant_id,

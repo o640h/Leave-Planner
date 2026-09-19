@@ -3,23 +3,37 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
+from authentication.email_delivery import (
+    DevelopmentOutbox,
+    EmailDeliveryError,
+    EmailMessage,
+)
+from authentication.models import EmailDeliveryAttempt
 from authentication.service import create_account
 from consultants.models import Consultant
 from database import create_database_engine, create_session_factory, session_scope
+from leave_bookings.persistence import LeaveBookingRecord
 from main import create_app
 from migrations import upgrade_database
 from settings import Settings
-from workspaces.models import MEMBER_ROLE, OWNER_ROLE, Workspace, WorkspaceMembership
+from workspaces.models import (
+    ADMIN_ROLE,
+    MEMBER_ROLE,
+    OWNER_ROLE,
+    Workspace,
+    WorkspaceMembership,
+)
 
 PASSWORD = "individual-account-password"
 
 
-def app_for(tmp_path: Path, *, linked: bool = True) -> FastAPI:
+def app_for(tmp_path: Path, *, linked: bool = True, extra_admin: bool = False) -> FastAPI:
     settings = Settings(environment="test", data_dir=tmp_path)
     upgrade_database(settings.resolved_database_url)
     engine = create_database_engine(settings.resolved_database_url)
@@ -41,6 +55,17 @@ def app_for(tmp_path: Path, *, linked: bool = True) -> FastAPI:
                 email="member@example.org",
                 password=PASSWORD,
                 verified_at=datetime.now(UTC),
+            )
+            admin = (
+                create_account(
+                    session,
+                    display_name="Workspace Admin",
+                    email="admin@example.org",
+                    password=PASSWORD,
+                    verified_at=datetime.now(UTC),
+                )
+                if extra_admin
+                else None
             )
             consultant = Consultant(
                 workspace_id=workspace.id,
@@ -69,6 +94,14 @@ def app_for(tmp_path: Path, *, linked: bool = True) -> FastAPI:
                     ),
                 )
             )
+            if admin is not None:
+                session.add(
+                    WorkspaceMembership(
+                        workspace_id=workspace.id,
+                        user_id=admin.id,
+                        role=ADMIN_ROLE,
+                    )
+                )
     finally:
         engine.dispose()
     return create_app(settings=settings, frontend_dist=tmp_path / "missing-frontend")
@@ -256,7 +289,7 @@ def test_operator_cannot_use_member_only_contract(tmp_path: Path) -> None:
 
 
 def test_member_leave_requests_and_reviewed_approved_cancellation(tmp_path: Path) -> None:
-    app = app_for(tmp_path)
+    app = app_for(tmp_path, extra_admin=True)
     with TestClient(app) as owner_client:
         owner_headers = login(owner_client, "owner@example.org")
         linked_id, year_id = configure_team(owner_client, owner_headers)
@@ -289,6 +322,14 @@ def test_member_leave_requests_and_reviewed_approved_cancellation(tmp_path: Path
     )
     assert submitted_booking["state"] == "requested"
     booking_id = int(submitted_booking["id"])
+    outbox = cast(DevelopmentOutbox, app.state.email_sender)
+    assert [message.recipient for message in outbox.messages] == [
+        "owner@example.org",
+        "admin@example.org",
+    ]
+    assert {message.subject for message in outbox.messages} == {
+        "Leave Request Ready For Review"
+    }
 
     with TestClient(app) as owner_client:
         owner_headers = login(owner_client, "owner@example.org")
@@ -311,6 +352,8 @@ def test_member_leave_requests_and_reviewed_approved_cancellation(tmp_path: Path
     assert next(item for item in approved.json()["bookings"] if item["id"] == booking_id)[
         "state"
     ] == "approved"
+    assert outbox.messages[-1].recipient == "member@example.org"
+    assert outbox.messages[-1].subject == "Leave Request Approved"
 
     with TestClient(app) as member_client:
         member_headers = login(member_client, "member@example.org")
@@ -327,6 +370,13 @@ def test_member_leave_requests_and_reviewed_approved_cancellation(tmp_path: Path
     )
     assert pending["state"] == "approved"
     assert pending["cancellation_requested_at"] is not None
+    assert [message.recipient for message in outbox.messages[-2:]] == [
+        "owner@example.org",
+        "admin@example.org",
+    ]
+    assert {message.subject for message in outbox.messages[-2:]} == {
+        "Leave Cancellation Ready For Review"
+    }
 
     with TestClient(app) as owner_client:
         owner_headers = login(owner_client, "owner@example.org")
@@ -346,6 +396,18 @@ def test_member_leave_requests_and_reviewed_approved_cancellation(tmp_path: Path
     )
     assert cancelled_booking["state"] == "cancelled"
     assert cancelled_booking["cancellation_requested_at"] is None
+    assert outbox.messages[-1].recipient == "member@example.org"
+    assert outbox.messages[-1].subject == "Leave Cancellation Approved"
+    email_content = " ".join(
+        f"{message.subject} {message.text}" for message in outbox.messages
+    )
+    for sensitive_value in (
+        "Linked Consultant",
+        "Member conference request",
+        "2026-09-28",
+        "2026-09-29",
+    ):
+        assert sensitive_value not in email_content
 
 
 def test_member_can_cancel_only_a_pending_request(tmp_path: Path) -> None:
@@ -382,3 +444,131 @@ def test_member_can_cancel_only_a_pending_request(tmp_path: Path) -> None:
         if item["id"] == booking["id"]
     )
     assert cancelled_booking["state"] == "cancelled"
+    outbox = cast(DevelopmentOutbox, app.state.email_sender)
+    assert outbox.messages[-1].recipient == "owner@example.org"
+    assert outbox.messages[-1].subject == "Leave Request Withdrawn"
+
+
+def test_rejected_request_and_cancellation_notify_the_requesting_member(
+    tmp_path: Path,
+) -> None:
+    app = app_for(tmp_path)
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        linked_id, year_id = configure_team(owner_client, owner_headers)
+
+    with TestClient(app) as member_client:
+        member_headers = login(member_client, "member@example.org")
+        first = member_client.post(
+            f"/api/member/leave-years/{year_id}/requests",
+            json={"start_date": "2026-10-12", "end_date": "2026-10-12", "note": None},
+            headers=member_headers,
+        ).json()
+        first_id = next(
+            item["id"]
+            for item in first["selected_year"]["bookings"]
+            if item["start_date"] == "2026-10-12"
+        )
+
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        rejected = owner_client.post(
+            f"/api/consultants/{linked_id}/leave-years/{year_id}/bookings/{first_id}/reject",
+            headers=owner_headers,
+        )
+
+    assert rejected.status_code == 200
+    outbox = cast(DevelopmentOutbox, app.state.email_sender)
+    assert outbox.messages[-1].recipient == "member@example.org"
+    assert outbox.messages[-1].subject == "Leave Request Not Approved"
+
+    with TestClient(app) as member_client:
+        member_headers = login(member_client, "member@example.org")
+        second = member_client.post(
+            f"/api/member/leave-years/{year_id}/requests",
+            json={"start_date": "2026-10-19", "end_date": "2026-10-19", "note": None},
+            headers=member_headers,
+        ).json()
+        second_id = next(
+            item["id"]
+            for item in second["selected_year"]["bookings"]
+            if item["start_date"] == "2026-10-19"
+        )
+
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        approved = owner_client.post(
+            f"/api/consultants/{linked_id}/leave-years/{year_id}/bookings/{second_id}/approve",
+            headers=owner_headers,
+        )
+    assert approved.status_code == 200
+
+    with TestClient(app) as member_client:
+        member_headers = login(member_client, "member@example.org")
+        requested = member_client.post(
+            f"/api/member/leave-years/{year_id}/bookings/{second_id}/request-cancellation",
+            headers=member_headers,
+        )
+    assert requested.status_code == 200
+
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        retained = owner_client.post(
+            f"/api/consultants/{linked_id}/leave-years/{year_id}/bookings/{second_id}/reject-cancellation",
+            headers=owner_headers,
+        )
+
+    assert retained.status_code == 200
+    retained_booking = next(
+        item for item in retained.json()["bookings"] if item["id"] == second_id
+    )
+    assert retained_booking["state"] == "approved"
+    assert retained_booking["cancellation_requested_at"] is None
+    assert outbox.messages[-1].recipient == "member@example.org"
+    assert outbox.messages[-1].subject == "Leave Cancellation Not Approved"
+
+
+class FailingSender:
+    def send(self, _message: EmailMessage, *, idempotency_key: str) -> str:
+        assert idempotency_key
+        raise EmailDeliveryError("provider_unavailable")
+
+
+def test_notification_failure_does_not_undo_the_leave_request(tmp_path: Path) -> None:
+    app = app_for(tmp_path)
+    settings = cast(Settings, app.state.settings)
+    with TestClient(app) as owner_client:
+        owner_headers = login(owner_client, "owner@example.org")
+        _, year_id = configure_team(owner_client, owner_headers)
+
+    app.state.email_sender = FailingSender()
+    with TestClient(app) as member_client:
+        member_headers = login(member_client, "member@example.org")
+        submitted = member_client.post(
+            f"/api/member/leave-years/{year_id}/requests",
+            json={"start_date": "2026-10-26", "end_date": "2026-10-26", "note": None},
+            headers=member_headers,
+        )
+
+    assert submitted.status_code == 201
+    engine = create_database_engine(settings.resolved_database_url)
+    try:
+        with session_scope(create_session_factory(engine)) as session:
+            booking = session.scalar(
+                select(LeaveBookingRecord).where(
+                    LeaveBookingRecord.start_date == datetime(2026, 10, 26).date()
+                )
+            )
+            attempt = session.scalar(
+                select(EmailDeliveryAttempt).where(
+                    EmailDeliveryAttempt.purpose == "leave_request_review"
+                )
+            )
+            assert booking is not None
+            assert booking.state == "requested"
+            assert booking.requested_by_user_id is not None
+            assert attempt is not None
+            assert attempt.status == "failed"
+            assert attempt.failure_code == "provider_unavailable"
+    finally:
+        engine.dispose()

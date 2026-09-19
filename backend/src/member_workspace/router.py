@@ -1,11 +1,14 @@
 """Authenticated endpoints for the restricted Member workspace."""
 
 from datetime import date
-from typing import Annotated
+from typing import Annotated, cast
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
+from authentication.dependencies import runtime_settings
+from authentication.email_delivery import EmailSender
 from dependencies import DatabaseSession
+from leave_bookings import notifications
 from leave_bookings.schemas import LeavePreviewRead, LeaveRequestWrite
 from workspaces.dependencies import require_member_workspace_request
 from workspaces.service import WorkspaceAccess
@@ -15,6 +18,22 @@ from .schemas import MemberWallchartRead, MemberWorkspaceRead
 
 router = APIRouter(prefix="/api/member", tags=["member-workspace"])
 MemberAccess = Annotated[WorkspaceAccess, Depends(require_member_workspace_request)]
+
+
+def _notify_operators(
+    request: Request,
+    session: DatabaseSession,
+    access: WorkspaceAccess,
+    event: notifications.OperatorEvent,
+) -> None:
+    notifications.notify_operators(
+        session,
+        cast(EmailSender, request.app.state.email_sender),
+        workspace_id=access.workspace_id,
+        origin=runtime_settings(request).public_origin or str(request.base_url).rstrip("/"),
+        event=event,
+    )
+    session.commit()
 
 
 @router.get("/workspace", response_model=MemberWorkspaceRead)
@@ -56,10 +75,14 @@ def preview_leave_request(
 def submit_leave_request(
     leave_year_id: int,
     details: LeaveRequestWrite,
+    request: Request,
     session: DatabaseSession,
     access: MemberAccess,
 ) -> MemberWorkspaceRead:
-    return service.submit_leave_request(session, access, leave_year_id, details)
+    result = service.submit_leave_request(session, access, leave_year_id, details)
+    session.commit()
+    _notify_operators(request, session, access, "submitted")
+    return result
 
 
 @router.post(
@@ -69,12 +92,16 @@ def submit_leave_request(
 def cancel_leave_request(
     leave_year_id: int,
     booking_id: int,
+    request: Request,
     session: DatabaseSession,
     access: MemberAccess,
 ) -> MemberWorkspaceRead:
-    return service.cancel_leave_request(
+    result = service.cancel_leave_request(
         session, access, leave_year_id, booking_id
     )
+    session.commit()
+    _notify_operators(request, session, access, "withdrawn")
+    return result
 
 
 @router.post(
@@ -84,9 +111,13 @@ def cancel_leave_request(
 def request_leave_cancellation(
     leave_year_id: int,
     booking_id: int,
+    request: Request,
     session: DatabaseSession,
     access: MemberAccess,
 ) -> MemberWorkspaceRead:
-    return service.request_leave_cancellation(
+    result = service.request_leave_cancellation(
         session, access, leave_year_id, booking_id
     )
+    session.commit()
+    _notify_operators(request, session, access, "cancellation_requested")
+    return result
