@@ -3,6 +3,8 @@ import type { CSSProperties } from 'react'
 import type { Consultant } from '../consultants/types'
 import type { LeaveYear } from '../leaveYears/types'
 import type { Holiday, HolidayOccurrence } from '../publicHolidays/types'
+import { LivePointerLayer } from '../system/LivePointerLayer'
+import { useWorkspacePointers } from '../system/workspacePointers'
 import type { LeaveBooking, PlanningWorkspace } from './types'
 
 export type PlanningRow = {
@@ -43,6 +45,8 @@ export function PlanningCalendar({
   onSelectBooking,
   onSelectHoliday,
 }: Props) {
+  const pointerView = `planning:${month}`
+  const { pointers, onPointerMove, onPointerLeave } = useWorkspacePointers(pointerView)
   const [year, monthNumber] = month.split('-').map(Number)
   const days = Array.from(
     { length: new Date(year, monthNumber, 0).getDate() },
@@ -57,7 +61,13 @@ export function PlanningCalendar({
 
   return (
     <div className="wallchart-scroll">
-      <div className="wallchart" role="grid" style={gridStyle}>
+      <div
+        className="wallchart"
+        role="grid"
+        style={gridStyle}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
+      >
         <div className="wallchart-row wallchart-row--header" role="row">
           <span className="wallchart-name" role="columnheader">
             Consultant
@@ -166,6 +176,7 @@ export function PlanningCalendar({
             </div>
           )
         })}
+        <LivePointerLayer pointers={pointers} />
       </div>
     </div>
   )

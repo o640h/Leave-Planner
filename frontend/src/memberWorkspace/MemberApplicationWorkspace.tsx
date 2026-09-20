@@ -7,6 +7,7 @@ import type { PolicyDocument } from '../policies/types'
 import { SettingsPage } from '../settings/SettingsPage'
 import { AppIcon } from '../system/AppIcon'
 import { HealthStatus } from '../system/HealthStatus'
+import { LivePointerSurface } from '../system/LivePointerSurface'
 import { WorkspaceFrame } from '../system/WorkspaceFrame'
 import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import { WorkspaceSelectionDialog } from '../workspaces/WorkspaceSelectionDialog'
@@ -237,19 +238,21 @@ export function MemberApplicationWorkspace({
             ) : (
               <>
                 {page === 'overview' ? (
-                  <MemberOverview
-                    data={data}
-                    loadingYear={loadingYear}
-                    onLeaveYearSelected={(id) => void selectLeaveYear(id)}
-                    onRequestLeave={() => setRequestDate(null)}
-                    onCancelRequest={(bookingId) =>
-                      void runBookingAction(cancelMemberLeaveRequest, bookingId)
-                    }
-                    onRequestCancellation={(bookingId) =>
-                      void runBookingAction(requestMemberLeaveCancellation, bookingId)
-                    }
-                    requestBusy={requestBusy}
-                  />
+                  <LivePointerSurface view="consultants">
+                    <MemberOverview
+                      data={data}
+                      loadingYear={loadingYear}
+                      onLeaveYearSelected={(id) => void selectLeaveYear(id)}
+                      onRequestLeave={() => setRequestDate(null)}
+                      onCancelRequest={(bookingId) =>
+                        void runBookingAction(cancelMemberLeaveRequest, bookingId)
+                      }
+                      onRequestCancellation={(bookingId) =>
+                        void runBookingAction(requestMemberLeaveCancellation, bookingId)
+                      }
+                      requestBusy={requestBusy}
+                    />
+                  </LivePointerSurface>
                 ) : null}
                 {page === 'planning' ? (
                   <MemberWallchart

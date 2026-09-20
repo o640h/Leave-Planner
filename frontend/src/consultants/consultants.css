@@ -7,6 +7,7 @@
 
 .directory-workspace {
   display: grid;
+  position: relative;
   grid-template-columns: 270px minmax(0, 1fr);
   background: var(--canvas);
 }

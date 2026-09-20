@@ -21,6 +21,76 @@
   text-rendering: optimizeLegibility;
 }
 
+.live-pointer-layer {
+  position: absolute;
+  z-index: 12;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.live-pointer-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.live-pointer {
+  position: absolute;
+  top: var(--live-pointer-y);
+  left: var(--live-pointer-x);
+  color: var(--live-pointer-colour);
+  filter: drop-shadow(0 2px 3px rgb(19 27 43 / 0.2));
+  transform: translate(-2px, -2px);
+  transition:
+    top 90ms linear,
+    left 90ms linear;
+  will-change: top, left;
+  animation: live-pointer-arrive 140ms ease-out;
+}
+
+.live-pointer svg {
+  display: block;
+  width: 19px;
+  height: 23px;
+  fill: currentcolor;
+  stroke: var(--surface);
+  stroke-linejoin: round;
+  stroke-width: 1.5px;
+}
+
+.live-pointer > span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  margin: -2px 0 0 14px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, currentcolor 76%, var(--surface));
+  border-radius: 50%;
+  background: var(--surface);
+  color: currentcolor;
+  font-size: 0.61538rem;
+  font-weight: 570;
+  line-height: 1;
+  box-shadow: 0 2px 7px rgb(19 27 43 / 0.16);
+}
+
+@keyframes live-pointer-arrive {
+  from {
+    opacity: 0;
+    transform: translate(-2px, -2px) scale(0.78);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-pointer {
+    transition: none;
+    animation: none;
+  }
+}
+
 * {
   box-sizing: border-box;
   scrollbar-width: thin;

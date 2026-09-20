@@ -260,6 +260,9 @@ describe('Member application workspace', () => {
 
     const wallchart = await screen.findByRole('grid', { name: /Team availability/i })
     expect(within(wallchart).getByText('Team Colleague')).toBeInTheDocument()
+    const firstDateHeading = within(wallchart).getAllByRole('columnheader')[1]
+    expect(firstDateHeading.firstElementChild).toHaveTextContent('T')
+    expect(firstDateHeading).toHaveTextContent('T1')
     expect(
       screen.queryByText('Team leave is shown by its current booking status.'),
     ).not.toBeInTheDocument()

@@ -2,6 +2,8 @@ import { useEffect, useState, type CSSProperties } from 'react'
 
 import { operatorErrorMessage } from '../api/client'
 import { AppIcon } from '../system/AppIcon'
+import { LivePointerLayer } from '../system/LivePointerLayer'
+import { useWorkspacePointers } from '../system/workspacePointers'
 import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import { getMemberWallchart } from './api'
 import type { MemberWallchart as MemberWallchartData } from './types'
@@ -36,6 +38,8 @@ export function MemberWallchart({
   const [data, setData] = useState<MemberWallchartData | null>(initialData ?? null)
   const [error, setError] = useState<string | null>(null)
   const [reloadRevision, setReloadRevision] = useState(0)
+  const pointerView = `planning:${month}`
+  const { pointers, onPointerMove, onPointerLeave } = useWorkspacePointers(pointerView)
 
   useWorkspaceInvalidation(['planning', 'holidays', 'consultants'], () => {
     setReloadRevision((revision) => revision + 1)
@@ -109,6 +113,8 @@ export function MemberWallchart({
               style={gridStyle}
               role="grid"
               aria-label={`Team availability for ${monthLabel}`}
+              onPointerMove={onPointerMove}
+              onPointerLeave={onPointerLeave}
             >
               <div className="member-wallchart-row member-wallchart-row--header" role="row">
                 <div className="member-wallchart-name" role="columnheader">
@@ -122,10 +128,10 @@ export function MemberWallchart({
                       role="columnheader"
                       key={day}
                     >
-                      <strong>{day}</strong>
                       <small>
                         {value.toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 1)}
                       </small>
+                      {day}
                     </div>
                   )
                 })}
@@ -188,6 +194,7 @@ export function MemberWallchart({
                   </div>
                 )
               })}
+              <LivePointerLayer pointers={pointers} />
             </div>
           </div>
         )}

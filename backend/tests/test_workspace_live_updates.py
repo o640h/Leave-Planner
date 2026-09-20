@@ -1,10 +1,12 @@
 """Optimistic consistency and workspace invalidation acceptance tests."""
 
+import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
@@ -13,6 +15,8 @@ from database import create_database_engine, create_session_factory, session_sco
 from main import create_app
 from migrations import upgrade_database
 from settings import Settings
+from workspaces.live_router import PointerMessage, _parse_message
+from workspaces.live_updates import WorkspaceUpdateHub
 from workspaces.models import OWNER_ROLE, Workspace, WorkspaceMembership
 
 EMAIL = "owner@example.org"
@@ -114,8 +118,150 @@ def test_committed_write_publishes_invalidation_and_rejects_stale_edit(
 def test_workspace_socket_rejects_an_untrusted_origin(tmp_path: Path) -> None:
     with TestClient(live_app(tmp_path)) as client:
         sign_in(client)
-        with pytest.raises(WebSocketDisconnect) as rejected, client.websocket_connect(
-            "/api/workspace-updates", headers={"Origin": "https://attacker.invalid"}
+        with (
+            pytest.raises(WebSocketDisconnect) as rejected,
+            client.websocket_connect(
+                "/api/workspace-updates", headers={"Origin": "https://attacker.invalid"}
+            ),
         ):
             pass
         assert rejected.value.code == 1008
+
+
+def test_workspace_socket_delivers_the_current_pointer_to_a_late_viewer(
+    tmp_path: Path,
+) -> None:
+    with TestClient(live_app(tmp_path)) as client:
+        sign_in(client)
+        socket_headers = {"Origin": "http://testserver"}
+        with client.websocket_connect("/api/workspace-updates", headers=socket_headers) as first:
+            first.send_json({"type": "view", "view": "consultants"})
+            first.send_json(
+                {
+                    "type": "pointer",
+                    "view": "consultants",
+                    "x": 0.2,
+                    "y": 0.8,
+                }
+            )
+            with client.websocket_connect(
+                "/api/workspace-updates", headers=socket_headers
+            ) as second:
+                second.send_json({"type": "view", "view": "consultants"})
+                message = second.receive_json()
+
+        assert message["type"] == "pointer_updated"
+        assert message["label"] == "P"
+        assert message["view"] == "consultants"
+        assert message["x"] == 0.2
+        assert message["y"] == 0.8
+
+
+class RecordingWebSocket:
+    def __init__(self) -> None:
+        self.accepted = False
+        self.messages: list[dict[str, object]] = []
+        self.closed_with: int | None = None
+
+    async def accept(self) -> None:
+        self.accepted = True
+
+    async def send_json(self, payload: dict[str, object]) -> None:
+        self.messages.append(payload)
+
+    async def close(self, code: int) -> None:
+        self.closed_with = code
+
+
+def test_live_pointers_are_private_to_a_workspace_and_compatible_view() -> None:
+    async def scenario() -> None:
+        hub = WorkspaceUpdateHub(asyncio.get_running_loop())
+        first = RecordingWebSocket()
+        colleague = RecordingWebSocket()
+        other_workspace = RecordingWebSocket()
+        first_id = await hub.connect(
+            10,
+            cast(WebSocket, first),
+            user_id=1,
+            public_id="first-user",
+            display_name="Alex Morgan",
+        )
+        colleague_id = await hub.connect(
+            10,
+            cast(WebSocket, colleague),
+            user_id=2,
+            public_id="second-user",
+            display_name="Jordan Patel",
+        )
+        other_id = await hub.connect(
+            20,
+            cast(WebSocket, other_workspace),
+            user_id=3,
+            public_id="third-user",
+            display_name="Sam Taylor",
+        )
+        for workspace_id, connection_id in (
+            (10, first_id),
+            (10, colleague_id),
+            (20, other_id),
+        ):
+            await hub.set_view(workspace_id, connection_id, "planning:2026-09")
+
+        await hub.move_pointer(
+            10,
+            first_id,
+            view="planning:2026-09",
+            x=0.25,
+            y=0.75,
+        )
+
+        late_joiner = RecordingWebSocket()
+        late_joiner_id = await hub.connect(
+            10,
+            cast(WebSocket, late_joiner),
+            user_id=4,
+            public_id="late-user",
+            display_name="Morgan Lee",
+        )
+        await hub.set_view(10, late_joiner_id, "planning:2026-09")
+
+        assert first.messages == []
+        assert other_workspace.messages == []
+        assert colleague.messages == [
+            {
+                "type": "pointer_updated",
+                "connection_id": first_id,
+                "label": "A",
+                "colour_index": colleague.messages[0]["colour_index"],
+                "view": "planning:2026-09",
+                "x": 0.25,
+                "y": 0.75,
+            }
+        ]
+        assert set(colleague.messages[0]) == {
+            "type",
+            "connection_id",
+            "label",
+            "colour_index",
+            "view",
+            "x",
+            "y",
+        }
+        assert late_joiner.messages == [colleague.messages[0]]
+
+        await hub.disconnect(10, first_id)
+        assert colleague.messages[-1] == {
+            "type": "pointer_removed",
+            "connection_id": first_id,
+        }
+        assert late_joiner.messages[-1] == colleague.messages[-1]
+
+    asyncio.run(scenario())
+
+
+def test_live_pointer_schema_accepts_supported_pages_without_record_identifiers() -> None:
+    consultants = _parse_message('{"type":"pointer","view":"consultants","x":0.2,"y":0.8}')
+    assert isinstance(consultants, PointerMessage)
+    assert consultants.view == "consultants"
+
+    assert _parse_message('{"type":"pointer","view":"consultants:42","x":0.2,"y":0.8}') is None

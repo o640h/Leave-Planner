@@ -503,6 +503,7 @@
 }
 
 .member-wallchart {
+  position: relative;
   min-width: max(100%, var(--member-wallchart-min-width));
   min-height: 100%;
 }
@@ -566,12 +567,12 @@
 
 .member-wallchart-day {
   color: var(--muted);
-  font-size: 0.69231rem;
+  font-size: 0.80769rem;
 }
 
 .member-wallchart-day small {
   color: var(--quiet);
-  font-size: 0.57692rem;
+  font-size: 0.61538rem;
 }
 
 .member-wallchart-day--weekend {

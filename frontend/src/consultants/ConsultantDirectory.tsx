@@ -14,8 +14,10 @@ import './consultants.css'
 
 import { LeaveYearPanel } from '../leaveYears/LeaveYearPanel'
 import { AppIcon } from '../system/AppIcon'
+import { LivePointerLayer } from '../system/LivePointerLayer'
 import { ModalLayer } from '../system/ModalLayer'
 import { RemovalDialog } from '../system/RemovalDialog'
+import { useWorkspacePointers } from '../system/workspacePointers'
 import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import type { RemovalImpact } from '../system/removal'
 
@@ -50,6 +52,7 @@ export function ConsultantDirectory() {
   const [searchQuery, setSearchQuery] = useState('')
   const [archiveImpact, setArchiveImpact] = useState<RemovalImpact | null>(null)
   const [removing, setRemoving] = useState(false)
+  const { pointers, onPointerMove, onPointerLeave } = useWorkspacePointers('consultants')
 
   useWorkspaceInvalidation(['consultants'], () => {
     setLoadAttempt((attempt) => attempt + 1)
@@ -186,7 +189,11 @@ export function ConsultantDirectory() {
 
   return (
     <section className="directory" aria-labelledby="directory-title">
-      <div className="directory-workspace">
+      <div
+        className="directory-workspace"
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
+      >
         <section className="directory-list-panel" aria-labelledby="consultant-list-title">
           <div className="panel-heading">
             <div>
@@ -341,6 +348,7 @@ export function ConsultantDirectory() {
             </div>
           )}
         </section>
+        <LivePointerLayer pointers={pointers} />
       </div>
 
       {editorTarget === 'new' || (selectedConsultant && identityEditorOpen) ? (

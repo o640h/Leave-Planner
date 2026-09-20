@@ -24,7 +24,7 @@ import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
 import { ProductIdentity } from './system/ProductIdentity'
 import { WorkspaceFrame } from './system/WorkspaceFrame'
-import { WorkspaceUpdateConnection } from './system/WorkspaceUpdates'
+import { WorkspaceUpdateProvider } from './system/WorkspaceUpdates'
 import { useWorkspaceInvalidation } from './system/workspaceInvalidation'
 import { WorkspaceCreationDialog } from './workspaces/WorkspaceCreationDialog'
 import { WorkspaceSelectionDialog } from './workspaces/WorkspaceSelectionDialog'
@@ -598,8 +598,7 @@ export function App() {
   }
   if (activeMembership.role === 'member') {
     return (
-      <>
-        <WorkspaceUpdateConnection workspaceId={activeMembership.workspace_id} />
+      <WorkspaceUpdateProvider workspaceId={activeMembership.workspace_id}>
         <MemberApplicationWorkspace
           key={workspace.active_workspace_id}
           user={session.user!}
@@ -617,13 +616,12 @@ export function App() {
             onCreated={workspaceCreated}
           />
         ) : null}
-      </>
+      </WorkspaceUpdateProvider>
     )
   }
 
   return (
-    <>
-      <WorkspaceUpdateConnection workspaceId={activeMembership.workspace_id} />
+    <WorkspaceUpdateProvider workspaceId={activeMembership.workspace_id}>
       <ApplicationWorkspace
         key={workspace.active_workspace_id}
         user={session.user ?? undefined}
@@ -641,6 +639,6 @@ export function App() {
           onCreated={workspaceCreated}
         />
       ) : null}
-    </>
+    </WorkspaceUpdateProvider>
   )
 }
