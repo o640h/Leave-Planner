@@ -212,3 +212,23 @@ it('publishes the last pointer position immediately after a refresh', () => {
     y: 0.6,
   })
 })
+
+it('does not create a reconnect storm after the server rate limits a socket', () => {
+  vi.useFakeTimers()
+  vi.stubGlobal('WebSocket', FakeWebSocket)
+  const view = render(
+    <WorkspaceUpdateProvider workspaceId={12}>
+      <PlanningObserver onRefresh={vi.fn()} />
+    </WorkspaceUpdateProvider>,
+  )
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('close', new CloseEvent('close', { code: 4429 }))
+    vi.advanceTimersByTime(59_999)
+  })
+  expect(FakeWebSocket.instances).toHaveLength(1)
+
+  act(() => vi.advanceTimersByTime(1))
+  expect(FakeWebSocket.instances).toHaveLength(2)
+  view.unmount()
+})

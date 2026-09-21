@@ -2,10 +2,9 @@
 
 ## Purpose
 
-This checkpoint fixes the authority and privacy rules that the later Phase 7 slices must implement.
-It changes no application behaviour. The current password-only `Admin`, single-membership resolver,
-leave calculations, applied entitlement, booking snapshots, and balance derivation remain unchanged
-until their owning tasks deliberately replace or extend them.
+This document records the authority and privacy rules implemented by the hosted application.
+The account boundary does not alter leave calculations, applied entitlement, booking snapshots, or
+balance derivation.
 
 The first named Owner will start with a new empty workspace and will not inherit the shared `Admin`
 identity or its legacy workspace. The transition command introduced later must collect and verify
@@ -172,7 +171,7 @@ there is no permanent emergency account or plaintext-token fallback.
 ### Authoritative Data Retained on the NAS
 
 - global account ID, canonical and display email, display name, verification and security state;
-- Argon2id password hash, password version, MFA state, and hashed recovery codes;
+- Argon2id password hash and password version;
 - workspaces, roles, memberships, consultant links, and ownership history;
 - hashed session and one-time token values, expiry, revocation, throttling, and lockout state;
 - consultants, leave years, job plans, entitlement, carry-forward, bookings, requests, and balances;
@@ -180,8 +179,10 @@ there is no permanent emergency account or plaintext-token fallback.
 - mail purpose, redacted recipient reference, creation/attempt/completion timestamps, retry state,
   and provider message identifier.
 
-Raw passwords, session tokens, CSRF tokens, one-time tokens, and MFA recovery codes are never logged.
-Only token hashes or reviewed password hashes are persisted.
+Raw passwords, session tokens, CSRF tokens, and one-time tokens are never logged. Only token hashes
+or reviewed password hashes are persisted. The current release has no MFA secret, recovery-code
+credential, or general recovery-code login; verified-mailbox reset and documented audited
+server-side recovery remain the account-recovery routes.
 
 ### Limited Data Processed by the Delivery Provider
 

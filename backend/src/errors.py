@@ -19,12 +19,14 @@ class ApiError(Exception):
         code: str,
         message: str,
         details: Any | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.code = code
         self.message = message
         self.details = details
+        self.headers = headers or {}
 
 
 def error_payload(code: str, message: str, details: Any | None = None) -> dict[str, Any]:
@@ -42,6 +44,7 @@ def install_error_handlers(app: FastAPI) -> None:
         )
         if exc.status_code in {401, 403, 429}:
             response.headers["Cache-Control"] = "no-store"
+        response.headers.update(exc.headers)
         return response
 
     @app.exception_handler(RequestValidationError)

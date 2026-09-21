@@ -28,9 +28,8 @@ Models continue to store leave quantities as fixed-precision numeric values, whi
 continue to serialize `Decimal` quantities as strings. No calculation rule changes at this layer.
 
 SQLite connection PRAGMAs are installed only for SQLite engines. The SQLite file-copy backup and
-restore API is also mounted only for SQLite. PostgreSQL backup and restore will use database dumps
-and is deliberately owned by Phase 6 task 10; copying PostgreSQL data files while the server is
-running is not a supported recovery path.
+restore API is also mounted only for SQLite. PostgreSQL backup and restore use verified database
+dumps; copying PostgreSQL data files while the server is running is not a supported recovery path.
 
 ## Verification
 

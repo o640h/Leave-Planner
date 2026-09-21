@@ -239,6 +239,9 @@ def test_foreign_workspace_records_are_not_visible_or_mutable(tmp_path: Path) ->
         for response in attempts:
             assert response.status_code == 404
 
+        unknown_consultant = client.get("/api/consultants/999999")
+        assert attempts[0].json() == unknown_consultant.json()
+
         holiday_settings = client.get("/api/settings/public-holidays")
         assert holiday_settings.status_code == 200
         assert holiday_settings.json()["corrections"] == []

@@ -147,6 +147,8 @@ def logout(
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> SessionRead:
     revoke_session(session, authenticated)
+    session.commit()
+    request.app.state.workspace_update_hub.close_session_soon(authenticated.session_id)
     clear_authentication_cookies(response, runtime_settings(request))
     no_store(response)
     return SessionRead(authenticated=False)

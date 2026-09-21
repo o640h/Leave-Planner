@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import secrets
 import zlib
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 
 from fastapi import WebSocket
@@ -13,6 +13,10 @@ from sqlalchemy.orm import Session
 
 PENDING_INVALIDATIONS_KEY = "pending_workspace_invalidations"
 POINTER_COLOUR_COUNT = 8
+
+
+class WorkspaceConnectionLimit(Exception):
+    """The account already owns the permitted number of live sockets."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +48,7 @@ class WorkspaceConnection:
     connection_id: str
     websocket: WebSocket
     user_id: int
+    session_id: int
     label: str
     colour_index: int
     view: str | None = None
@@ -68,8 +73,16 @@ class WorkspaceUpdateHub:
         user_id: int,
         public_id: str,
         display_name: str,
+        session_id: int = 0,
+        max_connections_for_user: int | None = None,
     ) -> str:
         await websocket.accept()
+        if (
+            max_connections_for_user is not None
+            and self.connection_count_for_user(user_id) >= max_connections_for_user
+        ):
+            await websocket.close(code=4429)
+            raise WorkspaceConnectionLimit
         workspace_connections = self._connections.setdefault(workspace_id, {})
         same_user = next(
             (
@@ -99,10 +112,36 @@ class WorkspaceUpdateHub:
             connection_id=connection_id,
             websocket=websocket,
             user_id=user_id,
+            session_id=session_id,
             label=_pointer_label(display_name),
             colour_index=colour_index,
         )
         return connection_id
+
+    def connection_count_for_user(self, user_id: int) -> int:
+        return sum(
+            connection.user_id == user_id
+            for connections in self._connections.values()
+            for connection in connections.values()
+        )
+
+    async def close_session(self, session_id: int, *, code: int = 4401) -> None:
+        await self._close_matching(
+            lambda connection: connection.session_id == session_id,
+            code=code,
+        )
+
+    async def close_user(self, user_id: int, *, code: int = 4401) -> None:
+        await self._close_matching(
+            lambda connection: connection.user_id == user_id,
+            code=code,
+        )
+
+    def close_session_soon(self, session_id: int, *, code: int = 4401) -> None:
+        asyncio.run_coroutine_threadsafe(self.close_session(session_id, code=code), self._loop)
+
+    def close_user_soon(self, user_id: int, *, code: int = 4401) -> None:
+        asyncio.run_coroutine_threadsafe(self.close_user(user_id, code=code), self._loop)
 
     async def disconnect(self, workspace_id: int, connection_id: str) -> None:
         connections = self._connections.get(workspace_id)
@@ -258,6 +297,21 @@ class WorkspaceUpdateHub:
         for connection in connections:
             try:
                 await connection.websocket.close(code=4409)
+            finally:
+                await self.disconnect(workspace_id, connection.connection_id)
+
+    async def _close_matching(
+        self, predicate: Callable[[WorkspaceConnection], bool], *, code: int
+    ) -> None:
+        matches = [
+            (workspace_id, connection)
+            for workspace_id, connections in self._connections.items()
+            for connection in connections.values()
+            if predicate(connection)
+        ]
+        for workspace_id, connection in matches:
+            try:
+                await connection.websocket.close(code=code)
             finally:
                 await self.disconnect(workspace_id, connection.connection_id)
 

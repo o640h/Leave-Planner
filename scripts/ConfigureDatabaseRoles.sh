@@ -19,5 +19,20 @@ $$;
 ALTER ROLE leave_planner_backup NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT BYPASSRLS;
 ALTER ROLE leave_planner_restore NOLOGIN NOSUPERUSER CREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
 GRANT CONNECT ON DATABASE leave_planner TO leave_planner_backup;
-GRANT pg_read_all_data TO leave_planner_backup;
+REVOKE pg_read_all_data FROM leave_planner_backup;
+GRANT USAGE ON SCHEMA public TO leave_planner_backup;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO leave_planner_backup;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO leave_planner_backup;
+ALTER DEFAULT PRIVILEGES FOR ROLE leave_planner_migrator IN SCHEMA public
+    GRANT SELECT ON TABLES TO leave_planner_backup;
+ALTER DEFAULT PRIVILEGES FOR ROLE leave_planner_migrator IN SCHEMA public
+    GRANT SELECT ON SEQUENCES TO leave_planner_backup;
+DO $$
+BEGIN
+    IF to_regclass('public.alembic_version') IS NOT NULL
+       AND NOT has_table_privilege('leave_planner_backup', 'public.alembic_version', 'SELECT') THEN
+        RAISE EXCEPTION 'The backup role cannot read the application schema';
+    END IF;
+END
+$$;
 SQL

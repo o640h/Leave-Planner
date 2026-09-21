@@ -20,7 +20,7 @@ from consultant_year_summary import router as consultant_year_summary_router
 from consultants import router as consultant_router
 from database import create_database_engine, create_session_factory
 from errors import install_error_handlers
-from http_security import HostedHttpSecurityMiddleware
+from http_security import HostedHttpSecurityMiddleware, SecurityRateLimits
 from job_plans.router import router as job_plan_router
 from leave_bookings.router import request_router as leave_request_router
 from leave_bookings.router import router as leave_booking_router
@@ -82,7 +82,12 @@ def create_app(
     app.state.settings = runtime
     app.state.email_sender = create_email_sender(runtime)
     app.state.workspace_update_hub = None
-    app.add_middleware(HostedHttpSecurityMiddleware, settings=runtime)
+    app.state.security_rate_limits = SecurityRateLimits(runtime)
+    app.add_middleware(
+        HostedHttpSecurityMiddleware,
+        settings=runtime,
+        limits=app.state.security_rate_limits,
+    )
     if runtime.environment == "production":
         assert runtime.public_host is not None
         app.add_middleware(

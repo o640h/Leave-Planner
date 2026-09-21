@@ -213,6 +213,144 @@ def test_invited_new_account_joins_only_after_email_verification(tmp_path: Path)
         engine.dispose()
 
 
+def test_revoked_invitation_cannot_be_accepted(tmp_path: Path) -> None:
+    app, engine, _factory, _account_ids, consultant_id = workspace_app(tmp_path)
+    assert consultant_id is not None
+    try:
+        with TestClient(app) as owner_client:
+            headers = sign_in(owner_client, OWNER_EMAIL)
+            invited = owner_client.post(
+                "/api/workspaces/1/invitations",
+                json={
+                    "email": MEMBER_EMAIL,
+                    "role": "member",
+                    "linked_consultant_id": consultant_id,
+                },
+                headers=headers,
+            )
+            assert invited.status_code == 200
+            invitation_id = invited.json()["invitations"][0]["invitation_id"]
+            invitation_token = latest_invitation_token(owner_client)
+
+            revoked = owner_client.delete(
+                f"/api/workspaces/1/invitations/{invitation_id}", headers=headers
+            )
+            assert revoked.status_code == 200
+            assert revoked.json()["invitations"] == []
+
+        with TestClient(app) as member_client:
+            member_headers = sign_in(member_client, MEMBER_EMAIL)
+            denied = member_client.post(
+                "/api/workspaces/invitations/accept",
+                json={"token": invitation_token},
+                headers=member_headers,
+            )
+            assert denied.status_code == 409
+            assert denied.json()["error"]["code"] == "workspace_management_conflict"
+    finally:
+        engine.dispose()
+
+
+def test_owner_can_promote_and_demote_a_workspace_member(tmp_path: Path) -> None:
+    app, engine, factory, account_ids, consultant_id = workspace_app(tmp_path)
+    assert consultant_id is not None
+    try:
+        with session_scope(factory) as session:
+            session.add(
+                WorkspaceMembership(
+                    workspace_id=1,
+                    user_id=account_ids["member"],
+                    role=MEMBER_ROLE,
+                    linked_consultant_id=consultant_id,
+                )
+            )
+
+        with TestClient(app) as owner_client:
+            headers = sign_in(owner_client, OWNER_EMAIL)
+            detail = owner_client.get("/api/workspaces/1/management").json()
+            membership_id = next(
+                person["membership_id"]
+                for person in detail["people"]
+                if person["role"] == "member"
+            )
+
+            promoted = owner_client.patch(
+                f"/api/workspaces/1/members/{membership_id}",
+                json={"role": "admin", "linked_consultant_id": None},
+                headers=headers,
+            )
+            assert promoted.status_code == 200
+            promoted_person = next(
+                person
+                for person in promoted.json()["people"]
+                if person["membership_id"] == membership_id
+            )
+            assert promoted_person["role"] == ADMIN_ROLE
+            assert promoted_person["linked_consultant_id"] is None
+
+            demoted = owner_client.patch(
+                f"/api/workspaces/1/members/{membership_id}",
+                json={"role": "member", "linked_consultant_id": consultant_id},
+                headers=headers,
+            )
+            assert demoted.status_code == 200
+            demoted_person = next(
+                person
+                for person in demoted.json()["people"]
+                if person["membership_id"] == membership_id
+            )
+            assert demoted_person["role"] == MEMBER_ROLE
+            assert demoted_person["linked_consultant_id"] == consultant_id
+    finally:
+        engine.dispose()
+
+
+def test_owner_admin_and_member_sessions_remain_independent(tmp_path: Path) -> None:
+    app, engine, factory, account_ids, consultant_id = workspace_app(tmp_path)
+    assert consultant_id is not None
+    try:
+        with session_scope(factory) as session:
+            session.add_all(
+                (
+                    WorkspaceMembership(
+                        workspace_id=1,
+                        user_id=account_ids["admin"],
+                        role=ADMIN_ROLE,
+                    ),
+                    WorkspaceMembership(
+                        workspace_id=1,
+                        user_id=account_ids["member"],
+                        role=MEMBER_ROLE,
+                        linked_consultant_id=consultant_id,
+                    ),
+                )
+            )
+
+        with (
+            TestClient(app) as owner_client,
+            TestClient(app) as admin_client,
+            TestClient(app) as member_client,
+        ):
+            sign_in(owner_client, OWNER_EMAIL)
+            sign_in(admin_client, ADMIN_EMAIL)
+            sign_in(member_client, MEMBER_EMAIL)
+
+            owner_context = owner_client.get("/api/auth/session").json()["workspace"]
+            admin_context = admin_client.get("/api/auth/session").json()["workspace"]
+            member_context = member_client.get("/api/auth/session").json()["workspace"]
+            assert owner_context["memberships"][0]["role"] == OWNER_ROLE
+            assert admin_context["memberships"][0]["role"] == ADMIN_ROLE
+            assert member_context["memberships"][0]["role"] == MEMBER_ROLE
+
+            assert owner_client.get("/api/consultants").status_code == 200
+            assert admin_client.get("/api/consultants").status_code == 200
+            assert member_client.get("/api/consultants").status_code == 403
+            assert member_client.get("/api/member/workspace").status_code == 200
+            assert owner_client.get("/api/member/workspace").status_code == 403
+    finally:
+        engine.dispose()
+
+
 def test_admin_can_manage_members_but_cannot_invite_or_change_admins(tmp_path: Path) -> None:
     app, engine, factory, account_ids, consultant_id = workspace_app(tmp_path)
     assert consultant_id is not None

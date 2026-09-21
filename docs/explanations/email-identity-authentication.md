@@ -117,8 +117,8 @@ Transactional mail will later be sent from a dedicated authenticated sender such
 
 `notifications@merydio.co.uk`. That address need not receive mail. If human replies are required, a
 separately configured and monitored support inbox can be supplied as Reply-To. In-app request
-notifications remain authoritative; Task 4 adds delivery, while later request work may optionally
-email each Owner or Admin at their registered address.
+state remains authoritative, while transactional messages notify each Owner or Admin at their
+registered address.
 
 ## Calculation Boundary
 

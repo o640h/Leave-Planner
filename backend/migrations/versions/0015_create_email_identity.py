@@ -38,7 +38,7 @@ def upgrade() -> None:
     connection.execute(sa.text("DELETE FROM security_events"))
     connection.execute(sa.text("DELETE FROM users"))
 
-    with op.batch_alter_table("users", recreate="always") as batch:
+    with op.batch_alter_table("users") as batch:
         batch.drop_constraint("uq_users_display_name", type_="unique")
         batch.drop_column("enabled")
         batch.add_column(sa.Column("public_id", sa.String(length=32), nullable=False))
@@ -66,7 +66,7 @@ def downgrade() -> None:
     if connection.scalar(sa.text("SELECT COUNT(*) FROM users")):
         raise RuntimeError("Email accounts must be removed before downgrading revision 0015")
 
-    with op.batch_alter_table("users", recreate="always") as batch:
+    with op.batch_alter_table("users") as batch:
         batch.drop_constraint("ck_users_security_state", type_="check")
         batch.drop_constraint("uq_users_canonical_email", type_="unique")
         batch.drop_constraint("uq_users_public_id", type_="unique")

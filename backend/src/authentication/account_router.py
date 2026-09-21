@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from dependencies import DatabaseSession
 from errors import ApiError
+from http_security import account_action_retry_after, enforce_account_action_limit
 from workspaces.management import accept_claimed_invitations, claim_invitation_for_registration
 
 from .account_actions import (
@@ -223,6 +224,7 @@ def request_password_reset(
         account is not None
         and account.security_state == ACTIVE
         and account.email_verified_at is not None
+        and not account_action_retry_after(request, account.id, "password-reset")
     ):
         issued = issue_action(
             session,
@@ -269,15 +271,18 @@ def confirm_password_reset(
     reset_account_password(session, account, details.password, actor_label="Account Recovery")
     revoke_user_actions(session, account.id)
     session.commit()
+    request.app.state.workspace_update_hub.close_user_soon(account.id)
     return MessageRead(message="Password changed. Sign in with your new password.")
 
 
 @router.post("/password-change", response_model=MessageRead)
 def change_password(
     details: PasswordChangeRequest,
+    request: Request,
     session: DatabaseSession,
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> MessageRead:
+    enforce_account_action_limit(request, authenticated.id, "password-change")
     if details.password != details.password_confirmation:
         raise ApiError(
             status_code=400,
@@ -320,6 +325,7 @@ def change_password(
     )
     revoke_user_actions(session, account.id)
     session.commit()
+    request.app.state.workspace_update_hub.close_user_soon(account.id)
     return MessageRead(message="Password changed successfully.")
 
 
@@ -330,6 +336,7 @@ def request_email_change(
     session: DatabaseSession,
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> MessageRead:
+    enforce_account_action_limit(request, authenticated.id, "email-change")
     if not reauthenticate_session(session, authenticated, details.password):
         record_security_event(
             session,
@@ -437,6 +444,7 @@ def confirm_email_change(
         actor_label=account.display_name,
     )
     session.commit()
+    request.app.state.workspace_update_hub.close_user_soon(account.id)
     deliver(
         session,
         request,

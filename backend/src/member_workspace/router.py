@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from authentication.dependencies import runtime_settings
 from authentication.email_delivery import EmailSender
 from dependencies import DatabaseSession
+from http_security import enforce_account_action_limit
 from leave_bookings import notifications
 from leave_bookings.schemas import LeavePreviewRead, LeaveRequestWrite
 from workspaces.dependencies import require_member_workspace_request
@@ -79,6 +80,7 @@ def submit_leave_request(
     session: DatabaseSession,
     access: MemberAccess,
 ) -> MemberWorkspaceRead:
+    enforce_account_action_limit(request, access.user_id, "member-leave-request")
     result = service.submit_leave_request(session, access, leave_year_id, details)
     session.commit()
     _notify_operators(request, session, access, "submitted")
@@ -96,6 +98,7 @@ def cancel_leave_request(
     session: DatabaseSession,
     access: MemberAccess,
 ) -> MemberWorkspaceRead:
+    enforce_account_action_limit(request, access.user_id, "member-leave-request")
     result = service.cancel_leave_request(
         session, access, leave_year_id, booking_id
     )
@@ -115,6 +118,7 @@ def request_leave_cancellation(
     session: DatabaseSession,
     access: MemberAccess,
 ) -> MemberWorkspaceRead:
+    enforce_account_action_limit(request, access.user_id, "member-leave-request")
     result = service.request_leave_cancellation(
         session, access, leave_year_id, booking_id
     )

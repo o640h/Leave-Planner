@@ -28,8 +28,8 @@ identifier.
 
 Trust-specific holiday corrections also carry and query `workspace_id`. The versioned England and
 Wales source calendar and its dated events remain shared reference data. SQLite recovery routes exist
-only during local development and require the same membership; PostgreSQL restore remains a later,
-separately authorized server operation.
+only during local development and require the same membership; PostgreSQL restore is a separately
+authorized server operation.
 
 ## Audit Identity
 

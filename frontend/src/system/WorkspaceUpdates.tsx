@@ -258,7 +258,8 @@ export function WorkspaceUpdateProvider({
         if (heartbeatTimer !== null) window.clearInterval(heartbeatTimer)
         heartbeatTimer = null
         if (!active || event.code === 4401 || event.code === 4403) return
-        reconnectTimer = window.setTimeout(connect, reconnectDelay)
+        const delay = event.code === 4429 ? 60_000 : reconnectDelay
+        reconnectTimer = window.setTimeout(connect, delay)
         reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY_MS)
       })
     }

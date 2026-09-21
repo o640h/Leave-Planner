@@ -17,6 +17,7 @@ from resources import frontend_distribution
 Environment = Literal["development", "production", "test"]
 EmailProvider = Literal["development_outbox", "resend"]
 RegistrationMode = Literal["closed", "invitation_only", "open"]
+TrustedProxyMode = Literal["none", "cloudflare_tunnel"]
 
 
 def default_data_directory(
@@ -66,6 +67,13 @@ class Settings(BaseSettings):
     login_rate_limit: int = Field(default=10, ge=1, le=1_000)
     rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
     account_action_rate_limit: int = Field(default=5, ge=1, le=100)
+    sensitive_action_rate_limit: int = Field(default=30, ge=1, le=1_000)
+    rate_limit_max_keys: int = Field(default=10_000, ge=100, le=100_000)
+    trusted_proxy_mode: TrustedProxyMode = "none"
+    websocket_connection_rate_limit: int = Field(default=12, ge=1, le=100)
+    websocket_connections_per_account: int = Field(default=5, ge=1, le=20)
+    websocket_message_rate_limit: int = Field(default=40, ge=20, le=500)
+    websocket_revalidation_seconds: int = Field(default=30, ge=5, le=300)
     registration_mode: RegistrationMode = "open"
     owned_workspace_limit: int = Field(default=3, ge=1, le=20)
     email_provider: EmailProvider = "development_outbox"
@@ -82,6 +90,8 @@ class Settings(BaseSettings):
             raise ValueError("Production requires a postgresql+psycopg database URL")
         if self.environment == "production" and not self.authentication_required:
             raise ValueError("Production requires authentication")
+        if self.environment != "production" and self.trusted_proxy_mode != "none":
+            raise ValueError("Trusted proxy mode is only available in production")
         if self.email_provider == "resend" and self.resend_api_key_file is None:
             raise ValueError("The Resend provider requires resend_api_key_file")
         if self.public_origin is not None:

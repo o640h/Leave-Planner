@@ -78,9 +78,18 @@ export LEAVE_PLANNER_VERSION="$version"
 previous_image=$(docker inspect leave-planner-application-1 --format '{{.Config.Image}}' 2>/dev/null || true)
 previous_image_id=$(docker inspect leave-planner-application-1 --format '{{.Image}}' 2>/dev/null || true)
 
-printf 'Creating and verifying the pre-release database backup...\n'
+printf 'Inspecting the database before release...\n'
 sh "$release_dir/scripts/ConfigureDatabaseRoles.sh"
-sh "$release_dir/scripts/PostgresBackup.sh" backup "$backup_dir"
+schema_revision=$(compose exec -T database psql -X -U postgres -d leave_planner -Atqc \
+    "SELECT version_num FROM alembic_version LIMIT 1" 2>/dev/null || true)
+if [ -n "$schema_revision" ]; then
+    sh "$release_dir/scripts/PostgresBackup.sh" backup "$backup_dir"
+else
+    application_tables=$(compose exec -T database psql -X -U postgres -d leave_planner -Atqc \
+        "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public'" 2>/dev/null || true)
+    [ "$application_tables" = 0 ] || fail 'The database has tables but no migration revision; refusing to skip its backup.'
+    printf 'The database is pristine; there is no application schema to back up.\n'
+fi
 
 printf 'Building application image leave-planner:%s...\n' "$version"
 compose build --pull application

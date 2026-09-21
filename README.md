@@ -2,7 +2,7 @@
 
 Leave Planner is a consultant annual-leave planning application. It replaces the one-workbook-per-consultant workflow with consultant records, job plans, entitlement calculations, public holidays, leave booking, balances, audit history, and recovery tools.
 
-The completed local release uses React and TypeScript, FastAPI, and SQLite. The current development phase is converting that workflow into an authenticated browser application backed by PostgreSQL and deployed as containers on a Synology NAS. Windows packaging and desktop runtime integrations have been retired.
+The application uses React and TypeScript, FastAPI, and PostgreSQL in its hosted container deployment. SQLite remains available for isolated local development and focused tests. Windows packaging and desktop runtime integrations have been retired.
 
 Policy documents and the reference workbook are retained in [`docs/reference`](docs/reference); calculation and maintenance notes are in [`docs/explanations`](docs/explanations).
 
@@ -18,7 +18,7 @@ uv sync --active --locked --group dev
 uv run --active --no-sync uvicorn main:app --app-dir src --reload --host 127.0.0.1 --port 8000
 ```
 
-Phase 7 uses named email accounts. The shared Admin account has been retired; the first Owner and a
+The application uses named email accounts. The shared Admin account has been retired; the first Owner and a
 new blank workspace are created with the explicit `authentication.account_admin create-owner`
 command documented in
 [`docs/explanations/first-owner-workspace.md`](docs/explanations/first-owner-workspace.md).
@@ -27,6 +27,8 @@ outbox. The complete test walkthrough and production Resend boundary are documen
 [`docs/explanations/transactional-email-and-account-recovery.md`](docs/explanations/transactional-email-and-account-recovery.md).
 Ordinary registration and explicit empty-workspace creation are documented in
 [`docs/explanations/account-registration-and-workspace-creation.md`](docs/explanations/account-registration-and-workspace-creation.md).
+The completed role, workspace-isolation, collaboration, and recovery checks are summarised in
+[`docs/explanations/multi-account-workspace-acceptance.md`](docs/explanations/multi-account-workspace-acceptance.md).
 
 Start Vite in the second:
 

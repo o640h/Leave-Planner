@@ -67,18 +67,6 @@ export const removeWorkspaceMember = (workspaceId: number, membershipId: number)
     method: 'DELETE',
   })
 
-export const requestOwnershipTransfer = (workspaceId: number, targetMembershipId: number) =>
-  apiRequest<WorkspaceManagement>(`/api/workspaces/${workspaceId}/ownership-transfers`, {
-    method: 'POST',
-    body: JSON.stringify({ target_membership_id: targetMembershipId }),
-  })
-
-export const acceptOwnershipTransfer = (workspaceId: number, transferId: number) =>
-  apiRequest<WorkspaceManagement>(
-    `/api/workspaces/${workspaceId}/ownership-transfers/${transferId}/accept`,
-    { method: 'POST' },
-  )
-
 export const getWorkspaceImpact = (workspaceId: number) =>
   apiRequest<WorkspaceImpact>(`/api/workspaces/${workspaceId}/impact`)
 

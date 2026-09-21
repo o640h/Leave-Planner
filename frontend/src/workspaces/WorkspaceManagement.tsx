@@ -6,7 +6,6 @@ import { ModalLayer } from '../system/ModalLayer'
 import { useWorkspaceInvalidation } from '../system/workspaceInvalidation'
 import { SelectMenu } from '../system/SelectMenu'
 import {
-  acceptOwnershipTransfer,
   closeWorkspace,
   deleteWorkspace,
   getWorkspaceImpact,
@@ -16,7 +15,6 @@ import {
   recoverWorkspace,
   removeWorkspaceMember,
   renameWorkspace,
-  requestOwnershipTransfer,
   resendWorkspaceInvitation,
   revokeWorkspaceInvitation,
   updateWorkspaceMember,
@@ -44,7 +42,6 @@ function PersonControls({
   busy,
   onChanged,
   onRemoved,
-  onTransfer,
 }: {
   person: WorkspacePerson
   management: WorkspaceManagementData
@@ -55,7 +52,6 @@ function PersonControls({
     consultantId: number | null,
   ) => void
   onRemoved: (person: WorkspacePerson) => void
-  onTransfer: (person: WorkspacePerson) => void
 }) {
   const [role, setRole] = useState<'admin' | 'member'>(
     person.role === 'member' ? 'member' : 'admin',
@@ -105,7 +101,9 @@ function PersonControls({
               }))}
               onChange={setConsultantId}
             />
-          ) : null}
+          ) : (
+            <span className="workspace-person-control-placeholder" aria-hidden="true" />
+          )}
           <button
             className="button button--quiet"
             type="button"
@@ -122,16 +120,6 @@ function PersonControls({
           >
             Remove
           </button>
-          {management.current_role === 'owner' && person.role === 'admin' ? (
-            <button
-              className="button button--quiet"
-              type="button"
-              disabled={busy}
-              onClick={() => onTransfer(person)}
-            >
-              Transfer Ownership
-            </button>
-          ) : null}
         </div>
       ) : null}
     </li>
@@ -494,64 +482,36 @@ export function WorkspaceManagement({
                         <p>Workspace roles and consultant links.</p>
                       </div>
                     </header>
-                    {management.transfer ? (
-                      <div className="workspace-transfer-notice">
-                        <span>
-                          Ownership transfer to {management.transfer.to_display_name} is pending.
-                        </span>
-                        {management.transfer.can_accept ? (
-                          <button
-                            className="button button--primary"
-                            type="button"
-                            disabled={busy}
-                            onClick={() =>
+                    <ul className="workspace-people-list" aria-label="Workspace People">
+                      {[...management.people]
+                        .sort((left, right) => {
+                          const rank = { owner: 0, admin: 1, member: 2 }
+                          return (
+                            rank[left.role] - rank[right.role] ||
+                            left.display_name.localeCompare(right.display_name)
+                          )
+                        })
+                        .map((person) => (
+                          <PersonControls
+                            key={person.membership_id}
+                            person={person}
+                            management={management}
+                            busy={busy}
+                            onChanged={(target, role, consultantId) =>
                               runMutation(
                                 () =>
-                                  acceptOwnershipTransfer(
+                                  updateWorkspaceMember(
                                     management.workspace_id,
-                                    management.transfer!.transfer_id,
+                                    target.membership_id,
+                                    role,
+                                    consultantId,
                                   ),
-                                'Ownership accepted.',
+                                `${target.display_name} updated.`,
                               )
                             }
-                          >
-                            Accept Ownership
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <ul className="workspace-people-list">
-                      {management.people.map((person) => (
-                        <PersonControls
-                          key={person.membership_id}
-                          person={person}
-                          management={management}
-                          busy={busy}
-                          onChanged={(target, role, consultantId) =>
-                            runMutation(
-                              () =>
-                                updateWorkspaceMember(
-                                  management.workspace_id,
-                                  target.membership_id,
-                                  role,
-                                  consultantId,
-                                ),
-                              `${target.display_name} updated.`,
-                            )
-                          }
-                          onRemoved={setMemberPendingRemoval}
-                          onTransfer={(target) =>
-                            runMutation(
-                              () =>
-                                requestOwnershipTransfer(
-                                  management.workspace_id,
-                                  target.membership_id,
-                                ),
-                              `Ownership transfer sent to ${target.display_name}.`,
-                            )
-                          }
-                        />
-                      ))}
+                            onRemoved={setMemberPendingRemoval}
+                          />
+                        ))}
                     </ul>
                   </section>
 

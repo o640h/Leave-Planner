@@ -175,4 +175,54 @@ describe('workspace management', () => {
       ),
     )
   })
+
+  it('orders people by role and omits ownership transfer controls', async () => {
+    const detailWithPeople = {
+      ...detail,
+      people: [
+        {
+          membership_id: 3,
+          user_id: 3,
+          public_id: 'member-public-id',
+          display_name: 'Workspace Member',
+          display_email: 'member@example.org',
+          role: 'member',
+          linked_consultant_id: 7,
+          linked_consultant_name: 'Dr Member',
+        },
+        ...detail.people,
+        {
+          membership_id: 2,
+          user_id: 2,
+          public_id: 'admin-public-id',
+          display_name: 'Workspace Admin',
+          display_email: 'admin@example.org',
+          role: 'admin',
+          linked_consultant_id: null,
+          linked_consultant_name: null,
+        },
+      ],
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const path = input.toString()
+        if (path === '/api/workspaces/managed') return Promise.resolve(json(managed))
+        if (path === '/api/workspaces/1/management') return Promise.resolve(json(detailWithPeople))
+        throw new Error(`Unexpected request: ${path}`)
+      }),
+    )
+
+    render(
+      <WorkspaceManagement
+        activeWorkspaceId={1}
+        onCreateWorkspace={vi.fn()}
+        onWorkspaceContextChanged={vi.fn()}
+      />,
+    )
+
+    const people = await screen.findByRole('list', { name: 'Workspace People' })
+    expect(people).toHaveTextContent(/Primary Owner.*Workspace Admin.*Workspace Member/)
+    expect(screen.queryByRole('button', { name: /Transfer Ownership/i })).not.toBeInTheDocument()
+  })
 })

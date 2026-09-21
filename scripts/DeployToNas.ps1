@@ -55,6 +55,7 @@ function ConvertTo-ShellArgument {
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+$projectEnvironment = Join-Path $repositoryRoot '.venv'
 $temporaryDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("leave-planner-release-" + [guid]::NewGuid().ToString('N'))
 $archiveName = "leave-planner-$Version.tgz"
 $archivePath = Join-Path $temporaryDirectory $archiveName
@@ -66,6 +67,13 @@ New-Item -ItemType Directory -Path $temporaryDirectory | Out-Null
 
 try {
     if (-not $SkipChecks) {
+        $projectPython = Join-Path $projectEnvironment 'Scripts\python.exe'
+        if (-not (Test-Path -LiteralPath $projectPython)) {
+            throw 'The project-root .venv is missing. Create it and install the locked backend development dependencies before deploying.'
+        }
+        $env:VIRTUAL_ENV = $projectEnvironment
+        $env:PATH = (Join-Path $projectEnvironment 'Scripts') + [System.IO.Path]::PathSeparator + $env:PATH
+
         Write-Host 'Running backend release checks...'
         Push-Location (Join-Path $repositoryRoot 'backend')
         try {
@@ -107,7 +115,8 @@ try {
             '--exclude=frontend/node_modules',
             '--exclude=frontend/dist',
             '--exclude=frontend/coverage',
-            '--exclude=deploy/.env',
+            '--exclude=.env',
+            '--exclude=**/.env',
             '--exclude=deploy/secrets',
             '--exclude=*.log',
             '.dockerignore',
@@ -115,7 +124,9 @@ try {
             'backend',
             'frontend',
             'deploy',
-            'scripts'
+            'scripts',
+            'docs/reference/HR78_Medical_Dental_Annual_Leave_Policy_v3_2025-07.pdf',
+            'docs/reference/HRS09_Medical_Dental_Annual_Leave_Guidance_v1_2025-07.pdf'
         )
         Invoke-CheckedCommand 'tar.exe' $tarArguments
     }
@@ -141,6 +152,12 @@ try {
     $health = Invoke-RestMethod -Uri "$PublicOrigin/api/health" -Method Get -TimeoutSec 30
     if ($health.status -ne 'ok' -or $health.environment -ne 'production') {
         throw 'The public health endpoint returned an unexpected response.'
+    }
+
+    Write-Host 'Checking an ordinary public endpoint through the trusted edge...'
+    $registration = Invoke-RestMethod -Uri "$PublicOrigin/api/auth/registration" -Method Get -TimeoutSec 30
+    if ($registration.mode -notin @('open', 'invitation_only', 'closed')) {
+        throw 'The public registration endpoint returned an unexpected response.'
     }
 
     Write-Host "Release $Version is live and healthy at $PublicOrigin."

@@ -41,25 +41,65 @@ stamp=$(date -u +%Y%m%dT%H%M%SZ)
 if [ "$action" = backup ]; then
     archive="$backup_dir/leave-planner-$stamp-$$.dump"
     partial_archive="$archive.partial"
-    database pg_dump -U postgres --role=leave_planner_backup -d leave_planner --format=custom > "$partial_archive"
+    database pg_dump -U postgres --role=leave_planner_backup -d leave_planner \
+        --format=custom --no-acl > "$partial_archive"
     database pg_restore --list < "$partial_archive" > /dev/null
-    mv -- "$partial_archive" "$archive"
-    partial_archive=
-    (cd -- "$backup_dir" && sha256sum "$(basename -- "$archive")" > "$(basename -- "$archive").sha256")
+    restore_archive=$partial_archive
 else
     archive="$backup_dir/$(basename -- "$target")"
     [ -f "$archive.sha256" ] || fail 'Missing checksum sidecar.'
     (cd -- "$backup_dir" && sha256sum -c "$(basename -- "$archive").sha256")
+    restore_archive=$archive
 fi
 # Cleanup owns only a successfully created, generated database, never an existing target.
 candidate="leave_planner_restore_$(date -u +%Y%m%d%H%M%S)_$$"
 database createdb -U postgres --template=template0 --owner=leave_planner_restore "$candidate"
 restore_db=$candidate
-database pg_restore -U postgres --role=leave_planner_restore --no-owner --dbname="$restore_db" --single-transaction < "$archive"
+database pg_restore -U postgres --role=leave_planner_restore --no-owner --no-acl \
+    --dbname="$restore_db" --single-transaction < "$restore_archive"
 partial_report="$archive.verify.partial"
 database psql -X -U postgres -d "$restore_db" -v ON_ERROR_STOP=1 > "$partial_report" <<'SQL'
 SET ROLE leave_planner_restore;
 SELECT version_num AS schema_revision FROM alembic_version;
+DO $$
+BEGIN
+    IF to_regclass('public.users') IS NULL
+       OR to_regclass('public.user_sessions') IS NULL
+       OR to_regclass('public.account_action_tokens') IS NULL
+       OR to_regclass('public.workspace_memberships') IS NULL THEN
+        RAISE EXCEPTION 'Identity or workspace access tables are missing from the restore';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM pg_class
+        WHERE relname IN ('workspaces', 'workspace_memberships', 'consultants')
+          AND relnamespace = 'public'::regnamespace
+          AND NOT relrowsecurity
+    ) THEN
+        RAISE EXCEPTION 'Workspace row-level security was not restored';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+        FROM (VALUES
+            ('workspaces', 'workspaces_select'),
+            ('workspaces', 'workspaces_write'),
+            ('workspace_memberships', 'workspace_memberships_select'),
+            ('workspace_memberships', 'workspace_memberships_write'),
+            ('consultants', 'consultants_workspace')
+        ) AS required_policy(table_name, policy_name)
+        WHERE NOT EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE schemaname = 'public'
+              AND tablename = required_policy.table_name
+              AND policyname = required_policy.policy_name
+        )
+    ) THEN
+        RAISE EXCEPTION 'Workspace isolation policies were not restored';
+    END IF;
+END $$;
+SELECT 'users' AS protected_table, count(*) AS restored_rows FROM users
+UNION ALL SELECT 'user_sessions', count(*) FROM user_sessions
+UNION ALL SELECT 'account_action_tokens', count(*) FROM account_action_tokens
+UNION ALL SELECT 'workspace_memberships', count(*) FROM workspace_memberships;
 SELECT format('SELECT %L AS table_name, count(*) AS restored_rows FROM %I.%I;',
               tablename, schemaname, tablename)
 FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename
@@ -67,6 +107,11 @@ FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename
 SQL
 database dropdb -U postgres "$restore_db"
 restore_db=
+if [ "$action" = backup ]; then
+    mv -- "$partial_archive" "$archive"
+    partial_archive=
+    (cd -- "$backup_dir" && sha256sum "$(basename -- "$archive")" > "$(basename -- "$archive").sha256")
+fi
 mv -- "$partial_report" "$archive.verified.txt"
 partial_report=
 if [ "$action" = backup ]; then

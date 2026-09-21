@@ -20,6 +20,7 @@ from authentication.service import (
 )
 from dependencies import DatabaseSession
 from errors import ApiError
+from http_security import enforce_account_action_limit
 
 from .management import (
     accept_invitation,
@@ -111,6 +112,7 @@ def create_workspace(
     session: DatabaseSession,
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> WorkspaceContextRead:
+    enforce_account_action_limit(request, authenticated.id, "workspace-create")
     try:
         context = create_owned_workspace(
             session,
@@ -118,6 +120,10 @@ def create_workspace(
             user_session_id=authenticated.session_id,
             workspace_name=details.name,
             owned_workspace_limit=runtime_settings(request).owned_workspace_limit,
+        )
+        session.commit()
+        request.app.state.workspace_update_hub.close_session_soon(
+            authenticated.session_id, code=4409
         )
     except ValueError as error:
         raise ApiError(
@@ -131,6 +137,7 @@ def create_workspace(
 @router.post("/active", response_model=WorkspaceContextRead)
 def update_active_workspace(
     details: WorkspaceSelectionRequest,
+    request: Request,
     session: DatabaseSession,
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> WorkspaceContextRead:
@@ -146,6 +153,10 @@ def update_active_workspace(
             code="workspace_not_found",
             message="The workspace could not be selected",
         )
+    session.commit()
+    request.app.state.workspace_update_hub.close_session_soon(
+        authenticated.session_id, code=4409
+    )
     return context_read(workspace_context(session, authenticated.id, membership.workspace_id))
 
 
@@ -160,6 +171,7 @@ def managed_workspaces(
 @router.post("/invitations/accept", response_model=WorkspaceContextRead)
 def accept_workspace_invitation(
     details: InvitationAcceptanceRequest,
+    request: Request,
     session: DatabaseSession,
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> WorkspaceContextRead:
@@ -174,6 +186,9 @@ def accept_workspace_invitation(
         if membership is None:
             raise RuntimeError("The accepted workspace could not be selected")
         session.commit()
+        request.app.state.workspace_update_hub.close_session_soon(
+            authenticated.session_id, code=4409
+        )
     except (ValueError, PermissionError) as error:
         raise _management_error(error) from error
     return context_read(workspace_context(session, authenticated.id, workspace_id))
@@ -214,6 +229,7 @@ def invite_workspace_person(
     session: DatabaseSession,
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> WorkspaceDetailsRead:
+    enforce_account_action_limit(request, authenticated.id, "workspace-invitation")
     try:
         invitation, raw_token, workspace_name = create_invitation(
             session,
@@ -252,6 +268,7 @@ def resend_workspace_invitation(
     session: DatabaseSession,
     authenticated: Annotated[AuthenticatedUser, Depends(require_authenticated_request)],
 ) -> WorkspaceDetailsRead:
+    enforce_account_action_limit(request, authenticated.id, "workspace-invitation")
     try:
         invitation, raw_token, workspace_name = resend_invitation(
             session, authenticated, workspace_id, invitation_id

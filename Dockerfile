@@ -50,4 +50,4 @@ COPY --from=frontend-build /build/frontend/dist /app/frontend/dist
 USER 10001:10001
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["python", "-m", "uvicorn", "main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000", "--no-proxy-headers"]

@@ -1,6 +1,7 @@
 """Hosted origin, request-boundary, and browser-header tests."""
 
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from fastapi import FastAPI, Request
@@ -8,7 +9,7 @@ from fastapi.testclient import TestClient
 from pydantic import SecretStr, ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from http_security import HostedHttpSecurityMiddleware
+from http_security import HostedHttpSecurityMiddleware, client_key
 from main import create_app
 from settings import Settings
 
@@ -22,6 +23,7 @@ def production_settings(
     request_rate_limit: int = 240,
     login_rate_limit: int = 10,
     account_action_rate_limit: int = 5,
+    trusted_proxy_mode: Literal["none", "cloudflare_tunnel"] = "none",
 ) -> Settings:
     return Settings(
         environment="production",
@@ -31,6 +33,7 @@ def production_settings(
         request_rate_limit=request_rate_limit,
         login_rate_limit=login_rate_limit,
         account_action_rate_limit=account_action_rate_limit,
+        trusted_proxy_mode=trusted_proxy_mode,
         email_provider="resend",
         resend_api_key_file=Path(__file__),
     )
@@ -107,7 +110,12 @@ def test_hosted_boundary_limits_clients_and_rejects_unknown_hosts() -> None:
         wrong_host = client.get("/probe", headers={"Host": "attacker.example"})
 
     assert second.headers["Strict-Transport-Security"] == "max-age=31536000"
-    assert second.headers["Content-Security-Policy"].startswith("default-src 'self'")
+    content_security_policy = second.headers["Content-Security-Policy"]
+    assert content_security_policy.startswith("default-src 'self'")
+    assert "script-src 'self'" in content_security_policy
+    assert "style-src-elem 'self'" in content_security_policy
+    assert "style-src-attr 'unsafe-inline'" in content_security_policy
+    assert "script-src 'self' 'unsafe-inline'" not in content_security_policy
     assert limited.status_code == 429
     assert int(limited.headers["Retry-After"]) > 0
     assert wrong_host.status_code == 400
@@ -147,3 +155,39 @@ def test_account_action_requests_and_confirmations_share_a_stricter_limit() -> N
 
     assert limited.status_code == 429
     assert limited.json()["error"]["code"] == "rate_limit_exceeded"
+
+
+def test_forwarded_address_is_used_only_for_the_trusted_tunnel() -> None:
+    direct = production_settings(request_rate_limit=1)
+    with TestClient(boundary_app(direct), base_url=PUBLIC_ORIGIN) as client:
+        assert client.get("/probe", headers={"CF-Connecting-IP": "203.0.113.10"}).status_code == 200
+        spoofed = client.get("/probe", headers={"CF-Connecting-IP": "203.0.113.11"})
+    assert spoofed.status_code == 429
+
+    tunnel = production_settings(
+        request_rate_limit=1,
+        trusted_proxy_mode="cloudflare_tunnel",
+    )
+    with TestClient(boundary_app(tunnel), base_url=PUBLIC_ORIGIN) as client:
+        assert client.get("/probe", headers={"CF-Connecting-IP": "203.0.113.10"}).status_code == 200
+        assert client.get("/probe", headers={"CF-Connecting-IP": "203.0.113.11"}).status_code == 200
+        missing = client.get("/probe")
+        malformed = client.get("/probe", headers={"CF-Connecting-IP": "not-an-address"})
+    assert missing.status_code == 400
+    assert malformed.status_code == 400
+    assert (
+        client_key(
+            peer_host="127.0.0.1",
+            cloudflare_connecting_ip="203.0.113.12",
+            settings=tunnel,
+        )
+        is None
+    )
+    assert (
+        client_key(
+            peer_host="8.8.8.8",
+            cloudflare_connecting_ip="203.0.113.12",
+            settings=tunnel,
+        )
+        is None
+    )

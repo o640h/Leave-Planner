@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 from authentication.dependencies import runtime_settings
 from authentication.email_delivery import EmailSender
 from dependencies import DatabaseSession
+from http_security import enforce_account_action_limit
 from leave_years import service as leave_year_service
 from workspaces.service import current_access
 
@@ -120,6 +121,9 @@ def approve_booking_request(
     request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
+    enforce_account_action_limit(
+        request, current_access(session).user_id, "leave-request-decision"
+    )
     result, requester_user_id = service.approve_request(
         session, consultant_id, leave_year_id, booking_id
     )
@@ -136,6 +140,9 @@ def reject_booking_request(
     request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
+    enforce_account_action_limit(
+        request, current_access(session).user_id, "leave-request-decision"
+    )
     result, requester_user_id = service.reject_request(
         session, consultant_id, leave_year_id, booking_id
     )
@@ -152,6 +159,9 @@ def approve_booking_cancellation(
     request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
+    enforce_account_action_limit(
+        request, current_access(session).user_id, "leave-request-decision"
+    )
     result, requester_user_id = service.approve_cancellation_request(
         session, consultant_id, leave_year_id, booking_id
     )
@@ -168,6 +178,9 @@ def reject_booking_cancellation(
     request: Request,
     session: DatabaseSession,
 ) -> PlanningRead:
+    enforce_account_action_limit(
+        request, current_access(session).user_id, "leave-request-decision"
+    )
     result, requester_user_id = service.reject_cancellation_request(
         session, consultant_id, leave_year_id, booking_id
     )

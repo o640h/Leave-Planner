@@ -197,9 +197,9 @@ Expected later files include new responsibility-based authentication and workspa
 an authentication screen/state boundary, and focused backend/frontend tests. Calculation packages are
 not expected to change.
 
-The demonstrable acceptance path for the first authentication slice is: initialise `Admin` from the
+The demonstrable authentication path is: initialise `Admin` from the
 server, see the password-only login screen, reject a wrong password without exposing detail, accept
 the configured password, load the existing application, log out, and prove the old session can no
-longer access any protected API. Task 5 adds workspace membership and the `Admin` actor to domain
-audit events, as implemented in `private-workspace-authorization.md`; Task 4 records authentication
-and account-administration security events only.
+longer access any protected API. Workspace membership and domain audit identity are documented in
+`private-workspace-authorization.md`; authentication and account-administration actions use the
+separate security-event log.

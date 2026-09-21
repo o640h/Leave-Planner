@@ -22,7 +22,12 @@ The Compose project has three services:
 PostgreSQL also contains separate no-login backup and restore roles. The backup role can read through
 RLS so a complete dump cannot silently omit another workspace; the restore role owns only the
 generated verification database. `scripts/ConfigureDatabaseRoles.sh` creates or reconciles these
-roles before each pre-release backup on an existing volume. The application role cannot assume them.
+roles before each pre-release backup on an existing volume. The no-login backup role receives
+schema-scoped read access to current and future application tables and sequences and has `BYPASSRLS`;
+the application role cannot assume it. Dumps omit deployment-specific ACL and default-privilege
+commands because those are recreated from the versioned initialization and reconciliation scripts;
+schema objects, constraints, row-level-security policies, and application data remain in the archive
+and are exercised by the disposable restore verification.
 
 Normal development remains unchanged: Vite runs on `localhost:5173`, FastAPI runs on
 `127.0.0.1:8000`, and the development server upgrades its isolated SQLite schema automatically.
@@ -95,8 +100,13 @@ The expected result is `status: ok` and `environment: production`. Direct
 The production edge is Cloudflare Tunnel at `https://app.merydio.co.uk`. Cloudflare terminates
 trusted public TLS and carries requests over an outbound connector to `http://application:8000` on
 the private edge network. The application accepts that exact public host, limits requests to 1 MiB,
-applies per-client and stricter login throttles, and emits the browser security headers. Manage the
-connector with both Compose files and follow `custom-domain.md` for token handling and recovery.
+uses Cloudflare's original client address only on that trusted non-loopback path, applies bounded
+per-client and stricter login throttles, and emits the browser security headers. Missing or malformed
+client identity fails closed outside the loopback health check; forwarded-address headers are ignored
+during development and direct access. Uvicorn does not rewrite the connection peer from generic
+forwarding headers: the application retains the tunnel container's private peer before deciding
+whether Cloudflare's dedicated client-address header is trustworthy. Manage the connector with both
+Compose files and follow `custom-domain.md` for token handling and recovery.
 
 Do not create a Leave Planner router forwarding rule or enable DMZ. Do not expose DSM administration,
 port `8080`, PostgreSQL, Container Manager, or SSH. During acceptance the EE Hub's custom port
@@ -131,16 +141,16 @@ docker compose --file deploy/compose.yml down
 docker compose --file deploy/compose.yml up --detach --wait
 ```
 
-After each operation, check `ps --all`, the application/database health, and the presence of the Admin
-account. A DSM reboot then proves that the `unless-stopped` database and application services return
+After each operation, check `ps --all`, the application/database health, and the presence of the first
+Owner account. A DSM reboot then proves that the `unless-stopped` database and application services return
 without rerunning a hidden migration. The completed migration container is intentionally not a
 long-running service. If an established NAS uptime must not be interrupted during development,
 record the reboot check as deferred and perform it during the hosted acceptance gate's planned
 maintenance window; never report an unperformed reboot as verified.
 
 `docker compose down` preserves the named volume. Never add `--volumes` or run `docker volume rm`
-against this project: those operations delete the database. Task 10 will add verified dumps and a
-restore drill before real consultant data is hosted.
+against this project: those operations delete the database. Use the verified dump and restore drill
+before real consultant data is hosted.
 
 ## Application upgrade
 
@@ -155,13 +165,21 @@ immutable. The script runs the complete local backend and frontend checks, creat
 that excludes local environments and secrets, uploads it with Synology-compatible legacy SCP, and
 invokes the NAS-side release helper. SSH and sudo can request the operator password.
 The PowerShell script runs `DeployRelease.sh` automatically; do not invoke the NAS helper separately.
+After container health succeeds, the initiating script checks both the public health route and an
+ordinary registration-configuration request through the Tunnel so an edge-validation failure cannot
+be mistaken for a usable release.
 
 On the NAS, the helper extracts to `releases/VERSION`, links only the persistent deployment `.env`
-and secret directory, creates and restores a pre-release database dump, builds
+and secret directory, creates and restores a pre-release database dump when an application schema
+already exists, builds
 `leave-planner:VERSION`, runs migrations, switches the application, confirms container health, and
 updates the `current` source link. PostgreSQL and the Cloudflare connector are not recreated. The
 previous image is retained and no image or volume prune is performed. After the first scripted
 release, use `/volume1/docker/leave-planner/current/deploy` for source-relative manual diagnostics.
+
+A pristine PostgreSQL volume has nothing to preserve, so the helper skips the pre-release dump only
+when the database has no Alembic revision and no public tables. An unversioned database containing
+any table fails closed instead of being treated as empty.
 
 `-SkipChecks` exists for a repeat invocation only when the identical source has already passed the
 checks; ordinary releases must not use it. Optional connection parameters are available through

@@ -578,16 +578,20 @@
 }
 
 .workspace-person-controls {
-  display: flex;
+  display: grid;
+  grid-template-columns: 150px 150px auto auto;
   min-width: 0;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 7px;
 }
 
 .workspace-person-controls .select-menu {
-  width: min(150px, 100%);
+  width: 150px;
+}
+
+.workspace-person-control-placeholder {
+  width: 150px;
 }
 
 .workspace-person-controls .select-menu-trigger {
@@ -616,18 +620,6 @@
 .workspace-invitation-actions {
   display: flex;
   gap: 7px;
-}
-
-.workspace-transfer-notice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 11px 22px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  background: var(--surface-subtle);
-  font-size: 0.69231rem;
 }
 
 .workspace-event-list li {
@@ -847,7 +839,13 @@
   }
 
   .workspace-person-controls {
+    display: flex;
+    flex-wrap: wrap;
     grid-column: auto;
+  }
+
+  .workspace-person-control-placeholder {
+    display: none;
   }
 
   .workspace-event-list span {

@@ -23,8 +23,18 @@ EMAIL = "owner@example.org"
 PASSWORD = "workspace-password"
 
 
-def live_app(tmp_path: Path) -> FastAPI:
-    settings = Settings(environment="development", data_dir=tmp_path)
+def live_app(
+    tmp_path: Path,
+    *,
+    websocket_connections_per_account: int = 5,
+    websocket_message_rate_limit: int = 40,
+) -> FastAPI:
+    settings = Settings(
+        environment="development",
+        data_dir=tmp_path,
+        websocket_connections_per_account=websocket_connections_per_account,
+        websocket_message_rate_limit=websocket_message_rate_limit,
+    )
     upgrade_database(settings.resolved_database_url)
     engine = create_database_engine(settings.resolved_database_url)
     try:
@@ -128,6 +138,46 @@ def test_workspace_socket_rejects_an_untrusted_origin(tmp_path: Path) -> None:
         assert rejected.value.code == 1008
 
 
+def test_logout_immediately_closes_the_authenticated_socket(tmp_path: Path) -> None:
+    with TestClient(live_app(tmp_path)) as client:
+        headers, _revision = sign_in(client)
+        with client.websocket_connect(
+            "/api/workspace-updates", headers={"Origin": "http://testserver"}
+        ) as websocket:
+            response = client.post("/api/auth/logout", headers=headers)
+            assert response.status_code == 200
+            with pytest.raises(WebSocketDisconnect) as closed:
+                websocket.receive_json()
+            assert closed.value.code == 4401
+
+
+def test_workspace_socket_caps_parallel_connections_per_account(tmp_path: Path) -> None:
+    app = live_app(tmp_path, websocket_connections_per_account=1)
+    with TestClient(app) as client:
+        sign_in(client)
+        socket_headers = {"Origin": "http://testserver"}
+        with client.websocket_connect("/api/workspace-updates", headers=socket_headers):
+            with client.websocket_connect(
+                "/api/workspace-updates", headers=socket_headers
+            ) as second, pytest.raises(WebSocketDisconnect) as rejected:
+                second.receive_json()
+            assert rejected.value.code == 4429
+
+
+def test_workspace_socket_rejects_a_message_flood(tmp_path: Path) -> None:
+    app = live_app(tmp_path, websocket_message_rate_limit=20)
+    with TestClient(app) as client:
+        sign_in(client)
+        with client.websocket_connect(
+            "/api/workspace-updates", headers={"Origin": "http://testserver"}
+        ) as websocket:
+            for _ in range(21):
+                websocket.send_json({"type": "heartbeat"})
+            with pytest.raises(WebSocketDisconnect) as closed:
+                websocket.receive_json()
+            assert closed.value.code == 4429
+
+
 def test_workspace_socket_delivers_the_current_pointer_to_a_late_viewer(
     tmp_path: Path,
 ) -> None:
@@ -185,6 +235,7 @@ def test_live_pointers_are_private_to_a_workspace_and_compatible_view() -> None:
             user_id=1,
             public_id="first-user",
             display_name="Alex Morgan",
+            session_id=101,
         )
         colleague_id = await hub.connect(
             10,
@@ -192,6 +243,7 @@ def test_live_pointers_are_private_to_a_workspace_and_compatible_view() -> None:
             user_id=2,
             public_id="second-user",
             display_name="Jordan Patel",
+            session_id=102,
         )
         other_id = await hub.connect(
             20,
@@ -199,6 +251,7 @@ def test_live_pointers_are_private_to_a_workspace_and_compatible_view() -> None:
             user_id=3,
             public_id="third-user",
             display_name="Sam Taylor",
+            session_id=103,
         )
         for workspace_id, connection_id in (
             (10, first_id),
@@ -222,6 +275,7 @@ def test_live_pointers_are_private_to_a_workspace_and_compatible_view() -> None:
             user_id=4,
             public_id="late-user",
             display_name="Morgan Lee",
+            session_id=104,
         )
         await hub.set_view(10, late_joiner_id, "planning:2026-09")
 
