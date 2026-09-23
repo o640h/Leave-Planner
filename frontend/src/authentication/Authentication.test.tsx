@@ -76,7 +76,7 @@ describe('email account authentication', () => {
     render(<App />)
 
     expect(await screen.findByRole('heading', { name: 'Sign In' })).toBeInTheDocument()
-    expect(screen.getByText('Merydio')).toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getByText('Merydio')).toBeInTheDocument()
     expect(screen.getByText('Secure Account')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Verify Email' })).not.toBeInTheDocument()
 

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -133,6 +133,13 @@ def create_app(
 
     static_dir = frontend_dist if frontend_dist is not None else runtime.resolved_frontend_dist
     if static_dir.is_dir():
+        @app.get("/about", include_in_schema=False)
+        @app.get("/privacy", include_in_schema=False)
+        @app.get("/terms", include_in_schema=False)
+        @app.get("/contact", include_in_schema=False)
+        def public_information_page() -> FileResponse:
+            return FileResponse(static_dir / "index.html", media_type="text/html")
+
         app.mount(
             "/",
             StaticFiles(directory=static_dir, html=True),

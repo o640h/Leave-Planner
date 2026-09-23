@@ -41,6 +41,12 @@ def test_compiled_frontend_is_served_when_present(tmp_path: Path) -> None:
     (tmp_path / "index.html").write_text("<h1>Leave Planner</h1>", encoding="utf-8")
     with TestClient(create_app(frontend_dist=tmp_path)) as client:
         response = client.get("/")
+        information = {
+            page: client.get(page)
+            for page in ("/about", "/privacy", "/terms", "/contact")
+        }
 
     assert response.status_code == 200
     assert "Leave Planner" in response.text
+    assert all(page.status_code == 200 for page in information.values())
+    assert all("Leave Planner" in page.text for page in information.values())

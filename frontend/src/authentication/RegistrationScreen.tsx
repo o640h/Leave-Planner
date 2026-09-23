@@ -166,6 +166,10 @@ export function RegistrationScreen({ onBack, invitationToken }: RegistrationScre
               <button className="button button--primary" type="submit" disabled={submitting}>
                 {submitting ? 'Creating Account' : 'Create Account'}
               </button>
+              <p className="authentication-legal-note">
+                Read the <a href="/terms">Terms</a> and <a href="/privacy">Privacy</a> information
+                before creating an account.
+              </p>
             </form>
 
             <div className="authentication-secondary-actions">

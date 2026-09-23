@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { AuthenticatedUser } from '../authentication/types'
+import { PublicLinks } from '../publicSite/PublicSite'
 import { AppIcon } from '../system/AppIcon'
 import { ModalLayer } from '../system/ModalLayer'
 import { ChangeEmailDialog } from './ChangeEmailDialog'
@@ -125,6 +126,18 @@ export function AccountPage({ user }: AccountPageProps) {
             >
               Change Password
             </button>
+          </div>
+        </section>
+        <section className="account-section" aria-labelledby="account-information-title">
+          <header>
+            <AppIcon name="document" />
+            <div>
+              <span className="section-label">Merydio</span>
+              <h2 id="account-information-title">Information &amp; Contact</h2>
+            </div>
+          </header>
+          <div className="account-information-links">
+            <PublicLinks />
           </div>
         </section>
       </section>

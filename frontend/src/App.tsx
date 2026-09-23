@@ -19,6 +19,8 @@ import type {
 import { ConsultantDirectory } from './consultants/ConsultantDirectory'
 import { MemberApplicationWorkspace } from './memberWorkspace/MemberApplicationWorkspace'
 import { PlanningPage } from './planning/PlanningPage'
+import { PublicInformationPage, PublicShell } from './publicSite/PublicSite'
+import { isPublicPage } from './publicSite/pages'
 import { SettingsPage, type SettingsSection } from './settings/SettingsPage'
 import { AppIcon } from './system/AppIcon'
 import { HealthStatus } from './system/HealthStatus'
@@ -349,7 +351,7 @@ export function WorkspaceSelectionScreen({
   )
 }
 
-export function App() {
+function Application() {
   const [session, setSession] = useState<Session | null>(null)
   const [registrationMode, setRegistrationMode] = useState<RegistrationMode>('invitation_only')
   const [registrationOpen, setRegistrationOpen] = useState(false)
@@ -492,70 +494,88 @@ export function App() {
 
   if (accountAction) {
     return (
-      <AccountActionScreen
-        mode={accountAction.mode}
-        token={accountAction.token}
-        currentEmail={
-          accountAction.mode === 'change-email'
-            ? (session?.user?.display_email ?? undefined)
-            : undefined
-        }
-        onBack={closeAccountAction}
-      />
+      <PublicShell>
+        <AccountActionScreen
+          mode={accountAction.mode}
+          token={accountAction.token}
+          currentEmail={
+            accountAction.mode === 'change-email'
+              ? (session?.user?.display_email ?? undefined)
+              : undefined
+          }
+          onBack={closeAccountAction}
+        />
+      </PublicShell>
     )
   }
 
   if (applicationState === 'unavailable') {
-    return <ApplicationStatus kind="unavailable" busy={retrying} onRetry={retryConnection} />
+    return (
+      <PublicShell>
+        <ApplicationStatus kind="unavailable" busy={retrying} onRetry={retryConnection} />
+      </PublicShell>
+    )
   }
 
   if (registrationOpen) {
     return (
-      <RegistrationScreen
-        invitationToken={invitationToken ?? undefined}
-        onBack={(notice) => {
-          setRegistrationOpen(false)
-          if (notice) setLoginNotice(notice)
-        }}
-      />
+      <PublicShell>
+        <RegistrationScreen
+          invitationToken={invitationToken ?? undefined}
+          onBack={(notice) => {
+            setRegistrationOpen(false)
+            if (notice) setLoginNotice(notice)
+          }}
+        />
+      </PublicShell>
     )
   }
 
   if (applicationState === 'access-denied') {
-    return <ApplicationStatus kind="access-denied" onSignOut={signOut} />
+    return (
+      <PublicShell>
+        <ApplicationStatus kind="access-denied" onSignOut={signOut} />
+      </PublicShell>
+    )
   }
 
   if (session === null) {
-    return <ApplicationLoading />
+    return (
+      <PublicShell>
+        <ApplicationLoading />
+      </PublicShell>
+    )
   }
 
   if (!session.authenticated) {
     return (
-      <LoginScreen
-        onAuthenticated={(nextSession) => {
-          setApplicationState('ready')
-          setLoginNotice(null)
-          setSession(nextSession)
-        }}
-        onForgotPassword={() => setAccountAction({ mode: 'forgot-password' })}
-        onRegister={
-          registrationMode === 'open' || invitationToken
-            ? () => setRegistrationOpen(true)
-            : undefined
-        }
-        notice={
-          invitationToken
-            ? 'Sign in with the invited email address, or create an account to continue.'
-            : loginNotice
-        }
-      />
+      <PublicShell>
+        <LoginScreen
+          onAuthenticated={(nextSession) => {
+            setApplicationState('ready')
+            setLoginNotice(null)
+            setSession(nextSession)
+          }}
+          onForgotPassword={() => setAccountAction({ mode: 'forgot-password' })}
+          onRegister={
+            registrationMode === 'open' || invitationToken
+              ? () => setRegistrationOpen(true)
+              : undefined
+          }
+          notice={
+            invitationToken
+              ? 'Sign in with the invited email address, or create an account to continue.'
+              : loginNotice
+          }
+        />
+      </PublicShell>
     )
   }
 
   const workspace = session.workspace
   if (!workspace || workspace.state === 'onboarding') {
     return (
-      <>
+      <PublicShell>
         <ApplicationStatus
           kind="onboarding"
           onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
@@ -568,19 +588,21 @@ export function App() {
             onCreated={workspaceCreated}
           />
         ) : null}
-      </>
+      </PublicShell>
     )
   }
 
   if (workspace.state === 'selection_required') {
     return (
-      <WorkspaceSelectionScreen
-        workspace={workspace}
-        onSelected={(nextWorkspace) =>
-          setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
-        }
-        onSignOut={signOut}
-      />
+      <PublicShell>
+        <WorkspaceSelectionScreen
+          workspace={workspace}
+          onSelected={(nextWorkspace) =>
+            setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
+          }
+          onSignOut={signOut}
+        />
+      </PublicShell>
     )
   }
 
@@ -589,27 +611,33 @@ export function App() {
   )
   if (!activeMembership) {
     return (
-      <ApplicationStatus
-        kind="access-denied"
-        onSignOut={signOut}
-        onManageAccount={() => setAccountAction({ mode: 'change-email' })}
-      />
+      <PublicShell>
+        <ApplicationStatus
+          kind="access-denied"
+          onSignOut={signOut}
+          onManageAccount={() => setAccountAction({ mode: 'change-email' })}
+        />
+      </PublicShell>
     )
   }
   if (activeMembership.role === 'member') {
     return (
       <WorkspaceUpdateProvider workspaceId={activeMembership.workspace_id}>
-        <MemberApplicationWorkspace
-          key={workspace.active_workspace_id}
-          user={session.user!}
-          workspace={workspace}
-          onSignOut={signOut}
-          signOutError={signOutError}
-          onWorkspaceSelected={(nextWorkspace) =>
-            setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
-          }
-          onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
-        />
+        <PublicShell>
+          <MemberApplicationWorkspace
+            key={workspace.active_workspace_id}
+            user={session.user!}
+            workspace={workspace}
+            onSignOut={signOut}
+            signOutError={signOutError}
+            onWorkspaceSelected={(nextWorkspace) =>
+              setSession((current) =>
+                current ? { ...current, workspace: nextWorkspace } : current,
+              )
+            }
+            onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
+          />
+        </PublicShell>
         {workspaceCreationOpen ? (
           <WorkspaceCreationDialog
             onCancel={() => setWorkspaceCreationOpen(false)}
@@ -622,17 +650,19 @@ export function App() {
 
   return (
     <WorkspaceUpdateProvider workspaceId={activeMembership.workspace_id}>
-      <ApplicationWorkspace
-        key={workspace.active_workspace_id}
-        user={session.user ?? undefined}
-        onSignOut={signOut}
-        signOutError={signOutError}
-        workspace={workspace}
-        onWorkspaceSelected={(nextWorkspace) =>
-          setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
-        }
-        onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
-      />
+      <PublicShell>
+        <ApplicationWorkspace
+          key={workspace.active_workspace_id}
+          user={session.user ?? undefined}
+          onSignOut={signOut}
+          signOutError={signOutError}
+          workspace={workspace}
+          onWorkspaceSelected={(nextWorkspace) =>
+            setSession((current) => (current ? { ...current, workspace: nextWorkspace } : current))
+          }
+          onCreateWorkspace={() => setWorkspaceCreationOpen(true)}
+        />
+      </PublicShell>
       {workspaceCreationOpen ? (
         <WorkspaceCreationDialog
           onCancel={() => setWorkspaceCreationOpen(false)}
@@ -641,4 +671,10 @@ export function App() {
       ) : null}
     </WorkspaceUpdateProvider>
   )
+}
+
+export function App() {
+  const path = window.location.pathname.replace(/\/$/, '') || '/'
+  if (isPublicPage(path)) return <PublicInformationPage path={path} />
+  return <Application />
 }
