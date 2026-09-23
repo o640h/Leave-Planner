@@ -66,6 +66,51 @@ it('does not misreport a CSRF rejection as missing workspace access', async () =
   expect(listener).not.toHaveBeenCalled()
 })
 
+it.each([
+  [400, 'invalid_request'],
+  [404, 'leave_year_not_found'],
+  [409, 'leave_year_overlap'],
+  [422, 'job_plan_gap'],
+  [500, 'request_failed'],
+  [502, 'public_holiday_source_unavailable'],
+  [503, 'policy_document_unavailable'],
+])('keeps an HTTP %i domain or endpoint error inside its feature', async (status, code) => {
+  const listener = vi.fn()
+  window.addEventListener(SERVICE_UNAVAILABLE_EVENT, listener, { once: true })
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status,
+      json: () =>
+        Promise.resolve({
+          error: { code, message: 'The request could not be completed.' },
+        }),
+    }),
+  )
+
+  await expect(apiRequest('/api/consultants/1/leave-years/1/summary')).rejects.toMatchObject({
+    status,
+  })
+  expect(listener).not.toHaveBeenCalled()
+})
+
+it('reports an unstructured gateway failure as a server outage', async () => {
+  const listener = vi.fn()
+  window.addEventListener(SERVICE_UNAVAILABLE_EVENT, listener, { once: true })
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: () => Promise.reject(new SyntaxError('The gateway returned HTML')),
+    }),
+  )
+
+  await expect(apiRequest('/api/consultants')).rejects.toMatchObject({ status: 502 })
+  expect(listener).toHaveBeenCalledOnce()
+})
+
 it('reports a server outage when fetch cannot connect', async () => {
   const listener = vi.fn()
   window.addEventListener(SERVICE_UNAVAILABLE_EVENT, listener, { once: true })

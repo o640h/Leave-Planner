@@ -315,7 +315,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                   leaveYearId={selectedLeaveYear.id}
                   onSaved={refreshSummary}
                 />
-                <LeaveBalanceSummary summary={selectedSummary} />
+                <LeaveBalanceSummary summary={selectedSummary} error={summaryError} />
               </section>
 
               <JobPlanPanel
@@ -339,13 +339,7 @@ export function LeaveYearPanel({ consultantId }: LeaveYearPanelProps) {
                 refreshRevision={calculationRevision}
                 reloadRevision={entitlementReloadRevision}
               />
-              {summaryError ? (
-                <p className="summary-load-error form-notice--error" role="alert">
-                  {summaryError}
-                </p>
-              ) : selectedSummary ? (
-                <ConsultantYearSummarySections summary={selectedSummary} />
-              ) : null}
+              {selectedSummary ? <ConsultantYearSummarySections summary={selectedSummary} /> : null}
             </div>
           ) : null}
         </>

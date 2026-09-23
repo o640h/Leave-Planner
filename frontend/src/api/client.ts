@@ -12,6 +12,7 @@ export const SERVICE_UNAVAILABLE_EVENT = 'leave-planner:service-unavailable'
 export const WORKSPACE_INVALIDATED_EVENT = 'leave-planner:workspace-invalidated'
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+const unavailableStatuses = new Set([502, 503, 504])
 let workspaceRevision: number | null = null
 
 export function rememberWorkspaceRevision(revision: unknown): void {
@@ -49,22 +50,36 @@ export class ApiClientError extends Error {
   }
 }
 
-async function requestError(response: Response): Promise<ApiClientError> {
+async function requestError(
+  response: Response,
+): Promise<{ error: ApiClientError; hasErrorEnvelope: boolean }> {
   const body = (await response.json().catch(() => null)) as ErrorEnvelope | null
+  const hasErrorEnvelope = typeof body?.error === 'object' && body.error !== null
   const code = typeof body?.error?.code === 'string' ? body.error.code : 'request_failed'
   const message =
     typeof body?.error?.message === 'string'
       ? body.error.message
       : 'The request could not be completed.'
-  return new ApiClientError(response.status, code, message, body?.error?.details)
+  return {
+    error: new ApiClientError(response.status, code, message, body?.error?.details),
+    hasErrorEnvelope,
+  }
 }
 
-function reportApplicationState(response: Response, path: string, code: string): void {
+function reportApplicationState(
+  response: Response,
+  path: string,
+  code: string,
+  hasErrorEnvelope: boolean,
+): void {
   if (response.status === 401 && path !== '/api/auth/login') {
     window.dispatchEvent(new Event(AUTHENTICATION_REQUIRED_EVENT))
   } else if (response.status === 403 && code === 'workspace_access_denied') {
     window.dispatchEvent(new Event(AUTHORIZATION_DENIED_EVENT))
-  } else if (response.status >= 500) {
+  } else if (
+    code === 'service_unavailable' ||
+    (!hasErrorEnvelope && unavailableStatuses.has(response.status))
+  ) {
     window.dispatchEvent(new Event(SERVICE_UNAVAILABLE_EVENT))
   }
 }
@@ -106,8 +121,8 @@ export async function apiRequest<ResponseBody>(
   })
 
   if (!response.ok) {
-    const error = await requestError(response)
-    reportApplicationState(response, path, error.code)
+    const { error, hasErrorEnvelope } = await requestError(response)
+    reportApplicationState(response, path, error.code, hasErrorEnvelope)
     if (error.code === 'stale_workspace_data') {
       window.dispatchEvent(
         new CustomEvent(WORKSPACE_INVALIDATED_EVENT, {
@@ -128,8 +143,8 @@ export async function apiFileRequest(
 ): Promise<{ blob: Blob; filename: string | null }> {
   const response = await fetchFromApplication(path, { credentials: 'same-origin' })
   if (!response.ok) {
-    const error = await requestError(response)
-    reportApplicationState(response, path, error.code)
+    const { error, hasErrorEnvelope } = await requestError(response)
+    reportApplicationState(response, path, error.code, hasErrorEnvelope)
     throw error
   }
 

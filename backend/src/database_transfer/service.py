@@ -135,7 +135,7 @@ def _summaries(engine: Engine, access: WorkspaceAccess | None = None) -> dict[tu
             result[(consultant_id, leave_year_id)] = _summary_digest(
                 get_summary(session, consultant_id, leave_year_id)
             )
-        # Reading a database without a saved calendar installs the dated offline snapshot.
+        # Summary reads use the bundled snapshot when no synced calendar has been saved.
         session.commit()
     return result
 

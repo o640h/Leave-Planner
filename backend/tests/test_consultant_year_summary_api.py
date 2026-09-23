@@ -237,6 +237,30 @@ def test_summary_remains_available_before_a_job_plan_is_added(tmp_path: Path) ->
     assert response.json()["warnings"][0]["code"] == "job-plan.required"
 
 
+def test_summary_reports_incomplete_job_plan_coverage_without_a_server_error(
+    tmp_path: Path,
+) -> None:
+    with TestClient(app_for(tmp_path)) as client:
+        consultant_id = client.post(
+            "/api/consultants", json={"name": "Setup Consultant", "post_title": None}
+        ).json()["id"]
+        year_id = client.post(
+            f"/api/consultants/{consultant_id}/leave-years",
+            json={"start_date": "2026-01-01", "end_date": "2026-12-31"},
+        ).json()["id"]
+        root = f"/api/consultants/{consultant_id}/leave-years/{year_id}"
+        assert client.post(
+            f"{root}/job-plans",
+            json=job_plan("2026-01-01", "2026-07-01"),
+        ).status_code == 201
+
+        response = client.get(f"{root}/summary")
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "job_plan_gap"
+    assert "cover every active date" in response.json()["error"]["message"]
+
+
 @pytest.mark.parametrize(
     ("name", "plans", "expected_periods", "expected_pas"),
     [

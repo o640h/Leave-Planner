@@ -149,6 +149,20 @@ describe('consultant year summary', () => {
     expect(screen.getByRole('button', { name: 'Requested' })).toHaveClass('balance-tab--active')
   })
 
+  it('replaces the balance loading state with a calculation setup error', () => {
+    render(
+      <LeaveBalanceSummary
+        summary={null}
+        error="A job plan must cover every active date in the leave year."
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'A job plan must cover every active date in the leave year.',
+    )
+    expect(screen.queryByText('Loading leave position...')).not.toBeInTheDocument()
+  })
+
   it('opens the complete leave log in an identified workspace view', () => {
     render(<ConsultantYearSummarySections summary={summary} />)
 

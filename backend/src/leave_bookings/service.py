@@ -131,16 +131,32 @@ def _holiday_result(
     session: Session, leave_year: LeaveYear, history: JobPlanHistory
 ) -> PublicHolidayResult:
     calendar = holiday_service.active_calendar(session)
-    return calculate_public_holidays(
-        PublicHolidayRequest(
-            leave_year=DateRange(leave_year.start_date, leave_year.end_date),
-            employment_start=leave_year.employment_start or leave_year.start_date,
-            employment_end=leave_year.employment_end,
-            calendar=calendar,
-            job_plans=history,
-            treatments=holiday_service.treatments_for_leave_year(session, leave_year.id),
-        )
-    ).value
+    try:
+        return calculate_public_holidays(
+            PublicHolidayRequest(
+                leave_year=DateRange(leave_year.start_date, leave_year.end_date),
+                employment_start=leave_year.employment_start or leave_year.start_date,
+                employment_end=leave_year.employment_end,
+                calendar=calendar,
+                job_plans=history,
+                treatments=holiday_service.treatments_for_leave_year(session, leave_year.id),
+            )
+        ).value
+    except LookupError as error:
+        raise ApiError(
+            status_code=422,
+            code="job_plan_gap",
+            message=(
+                "A job plan must cover every active date in the leave year "
+                "before leave can be calculated."
+            ),
+        ) from error
+    except ValueError as error:
+        raise ApiError(
+            status_code=422,
+            code="invalid_holiday_treatment",
+            message="Review public-holiday treatments before calculating leave.",
+        ) from error
 
 
 def _domain_booking(record: LeaveBookingRecord) -> LeaveBooking:
@@ -454,6 +470,10 @@ def _calculation(
             message="Add a job plan before entering leave.",
         )
     history = job_plan_service.calculation_history(plans)
+    entitlement_service.ensure_job_plan_coverage(
+        entitlement_service.active_period(leave_year),
+        history,
+    )
     holidays = _holiday_result(session, leave_year, history)
     records = tuple(
         record for record in _records(session, leave_year_id) if record.id != excluding_id

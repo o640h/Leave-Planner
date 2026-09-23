@@ -57,6 +57,18 @@ def job_plan() -> dict[str, Any]:
     }
 
 
+def test_fresh_workspace_reads_the_bundled_calendar_without_a_hidden_write(
+    tmp_path: Path,
+) -> None:
+    with TestClient(app_for(tmp_path)) as client:
+        settings = client.get("/api/settings/public-holidays")
+
+    assert settings.status_code == 200
+    assert settings.json()["source"] == "static_snapshot"
+    assert row(tmp_path, "SELECT COUNT(*) FROM holiday_calendar_versions") == (0,)
+    assert row(tmp_path, "SELECT COUNT(*) FROM holiday_calendar_events") == (0,)
+
+
 def test_calendar_corrections_and_consultant_treatments_persist(tmp_path: Path) -> None:
     with TestClient(app_for(tmp_path)) as client:
         consultant_id, leave_year_id = setup_year(client)
@@ -120,6 +132,36 @@ def test_calendar_corrections_and_consultant_treatments_persist(tmp_path: Path) 
         "ORDER BY id",
     )
     assert actions == [("created",), ("deleted",)]
+
+
+def test_holiday_calculation_reports_incomplete_job_plan_coverage(tmp_path: Path) -> None:
+    with TestClient(app_for(tmp_path)) as client:
+        consultant_id, leave_year_id = setup_year(client)
+        root = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
+        partial_plan = job_plan()
+        partial_plan["effective_until"] = "2026-01-01"
+        assert client.post(f"{root}/job-plans", json=partial_plan).status_code == 201
+
+        response = client.get(f"{root}/public-holidays")
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "job_plan_gap"
+    assert "cover every active date" in response.json()["error"]["message"]
+
+
+def test_treatment_rejects_a_date_that_is_not_a_public_holiday(tmp_path: Path) -> None:
+    with TestClient(app_for(tmp_path)) as client:
+        consultant_id, leave_year_id = setup_year(client)
+        root = f"/api/consultants/{consultant_id}/leave-years/{leave_year_id}"
+        assert client.post(f"{root}/job-plans", json=job_plan()).status_code == 201
+
+        response = client.put(
+            f"{root}/public-holidays/2026-02-03/treatment",
+            json={"basis": "qualifying_on_call"},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "public_holiday_not_found"
 
 
 def test_carry_forward_can_be_set_and_cleared(tmp_path: Path) -> None:

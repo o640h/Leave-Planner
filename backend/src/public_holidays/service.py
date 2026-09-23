@@ -60,18 +60,13 @@ def _store_calendar(session: Session, calendar: PublicHolidayCalendar) -> None:
     session.flush()
 
 
-def _latest_calendar_record(session: Session) -> HolidayCalendarVersionRecord:
+def _latest_calendar_record(session: Session) -> HolidayCalendarVersionRecord | None:
     statement = (
         select(HolidayCalendarVersionRecord)
         .options(selectinload(HolidayCalendarVersionRecord.events))
         .order_by(HolidayCalendarVersionRecord.id.desc())
     )
-    record = session.scalars(statement).first()
-    if record is None:
-        _store_calendar(session, ENGLAND_WALES_SNAPSHOT)
-        record = session.scalars(statement).first()
-    assert record is not None
-    return record
+    return session.scalars(statement).first()
 
 
 def _active_corrections(session: Session) -> tuple[HolidayCorrectionRecord, ...]:
@@ -90,12 +85,21 @@ def _active_corrections(session: Session) -> tuple[HolidayCorrectionRecord, ...]
 
 def active_calendar(session: Session) -> PublicHolidayCalendar:
     record = _latest_calendar_record(session)
+    base_calendar = (
+        ENGLAND_WALES_SNAPSHOT
+        if record is None
+        else PublicHolidayCalendar(
+            source=HolidayCalendarSource(record.source),
+            source_date=record.source_date,
+            holidays=tuple(
+                PublicHoliday(item.holiday_date, item.name, item.notes) for item in record.events
+            ),
+        )
+    )
     return PublicHolidayCalendar(
-        source=HolidayCalendarSource(record.source),
-        source_date=record.source_date,
-        holidays=tuple(
-            PublicHoliday(item.holiday_date, item.name, item.notes) for item in record.events
-        ),
+        source=base_calendar.source,
+        source_date=base_calendar.source_date,
+        holidays=base_calendar.holidays,
         corrections=tuple(
             PublicHolidayCorrection(
                 holiday_date=item.holiday_date,
@@ -239,16 +243,32 @@ def calculate_leave_year_holidays(
         )
     history = job_plan_service.calculation_history(job_plans)
     calendar = active_calendar(session)
-    result = calculate_public_holidays(
-        PublicHolidayRequest(
-            leave_year=DateRange(leave_year.start_date, leave_year.end_date),
-            employment_start=leave_year.employment_start or leave_year.start_date,
-            employment_end=leave_year.employment_end,
-            calendar=calendar,
-            job_plans=history,
-            treatments=treatments_for_leave_year(session, leave_year_id),
-        )
-    ).value
+    try:
+        result = calculate_public_holidays(
+            PublicHolidayRequest(
+                leave_year=DateRange(leave_year.start_date, leave_year.end_date),
+                employment_start=leave_year.employment_start or leave_year.start_date,
+                employment_end=leave_year.employment_end,
+                calendar=calendar,
+                job_plans=history,
+                treatments=treatments_for_leave_year(session, leave_year_id),
+            )
+        ).value
+    except LookupError as error:
+        raise ApiError(
+            status_code=422,
+            code="job_plan_gap",
+            message=(
+                "A job plan must cover every active date in the leave year "
+                "before holidays can be calculated."
+            ),
+        ) from error
+    except ValueError as error:
+        raise ApiError(
+            status_code=422,
+            code="invalid_holiday_treatment",
+            message="A saved treatment no longer matches an active public holiday.",
+        ) from error
     return LeaveYearHolidaysRead(
         source=calendar.source.value,
         source_date=calendar.source_date,
@@ -294,6 +314,18 @@ def save_treatment(
             PublicHolidayTreatmentRecord.holiday_date == holiday_date,
         )
     )
+    holiday_dates = {
+        item.holiday_date for item in resolved_holidays(active_calendar(session))
+    }
+    removing_stale_treatment = (
+        details.basis is HolidayTreatmentBasis.STANDARD and record is not None
+    )
+    if holiday_date not in holiday_dates and not removing_stale_treatment:
+        raise ApiError(
+            status_code=422,
+            code="public_holiday_not_found",
+            message="Choose an active public-holiday date.",
+        )
     if details.basis is HolidayTreatmentBasis.STANDARD:
         if record is not None:
             record_id = record.id

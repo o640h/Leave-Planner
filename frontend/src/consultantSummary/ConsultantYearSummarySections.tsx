@@ -71,8 +71,21 @@ function BalancePositionView({
   )
 }
 
-export function LeaveBalanceSummary({ summary }: { summary: ConsultantYearSummary | null }) {
+export function LeaveBalanceSummary({
+  summary,
+  error = null,
+}: {
+  summary: ConsultantYearSummary | null
+  error?: string | null
+}) {
   const [view, setView] = useState<'requested' | 'approved'>('approved')
+  if (error) {
+    return (
+      <p className="summary-empty form-notice--error" role="alert">
+        {error}
+      </p>
+    )
+  }
   if (!summary) return <p className="summary-empty">Loading leave position...</p>
 
   return (

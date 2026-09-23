@@ -189,16 +189,25 @@ def calculate_recommendation(
     )
 
     holiday_calendar = public_holiday_service.active_calendar(session)
-    holiday_calculation = calculate_public_holidays(
-        PublicHolidayRequest(
-            leave_year=period_dates,
-            employment_start=employment_start,
-            employment_end=leave_year.employment_end,
-            calendar=holiday_calendar,
-            job_plans=history,
-            treatments=public_holiday_service.treatments_for_leave_year(session, leave_year_id),
+    try:
+        holiday_calculation = calculate_public_holidays(
+            PublicHolidayRequest(
+                leave_year=period_dates,
+                employment_start=employment_start,
+                employment_end=leave_year.employment_end,
+                calendar=holiday_calendar,
+                job_plans=history,
+                treatments=public_holiday_service.treatments_for_leave_year(
+                    session, leave_year_id
+                ),
+            )
         )
-    )
+    except ValueError as error:
+        raise ApiError(
+            status_code=422,
+            code="invalid_holiday_treatment",
+            message="Review public-holiday treatments before calculating entitlement.",
+        ) from error
 
     base = base_calculation.value
     holidays = holiday_calculation.value
