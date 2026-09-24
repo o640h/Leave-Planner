@@ -129,6 +129,25 @@
   font-size: 0.76923rem;
 }
 
+.account-section:last-child {
+  margin-bottom: 0;
+}
+
+.account-information-links nav {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+}
+
+.account-information-links nav a {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  font-size: 0.84615rem;
+}
+
 .account-action-modal {
   width: min(470px, 100%);
 }
@@ -166,6 +185,12 @@
     grid-template-columns: 1fr;
     gap: 6px;
     padding-block: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .account-information-links nav {
+    grid-template-columns: 1fr;
   }
 }
 

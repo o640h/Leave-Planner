@@ -2,6 +2,17 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 type Size = { width: number; height: number }
 
+function availableSize(frame: HTMLElement | null): Size {
+  const shell = frame?.parentElement
+  const shellStyle = shell ? window.getComputedStyle(shell) : null
+  const top = Number.parseFloat(shellStyle?.paddingTop ?? '') || 0
+  const bottom = Number.parseFloat(shellStyle?.paddingBottom ?? '') || 0
+  return {
+    width: window.innerWidth,
+    height: Math.max(0, window.innerHeight - top - bottom),
+  }
+}
+
 export function WorkspaceFrame({ children }: { children: ReactNode }) {
   const [size, setSize] = useState<Size>({ width: 1440, height: 900 })
   const [expanded, setExpanded] = useState(false)
@@ -15,15 +26,17 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
       element.style.removeProperty('width')
       element.style.removeProperty('height')
     } else {
-      element.style.width = `${Math.min(window.innerWidth, size.width)}px`
-      element.style.height = `${Math.min(window.innerHeight, size.height)}px`
+      const available = availableSize(element)
+      element.style.width = `${Math.min(available.width, size.width)}px`
+      element.style.height = `${Math.min(available.height, size.height)}px`
     }
   }, [expanded, size])
 
   function resize(width: number, height: number) {
+    const available = availableSize(frame.current)
     setSize({
-      width: Math.max(720, Math.min(window.innerWidth, width)),
-      height: Math.max(480, Math.min(window.innerHeight, height)),
+      width: Math.min(available.width, Math.max(720, width)),
+      height: Math.min(available.height, Math.max(480, height)),
     })
   }
 

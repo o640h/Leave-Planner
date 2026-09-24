@@ -1,14 +1,18 @@
 .public-shell {
+  --footer-clearance: 56px;
+
   display: flex;
   position: relative;
   width: 100%;
   height: 100dvh;
   align-items: center;
   justify-content: center;
+  padding-block: var(--footer-clearance);
 }
 
 .public-shell > .application-frame {
-  height: min(900px, calc(100dvh - 72px));
+  height: min(900px, calc(100dvh - var(--footer-clearance) - var(--footer-clearance)));
+  max-height: calc(100dvh - var(--footer-clearance) - var(--footer-clearance));
 }
 
 .public-shell > .site-footer {
@@ -26,6 +30,7 @@
 
 .public-shell > .workspace-frame--expanded {
   height: 100dvh;
+  max-height: 100dvh;
 }
 
 .public-shell:has(> .workspace-frame--expanded) > .site-footer {
@@ -157,11 +162,13 @@
     justify-content: flex-start;
     min-height: 100dvh;
     height: auto;
+    padding-block: 0;
   }
 
   .public-shell > .application-frame {
     min-height: calc(100dvh - 100px);
     height: auto;
+    max-height: none;
   }
 
   .public-shell > .site-footer {
